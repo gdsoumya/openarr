@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography, ServiceId } from '../core/theme/tokens';
@@ -120,9 +121,9 @@ export function DashboardScreen() {
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.title}>Dashboard</Text>
         <View style={styles.headerActions}>
-          <Pressable style={styles.headerBtn}><Text style={{ fontSize: 16 }}>🔔</Text></Pressable>
+          <Pressable style={styles.headerBtn}><Ionicons name="notifications-outline" size={20} color={colors.textMuted} /></Pressable>
           <Pressable style={styles.headerBtn} onPress={() => navigation.navigate('Home', { screen: 'Settings' })}>
-            <Text style={{ fontSize: 16 }}>⚙️</Text>
+            <Ionicons name="settings-outline" size={20} color={colors.textMuted} />
           </Pressable>
         </View>
       </View>

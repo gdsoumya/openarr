@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Switch } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -81,7 +82,7 @@ export function TorrentDetailScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Pressable onPress={() => navigation.goBack()}><Text style={styles.back}>← Back</Text></Pressable>
+        <Pressable onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color={colors.primary} /></Pressable>
       </View>
       <Text style={styles.name}>{torrent.name}</Text>
 
@@ -146,7 +147,6 @@ export function TorrentDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
-  back: { ...typography.body, color: colors.primary },
   name: { ...typography.h3, color: colors.textPrimary, paddingHorizontal: spacing.xl, marginBottom: spacing.lg },
   progressBar: { marginHorizontal: spacing.xl, marginBottom: spacing.xl },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.xl, gap: spacing.sm, marginBottom: spacing.xl },

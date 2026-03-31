@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Linking, RefreshControl } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
@@ -231,7 +232,10 @@ export function MovieDetailScreen() {
             ],
           });
         }}>
-          <Text style={[styles.actionBtnText, styles.actionBtnTextPrimary]}>🔍 Search</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <MaterialCommunityIcons name="magnify" size={16} color={colors.primary} />
+            <Text style={[styles.actionBtnText, styles.actionBtnTextPrimary]}>Search</Text>
+          </View>
         </Pressable>
         <Pressable style={styles.actionBtn} onPress={() => {
           if (!adapter || !movie) return;
@@ -251,7 +255,7 @@ export function MovieDetailScreen() {
             ],
           });
         }}>
-          <Text style={styles.actionBtnText}>⋮ More</Text>
+          <MaterialCommunityIcons name="dots-vertical" size={20} color={colors.textMuted} />
         </Pressable>
       </View>
     </View>
