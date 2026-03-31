@@ -55,7 +55,8 @@ export function SearchHomeScreen() {
   };
 
   const doSearch = useCallback(async () => {
-    if (!adapter || !query.trim()) return;
+    if (!query.trim()) return;
+    if (!adapter) { Alert.alert('Not Configured', 'Set up Prowlarr in Settings to search indexers.'); return; }
     setLoading(true);
     setResults([]);
     try {

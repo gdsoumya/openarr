@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ScrollView, View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../../core/theme/tokens';
@@ -43,6 +43,9 @@ export function MoviesHomeScreen() {
   const [library, setLibrary] = useState<Movie[]>([]);
   const [trending, setTrending] = useState<TMDBMovie[]>([]);
   const [recentlyReleased, setRecentlyReleased] = useState<TMDBMovie[]>([]);
+  const [radarrSearchResults, setRadarrSearchResults] = useState<Movie[]>([]);
+  const [tmdbSearchResults, setTmdbSearchResults] = useState<TMDBMovie[]>([]);
+  const [searching, setSearching] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const showToast = useToastStore((s) => s.show);
@@ -54,7 +57,6 @@ export function MoviesHomeScreen() {
   const [recentError, setRecentError] = useState('');
 
   const fetchData = useCallback(async () => {
-    // Library from Radarr
     if (adapter) {
       setLibraryStatus('loading');
       try {
@@ -70,7 +72,6 @@ export function MoviesHomeScreen() {
       setLibraryStatus('empty');
     }
 
-    // Trending from TMDB
     setTrendingStatus('loading');
     try {
       const data = await tmdb.getTrendingMovies();
@@ -82,7 +83,6 @@ export function MoviesHomeScreen() {
       setTrendingError(e.response?.status === 401 ? 'Invalid TMDB token — check config.ts' : `TMDB: ${e.message ?? 'Failed to load'}`);
     }
 
-    // Recently released from TMDB
     setRecentStatus('loading');
     try {
       const data = await tmdb.getNowPlayingMovies();
@@ -99,11 +99,39 @@ export function MoviesHomeScreen() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const doSearch = useCallback(async () => {
+    const q = searchQuery.trim();
+    if (!q) { setRadarrSearchResults([]); setTmdbSearchResults([]); return; }
+    setSearching(true);
+    try {
+      if (adapter) {
+        const results = await adapter.lookupMovie(q);
+        setRadarrSearchResults(results);
+        setTmdbSearchResults([]);
+      } else {
+        const results = await tmdb.searchMovies(q);
+        setTmdbSearchResults(results);
+        setRadarrSearchResults([]);
+      }
+    } catch (e: any) {
+      showToast(`Search failed: ${e.message}`, 'error');
+    }
+    setSearching(false);
+  }, [searchQuery, adapter]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) { setRadarrSearchResults([]); setTmdbSearchResults([]); }
+  }, [searchQuery]);
+
   if (initialLoading) return <LoadingSpinner message="Loading movies..." />;
 
   const displayLibrary = searchQuery
     ? library.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()))
     : library;
+
+  const isSearchMode = searchQuery.trim().length > 0;
+  const hasSearchResults = radarrSearchResults.length > 0 || tmdbSearchResults.length > 0;
+  const libraryTmdbIds = new Set(library.map(m => m.tmdbId));
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}
@@ -115,35 +143,101 @@ export function MoviesHomeScreen() {
         />
       }>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>Movies</Text></View>
-      <SearchBar placeholder="Search your library or discover movies..." value={searchQuery} onChangeText={setSearchQuery} />
+      <SearchBar
+        placeholder={adapter ? 'Search movies to add (via Radarr)...' : 'Search TMDB for movies...'}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        onSubmit={doSearch}
+      />
 
-      {!config && (
+      {!config && !isSearchMode && (
         <View style={styles.notConfigured}>
-          <Text style={styles.notConfiguredText}>Radarr not configured. Add it in Settings to see your library.</Text>
+          <Text style={styles.notConfiguredText}>Radarr not configured. Add it in Settings to manage your library.</Text>
         </View>
       )}
 
-      <Carousel title="My Library" count={displayLibrary.length} onSeeAll={() => { /* TODO: navigate to grid view */ }}
-        status={!config ? 'empty' : libraryStatus}>
-        {displayLibrary.map((m) => (
-          <PosterCard key={m.id} title={m.title} subtitle={`${m.year} · ${m.genres?.[0] ?? ''}`}
-            posterUrl={m.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getMovieBadge(m)} onPress={() => navigation.navigate('MovieDetail', { movie: m })} />
-        ))}
-      </Carousel>
+      {/* Search results */}
+      {isSearchMode && (
+        <>
+          {searching && (
+            <View style={styles.searchingRow}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.searchingText}>Searching{adapter ? ' Radarr' : ' TMDB'}...</Text>
+            </View>
+          )}
 
-      <Carousel title="Trending This Week"
-        status={trendingStatus} errorMessage={trendingError}>
-        {trending.map((m) => (
-          <PosterCard key={m.id} title={m.title} subtitle={m.release_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' })} />
-        ))}
-      </Carousel>
+          {/* Radarr lookup results */}
+          {!searching && radarrSearchResults.length > 0 && (
+            <Carousel title={`Results for "${searchQuery}"`} count={radarrSearchResults.length} status="loaded">
+              {radarrSearchResults.map((m) => {
+                const inLibrary = libraryTmdbIds.has(m.tmdbId);
+                return (
+                  <PosterCard key={m.tmdbId} title={m.title}
+                    subtitle={`${m.year ?? ''} · ${m.genres?.[0] ?? ''}`}
+                    posterUrl={m.images?.find(i => i.coverType === 'poster')?.remoteUrl}
+                    badge={inLibrary ? { label: 'In Library', variant: 'inLibrary' } : undefined}
+                    onPress={() => {
+                      if (inLibrary) {
+                        const existing = library.find(l => l.tmdbId === m.tmdbId);
+                        if (existing) navigation.navigate('MovieDetail', { movie: existing });
+                      } else {
+                        navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' });
+                      }
+                    }} />
+                );
+              })}
+            </Carousel>
+          )}
 
-      <Carousel title="Recently Released"
-        status={recentStatus} errorMessage={recentError}>
-        {recentlyReleased.map((m) => (
-          <PosterCard key={m.id} title={m.title} subtitle={m.release_date ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' })} />
-        ))}
-      </Carousel>
+          {/* TMDB search results (when Radarr not configured) */}
+          {!searching && tmdbSearchResults.length > 0 && (
+            <Carousel title={`Results for "${searchQuery}"`} count={tmdbSearchResults.length} status="loaded">
+              {tmdbSearchResults.map((m) => (
+                <PosterCard key={m.id} title={m.title} subtitle={m.release_date?.slice(0, 4) ?? ''}
+                  posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md"
+                  onPress={() => navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' })} />
+              ))}
+            </Carousel>
+          )}
+
+          {!searching && !hasSearchResults && (
+            <View style={styles.noResults}>
+              <Text style={styles.noResultsText}>Press return to search. Results from {adapter ? 'Radarr (TMDB)' : 'TMDB'}.</Text>
+            </View>
+          )}
+        </>
+      )}
+
+      {/* Library — filtered when searching */}
+      {displayLibrary.length > 0 && (
+        <Carousel title={isSearchMode ? 'In Your Library' : 'My Library'} count={displayLibrary.length}
+          status={!config ? 'empty' : libraryStatus}>
+          {displayLibrary.map((m) => (
+            <PosterCard key={m.id} title={m.title} subtitle={`${m.year} · ${m.genres?.[0] ?? ''}`}
+              posterUrl={m.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getMovieBadge(m)}
+              onPress={() => navigation.navigate('MovieDetail', { movie: m })} />
+          ))}
+        </Carousel>
+      )}
+
+      {/* Discovery carousels — hide when searching */}
+      {!isSearchMode && (
+        <>
+          <Carousel title="Trending This Week"
+            status={trendingStatus} errorMessage={trendingError}>
+            {trending.map((m) => (
+              <PosterCard key={m.id} title={m.title} subtitle={m.release_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' })} />
+            ))}
+          </Carousel>
+
+          <Carousel title="Recently Released"
+            status={recentStatus} errorMessage={recentError}>
+            {recentlyReleased.map((m) => (
+              <PosterCard key={m.id} title={m.title} subtitle={m.release_date ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' })} />
+            ))}
+          </Carousel>
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -155,4 +249,8 @@ const styles = StyleSheet.create({
   title: { ...typography.h1, color: colors.textPrimary },
   notConfigured: { marginHorizontal: spacing.xl, marginBottom: spacing.lg, padding: spacing.lg, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, borderWidth: 1, borderColor: colors.divider },
   notConfiguredText: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
+  searchingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
+  searchingText: { ...typography.caption, color: colors.textMuted },
+  noResults: { padding: spacing.xl, alignItems: 'center' },
+  noResultsText: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
 });
