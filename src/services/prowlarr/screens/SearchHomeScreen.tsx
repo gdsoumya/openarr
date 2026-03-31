@@ -1,8 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
-import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { FilterChips } from '../../../core/components/FilterChips';
@@ -132,7 +131,7 @@ export function SearchHomeScreen() {
             </View>
           )}
           {!loading && (
-            <FlashList data={results} estimatedItemSize={80}
+            <FlatList data={results}
               renderItem={({ item }) => (
                 <Pressable style={styles.resultItem} onPress={() => grabResult(item)}>
                   <View style={styles.resultTop}>
@@ -166,7 +165,7 @@ export function SearchHomeScreen() {
       {config && activeTab === 'indexers' && (
         <FlashList
           data={indexers}
-          estimatedItemSize={60}
+         
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingBottom: 100 }}
           ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No indexers configured</Text></View>}
@@ -190,7 +189,7 @@ export function SearchHomeScreen() {
       {config && activeTab === 'stats' && (
         <FlashList
           data={indexerStats}
-          estimatedItemSize={80}
+         
           keyExtractor={(item) => String(item.indexerId)}
           contentContainerStyle={{ paddingBottom: 100 }}
           ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No stats available</Text></View>}

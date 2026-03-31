@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, RefreshControl, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl, ScrollView, FlatList } from 'react-native';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
-import { FlashList } from '@shopify/flash-list';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
@@ -132,7 +131,7 @@ export function SubsHomeScreen() {
         {config && loading && <LoadingSpinner message="Loading subtitles..." />}
 
         {config && !loading && activeTab === 'series' && (
-          <FlashList data={series} estimatedItemSize={70}
+          <FlatList data={series}
             renderItem={({ item: s }) => (
               <View style={styles.seriesItem}>
                 <View style={styles.seriesInfo}>
@@ -157,7 +156,7 @@ export function SubsHomeScreen() {
         )}
 
         {config && !loading && activeTab === 'movies' && (
-          <FlashList data={movies} estimatedItemSize={70}
+          <FlatList data={movies}
             renderItem={({ item: m }) => (
               <View style={styles.seriesItem}>
                 <View style={styles.seriesInfo}>
@@ -221,7 +220,7 @@ export function SubsHomeScreen() {
 
       <BottomSheetWrapper ref={subSheetRef} snapPoints={['60%']} onClose={() => { setSubResults([]); setSearchingEpId(null); setSearchingMovieId(null); }}>
         <Text style={styles.sheetTitle}>Subtitle Search Results</Text>
-        <FlashList data={subResults} estimatedItemSize={70}
+        <FlatList data={subResults}
           renderItem={({ item: sub }) => (
             <Pressable style={styles.subResultItem} onPress={() => downloadSub(sub)}>
               <View style={styles.subResultRow}>
