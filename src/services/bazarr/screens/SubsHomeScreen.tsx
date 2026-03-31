@@ -199,7 +199,7 @@ export function SubsHomeScreen() {
               </View>
             )}
             keyExtractor={(_, idx) => String(idx)}
-            contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
+            contentContainerStyle={{ paddingBottom: 100 }}
             ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No subtitle history yet</Text></View>}
           />
         )}
@@ -215,7 +215,7 @@ export function SubsHomeScreen() {
               </View>
             )}
             keyExtractor={(item) => item.name}
-            contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
+            contentContainerStyle={{ paddingBottom: 100 }}
             ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No providers configured</Text></View>}
           />
         )}
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   providerStatus: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   providerDot: { width: 8, height: 8, borderRadius: 4 },
   providerStatusText: { ...typography.micro, fontWeight: '600' },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
+  empty: { alignItems: 'center', paddingVertical: spacing.xxxl },
   emptyText: { ...typography.body, color: colors.textMuted, textAlign: 'center', paddingHorizontal: spacing.xl },
   sheetTitle: { ...typography.h3, color: colors.textPrimary, marginBottom: spacing.md, paddingHorizontal: spacing.xl },
   subResultItem: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)' },

@@ -152,7 +152,7 @@ export function SearchHomeScreen() {
                 </Pressable>
               )}
               keyExtractor={(item) => item.guid}
-              contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
+              contentContainerStyle={{ paddingBottom: 100 }}
               ListEmptyComponent={
                 <View style={styles.placeholder}>
                   <Text style={styles.placeholderText}>Enter a search term and press return</Text>
@@ -168,7 +168,7 @@ export function SearchHomeScreen() {
           data={indexers}
          
           keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No indexers configured</Text></View>}
           renderItem={({ item }) => (
             <View style={styles.resultItem}>
@@ -192,7 +192,7 @@ export function SearchHomeScreen() {
           data={indexerStats}
          
           keyExtractor={(item) => String(item.indexerId)}
-          contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No stats available</Text></View>}
           renderItem={({ item }) => (
             <View style={styles.resultItem}>
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   grabBadgeText: { ...typography.badge, color: colors.primary },
   resultStats: { flexDirection: 'row', gap: spacing.md },
   resultStat: { ...typography.micro, color: colors.textMuted },
-  placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
+  placeholder: { alignItems: 'center', paddingVertical: spacing.xxxl, paddingHorizontal: spacing.xl },
   placeholderText: { ...typography.body, color: colors.textMuted, textAlign: 'center' },
   searchingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
   searchingText: { ...typography.caption, color: colors.textMuted },

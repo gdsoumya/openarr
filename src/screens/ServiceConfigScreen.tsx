@@ -38,9 +38,7 @@ export function ServiceConfigScreen() {
   const [username, setUsername] = useState(existing?.username ?? '');
   const [password, setPassword] = useState(existing?.password ?? '');
   const [sslIgnoreCert, setSslIgnoreCert] = useState(existing?.sslIgnoreCert ?? false);
-  const [basePath, setBasePath] = useState(existing?.basePath ?? '');
   const [showSecret, setShowSecret] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [testResult, setTestResult] = useState<'none' | 'testing' | 'success' | 'fail'>('none');
   const [testError, setTestError] = useState('');
 
@@ -57,7 +55,6 @@ export function ServiceConfigScreen() {
     username: !usesApiKey ? (username.trim() || undefined) : undefined,
     password: !usesApiKey ? (password.trim() || undefined) : undefined,
     sslIgnoreCert,
-    basePath: basePath.trim() || undefined,
   });
 
   const testConnection = async () => {
@@ -193,6 +190,12 @@ export function ServiceConfigScreen() {
         </>
       )}
 
+      {/* SSL toggle */}
+      <View style={styles.switchRow}>
+        <Text style={styles.switchLabel}>Ignore SSL Certificate Errors</Text>
+        <Switch value={sslIgnoreCert} onValueChange={setSslIgnoreCert} trackColor={{ true: colors.primary, false: 'rgba(255,255,255,0.1)' }} thumbColor="#fff" />
+      </View>
+
       {/* Test + Save */}
       <Pressable style={styles.testButton} onPress={testConnection}>
         <Text style={styles.testButtonText}>{testResult === 'testing' ? 'Testing...' : 'Test Connection'}</Text>
@@ -203,23 +206,6 @@ export function ServiceConfigScreen() {
       <Pressable style={styles.saveButton} onPress={save}>
         <Text style={styles.saveButtonText}>Save</Text>
       </Pressable>
-
-      {/* Advanced — collapsed by default */}
-      <Pressable style={styles.advancedToggle} onPress={() => setShowAdvanced(!showAdvanced)}>
-        <Text style={styles.advancedToggleText}>{showAdvanced ? '▾ Hide Advanced' : '▸ Advanced Options'}</Text>
-      </Pressable>
-
-      {showAdvanced && (
-        <View style={styles.advancedSection}>
-          <Text style={styles.label}>Base Path (for reverse proxy subpaths)</Text>
-          <TextInput style={styles.input} value={basePath} onChangeText={setBasePath} placeholder={`/${serviceId}`} placeholderTextColor={colors.textMuted} autoCapitalize="none" />
-
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>Ignore SSL Certificate Errors</Text>
-            <Switch value={sslIgnoreCert} onValueChange={setSslIgnoreCert} trackColor={{ true: colors.primary, false: 'rgba(255,255,255,0.1)' }} thumbColor="#fff" />
-          </View>
-        </View>
-      )}
     </ScrollView>
   );
 }
@@ -242,9 +228,6 @@ const styles = StyleSheet.create({
   testFail: { ...typography.caption, color: colors.error, textAlign: 'center', marginTop: spacing.sm },
   saveButton: { backgroundColor: colors.primary, borderRadius: radii.md, padding: spacing.lg, alignItems: 'center', marginTop: spacing.lg },
   saveButtonText: { ...typography.bodyBold, color: '#0f1023' },
-  advancedToggle: { marginTop: spacing.xxl, paddingVertical: spacing.md, alignItems: 'center' },
-  advancedToggleText: { ...typography.caption, color: colors.textMuted, fontWeight: '500' },
-  advancedSection: { borderTopWidth: 1, borderTopColor: colors.divider, marginTop: spacing.sm, paddingTop: spacing.sm },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.xl },
   switchLabel: { ...typography.body, color: colors.textSecondary, flex: 1 },
 });
