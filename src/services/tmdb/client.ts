@@ -58,6 +58,11 @@ export class TMDBClient {
     return { results: filtered, totalResults: data.total_results };
   }
 
+  async findByExternalId(externalId: string, source: 'imdb_id' | 'tvdb_id'): Promise<{ tv_results: TMDBShow[]; movie_results: TMDBMovie[] }> {
+    const { data } = await this.client.get(`/find/${externalId}`, { params: { external_source: source } });
+    return { tv_results: data.tv_results ?? [], movie_results: data.movie_results ?? [] };
+  }
+
   async getShowDetails(id: number): Promise<TMDBShow & { number_of_seasons: number; status: string }> { const { data } = await this.client.get(`/tv/${id}`); return data; }
   async getMovieDetails(id: number): Promise<TMDBMovie & { runtime: number; budget: number; revenue: number; genres: any[] }> { const { data } = await this.client.get(`/movie/${id}`); return data; }
   async getShowExternalIds(id: number): Promise<TMDBExternalIds> { const { data } = await this.client.get(`/tv/${id}/external_ids`); return data; }

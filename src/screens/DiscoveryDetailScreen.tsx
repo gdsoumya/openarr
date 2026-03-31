@@ -54,8 +54,16 @@ export function DiscoveryDetailScreen() {
       if (item.poster_path) {
         // This is a TMDB item — id is TMDB ID
         resolvedTmdbId = item.id;
+      } else if (item.imdbId) {
+        // Sonarr item with IMDB ID — exact lookup via TMDB /find
+        const found = await tmdb.findByExternalId(item.imdbId, 'imdb_id').catch(() => ({ tv_results: [], movie_results: [] }));
+        resolvedTmdbId = found.tv_results[0]?.id;
+      } else if (item.tvdbId) {
+        // Sonarr item with TVDB ID — exact lookup via TMDB /find
+        const found = await tmdb.findByExternalId(String(item.tvdbId), 'tvdb_id').catch(() => ({ tv_results: [], movie_results: [] }));
+        resolvedTmdbId = found.tv_results[0]?.id;
       } else {
-        // Sonarr lookup — search TMDB by title to get TMDB ID
+        // Last resort — fuzzy title search
         const searchResult = await tmdb.searchTV(item.title ?? item.name, 1).catch(() => ({ results: [] }));
         resolvedTmdbId = searchResult.results?.[0]?.id;
       }
