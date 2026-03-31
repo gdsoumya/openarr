@@ -89,6 +89,15 @@ export function MovieDetailScreen() {
     fetchData();
   }, [adapter]);
 
+  useEffect(() => {
+    if (!adapter || !movie) return;
+    if (activeTab === 'history') {
+      adapter.getHistory().then(r => setHistoryItems(r.records ?? [])).catch(() => {});
+    } else if (activeTab === 'files') {
+      setMovieFile(movie.movieFile ?? null);
+    }
+  }, [activeTab, adapter, movie]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     if (adapter && movie) {
@@ -263,6 +272,45 @@ export function MovieDetailScreen() {
             )}
           </>
         )}
+
+        {activeTab === 'history' && (
+          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+            {historyItems.length === 0 && <View style={styles.emptyTab}><Text style={styles.emptyTabText}>No history</Text></View>}
+            {historyItems.map((item, idx) => (
+              <View key={idx} style={styles.historyItem}>
+                <Text style={styles.historyTitle} numberOfLines={1}>{item.sourceTitle}</Text>
+                <View style={styles.historyMeta}>
+                  <Text style={styles.historyEvent}>{item.eventType}</Text>
+                  <Text style={styles.historyQuality}>{item.quality?.quality?.name ?? ''}</Text>
+                  <Text style={styles.historyDate}>{new Date(item.date).toLocaleDateString()}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+
+        {activeTab === 'files' && (
+          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+            {!movieFile && <View style={styles.emptyTab}><Text style={styles.emptyTabText}>No files</Text></View>}
+            {movieFile && (
+              <View style={styles.fileItem}>
+                <Text style={styles.fileName} numberOfLines={2}>{movieFile.path?.split('/').pop() ?? 'Unknown'}</Text>
+                <View style={styles.fileMeta}>
+                  <Text style={styles.fileQuality}>{movieFile.quality?.quality?.name ?? ''}</Text>
+                  <Text style={styles.fileSize}>{movieFile.size ? `${(movieFile.size / 1073741824).toFixed(2)} GB` : ''}</Text>
+                  <Text style={styles.fileLang}>{movieFile.mediaInfo?.audioLanguages ?? movieFile.mediaInfo?.languages ?? ''}</Text>
+                </View>
+                {movieFile.mediaInfo && (
+                  <View style={styles.fileMeta}>
+                    <Text style={styles.fileCodec}>{movieFile.mediaInfo.videoCodec ?? ''}</Text>
+                    <Text style={styles.fileCodec}>{movieFile.mediaInfo.resolution ?? ''}</Text>
+                    <Text style={styles.fileCodec}>{movieFile.mediaInfo.audioCodec ?? ''}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </ScrollView>
+        )}
       </ScrollView>
 
       {/* File status bar */}
@@ -382,4 +430,19 @@ const styles = StyleSheet.create({
   actionBtnPrimary: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder, flex: 2 },
   actionBtnText: { ...typography.bodyBold, color: colors.textMuted },
   actionBtnTextPrimary: { color: colors.primary },
+  emptyTab: { padding: spacing.xxxl, alignItems: 'center' },
+  emptyTabText: { ...typography.body, color: colors.textMuted },
+  historyItem: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
+  historyTitle: { ...typography.caption, fontWeight: '600', color: colors.textPrimary },
+  historyMeta: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
+  historyEvent: { ...typography.micro, color: colors.textMuted },
+  historyQuality: { ...typography.micro, color: colors.primary },
+  historyDate: { ...typography.micro, color: colors.textMuted },
+  fileItem: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
+  fileName: { ...typography.caption, fontWeight: '600', color: colors.textPrimary },
+  fileMeta: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
+  fileQuality: { ...typography.micro, color: colors.primary },
+  fileSize: { ...typography.micro, color: colors.textMuted },
+  fileLang: { ...typography.micro, color: colors.bazarr },
+  fileCodec: { ...typography.micro, color: colors.textMuted },
 });
