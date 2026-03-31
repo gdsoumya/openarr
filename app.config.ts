@@ -27,7 +27,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: 'com.openarr.app',
     permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'],
   },
+  splash: {
+    image: './assets/images/splash-icon.png',
+    resizeMode: 'contain',
+    backgroundColor: '#0f1023',
+  },
   plugins: [
-    'expo-notifications',
+    ['expo-notifications', { icon: './assets/images/notification-icon.png', color: '#64ffda' }],
   ],
 });
