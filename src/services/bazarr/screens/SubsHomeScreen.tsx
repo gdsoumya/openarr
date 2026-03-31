@@ -103,7 +103,7 @@ export function SubsHomeScreen() {
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>Subtitles</Text></View>
 
-        <View style={styles.tabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={styles.tabs}>
           {tabs.map(tab => (
             <Pressable key={tab.id} style={[styles.tab, activeTab === tab.id && styles.tabActive]}
               onPress={() => setActiveTab(tab.id)}>
@@ -112,7 +112,7 @@ export function SubsHomeScreen() {
               </Text>
             </Pressable>
           ))}
-        </View>
+        </ScrollView>
 
         {!config && (
           <View style={styles.empty}>

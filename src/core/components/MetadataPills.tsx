@@ -8,7 +8,7 @@ export function MetadataPills({ pills }: MetadataPillsProps) {
   if (pills.length === 0) return null;
   return (
     <View style={styles.wrapper}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.container}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={styles.container}>
         {pills.map((pill, i) => (
           <View key={i} style={styles.pill}><Text style={styles.text}>{pill}</Text></View>
         ))}

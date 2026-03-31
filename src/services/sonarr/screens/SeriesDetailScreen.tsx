@@ -363,14 +363,14 @@ export function SeriesDetailScreen() {
           watchProviders={watchProviders}
         />
 
-        <View style={styles.tabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={styles.tabs}>
           {tabs.map(tab => (
             <Pressable key={tab} style={[styles.tab, activeTab === tab.toLowerCase() && styles.tabActive]}
               onPress={() => setActiveTab(tab.toLowerCase())}>
               <Text style={[styles.tabText, activeTab === tab.toLowerCase() && styles.tabTextActive]}>{tab}</Text>
             </Pressable>
           ))}
-        </View>
+        </ScrollView>
 
         {activeTab === 'seasons' && loadingEpisodes && <LoadingSpinner message="Loading episodes..." />}
         {activeTab === 'seasons' && !loadingEpisodes && series.seasons?.filter(s => s.seasonNumber > 0).map(season => (

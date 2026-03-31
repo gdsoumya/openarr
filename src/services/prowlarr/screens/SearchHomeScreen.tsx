@@ -101,14 +101,14 @@ export function SearchHomeScreen() {
         )}
       </View>
 
-      <View style={styles.tabs}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={styles.tabs}>
         {tabs.map(tab => (
           <Pressable key={tab} style={[styles.tab, activeTab === tab.toLowerCase() && styles.tabActive]}
             onPress={() => setActiveTab(tab.toLowerCase())}>
             <Text style={[styles.tabText, activeTab === tab.toLowerCase() && styles.tabTextActive]}>{tab}</Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
 
       {!config && (
         <View style={styles.placeholder}>

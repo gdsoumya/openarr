@@ -8,7 +8,7 @@ interface FilterChipsProps { chips: FilterChip[]; activeId: string; onSelect: (i
 export function FilterChips({ chips, activeId, onSelect }: FilterChipsProps) {
   return (
     <View style={styles.wrapper}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.container}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={styles.container}>
         {chips.map((chip) => {
           const isActive = chip.id === activeId;
           return (

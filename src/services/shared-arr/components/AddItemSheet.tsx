@@ -262,7 +262,7 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
         <Text style={styles.title}>Add to {type === 'sonarr' ? 'Sonarr' : 'Radarr'}</Text>
 
         <Text style={styles.label}>Quality Profile</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={styles.pickerRow} contentContainerStyle={styles.pickerRowContent}>
           {profiles.map((p) => (
             <Pressable key={p.id} style={[styles.pickerItem, selectedProfile === p.id && styles.pickerItemActive]}
               onPress={() => setSelectedProfile(p.id)}>
@@ -272,7 +272,7 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
         </ScrollView>
 
         <Text style={styles.label}>Root Folder</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={styles.pickerRow} contentContainerStyle={styles.pickerRowContent}>
           {folders.map((f) => (
             <Pressable key={f.id} style={[styles.pickerItem, selectedFolder === f.path && styles.pickerItemActive]}
               onPress={() => setSelectedFolder(f.path)}>
@@ -333,8 +333,9 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
 const styles = StyleSheet.create({
   title: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.md },
   label: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.sm, marginTop: spacing.lg },
-  pickerRow: { flexDirection: 'row', marginBottom: spacing.sm, height: 40 },
-  pickerItem: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider, marginRight: spacing.sm },
+  pickerRow: { marginBottom: spacing.sm },
+  pickerRowContent: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingRight: spacing.xl },
+  pickerItem: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider },
   pickerItemActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
   pickerText: { ...typography.caption, color: colors.textMuted },
   pickerTextActive: { color: colors.primary },

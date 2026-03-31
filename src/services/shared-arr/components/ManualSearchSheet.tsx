@@ -88,7 +88,7 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
         {/* Sort chips */}
         {!isLoading && releases.length > 0 && (
           <View style={styles.sortWrapper}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sortRow}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={styles.sortRow}>
               <Text style={styles.sortLabel}>Sort:</Text>
               {sortChips.map((chip) => (
                 <Pressable

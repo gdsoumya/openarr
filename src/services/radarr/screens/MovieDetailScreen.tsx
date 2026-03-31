@@ -229,14 +229,14 @@ export function MovieDetailScreen() {
 
         <RatingsBar ratings={omdbRatings} tmdbRating={movie.ratings?.tmdb?.value} loading={ratingsLoading} title={movie.title} imdbId={movie.imdbId} tmdbId={movie.tmdbId} type="movie" />
 
-        <View style={styles.tabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={styles.tabs}>
           {tabs.map(tab => (
             <Pressable key={tab} style={[styles.tab, activeTab === tab.toLowerCase() && styles.tabActive]}
               onPress={() => setActiveTab(tab.toLowerCase())}>
               <Text style={[styles.tabText, activeTab === tab.toLowerCase() && styles.tabTextActive]}>{tab}</Text>
             </Pressable>
           ))}
-        </View>
+        </ScrollView>
 
         {activeTab === 'info' && (
           <>
