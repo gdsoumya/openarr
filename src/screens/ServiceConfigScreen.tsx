@@ -10,7 +10,7 @@ import { getAdapter, clearAdapters } from '../services/adapterFactory';
 type AuthMode = 'apikey' | 'basic';
 
 const SERVICE_META: Record<ServiceId, { defaultPort: string; authMode: AuthMode; authHint: string; urlSuffix?: string }> = {
-  transmission: { defaultPort: '9091', authMode: 'basic', authHint: 'Username/password from Transmission → Settings → Web', urlSuffix: '/transmission/rpc' },
+  transmission: { defaultPort: '9091', authMode: 'basic', authHint: 'Username/password from Transmission → Settings → Web (/rpc is appended automatically)', urlSuffix: '/transmission' },
   sonarr: { defaultPort: '8989', authMode: 'apikey', authHint: 'Settings → General → API Key' },
   radarr: { defaultPort: '7878', authMode: 'apikey', authHint: 'Settings → General → API Key' },
   prowlarr: { defaultPort: '9696', authMode: 'apikey', authHint: 'Settings → General → API Key' },
