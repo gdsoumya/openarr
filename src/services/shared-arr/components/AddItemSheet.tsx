@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, Switch } from 'react-nat
 import BottomSheet from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetWrapper } from '../../../core/components/BottomSheetWrapper';
+import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
@@ -14,11 +15,12 @@ interface AddItemSheetProps {
   type: 'sonarr' | 'radarr';
   item: any;
   onDismiss: () => void;
-  onAdded: () => void;
+  onAdded: (status: 'added' | 'added_searching') => void;
 }
 
 export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddItemSheetProps) {
   const sheetRef = useRef<BottomSheet>(null);
+  const { alert } = useThemedAlert();
   const config = useServiceConfig(type);
   const isLocal = useConnectionStore((s) => s.isLocal);
 
@@ -110,45 +112,77 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
       if (type === 'sonarr') {
         const adapter = getSonarrAdapter(config, isLocal);
 
-        // Build seasons array with per-season monitored state
-        const seasonsPayload = seasons.length > 0
-          ? seasons.map(s => ({ seasonNumber: s.seasonNumber, monitored: seasonMonitored.get(s.seasonNumber) ?? true }))
-          : undefined;
+        // If this is a TMDB item (no tvdbId), lookup via Sonarr to get proper data
+        let seriesData = item;
+        if (!item.tvdbId) {
+          const title = item.title ?? item.name;
+          const lookupResults = await adapter.lookupSeries(title);
+          const match = lookupResults[0]; // Best match
+          if (!match) throw new Error(`Could not find "${title}" in Sonarr lookup. Try searching from the TV tab instead.`);
+          seriesData = match;
+        }
 
-        // Determine monitor preset based on selection
-        const allMonitored = seasons.every(s => seasonMonitored.get(s.seasonNumber));
-        const noneMonitored = seasons.every(s => !seasonMonitored.get(s.seasonNumber));
+        const noneMonitored = seasons.length > 0 && seasons.every(s => !seasonMonitored.get(s.seasonNumber));
 
-        await adapter.addSeries({
-          tvdbId: item.tvdbId ?? item.id,
-          title: item.title ?? item.name,
+        const body: any = {
+          ...seriesData,
           qualityProfileId: selectedProfile,
           rootFolderPath: selectedFolder,
-          seriesType: 'standard',
+          seriesType: seriesData.seriesType ?? 'standard',
           monitored: !noneMonitored,
           tags: [],
-          seasons: seasonsPayload,
           addOptions: {
-            monitor: noneMonitored ? 'none' : allMonitored ? 'all' : 'none',
+            monitor: 'none',
             searchForMissingEpisodes: withSearch,
           },
-        } as any); // seasons field is passed through to Sonarr API
+        };
+
+        if (seasons.length > 0) {
+          body.seasons = seasons.map(s => ({
+            seasonNumber: s.seasonNumber,
+            monitored: seasonMonitored.get(s.seasonNumber) ?? true,
+          }));
+        }
+
+        await adapter.addSeries(body);
       } else {
         const adapter = getRadarrAdapter(config, isLocal);
-        await adapter.addMovie({
-          tmdbId: item.tmdbId ?? item.id,
-          title: item.title,
+
+        // If this is a TMDB item (no tmdbId field from Radarr), lookup via Radarr
+        let movieData = item;
+        if (!item.tmdbId || item.poster_path) {
+          // Has poster_path = came from TMDB, needs Radarr lookup for proper format
+          const title = item.title ?? item.name;
+          const lookupResults = await adapter.lookupMovie(title);
+          const match = lookupResults[0];
+          if (!match) throw new Error(`Could not find "${title}" in Radarr lookup.`);
+          movieData = match;
+        }
+
+        const movieBody: any = {
+          ...movieData,
           qualityProfileId: selectedProfile,
           rootFolderPath: selectedFolder,
           monitored: true,
-          minimumAvailability: 'released',
+          minimumAvailability: movieData.minimumAvailability ?? 'released',
           tags: [],
           addOptions: { searchForMovie: withSearch },
-        });
+        };
+        await adapter.addMovie(movieBody);
       }
-      onAdded();
+      const itemTitle = item.title ?? item.name;
       onDismiss();
-    } catch (e: any) { console.error('Add failed:', e); }
+      onAdded(withSearch ? 'added_searching' : 'added');
+      alert(
+        withSearch ? 'Added & Searching' : 'Added Successfully',
+        withSearch
+          ? `"${itemTitle}" added to ${type === 'sonarr' ? 'Sonarr' : 'Radarr'} and search triggered. Check Activity for progress.`
+          : `"${itemTitle}" added to ${type === 'sonarr' ? 'Sonarr' : 'Radarr'}. Status: Monitored (Missing).`,
+      );
+    } catch (e: any) {
+      const msg = e.response?.data?.message ?? e.response?.data?.[0]?.errorMessage ?? e.message ?? 'Unknown error';
+      alert('Failed to Add', msg);
+    }
     setLoading(false);
   };
 

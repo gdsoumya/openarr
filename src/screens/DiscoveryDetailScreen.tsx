@@ -23,6 +23,7 @@ export function DiscoveryDetailScreen() {
   const isInSonarr = useLibraryCache((s) => s.isInSonarr);
   const isInRadarr = useLibraryCache((s) => s.isInRadarr);
   const [showAddSheet, setShowAddSheet] = useState(false);
+  const [addedStatus, setAddedStatus] = useState<'added' | 'added_searching' | null>(null);
 
   const [omdbRatings, setOmdbRatings] = useState<OMDBRatings | null>(null);
   const [watchProviders, setWatchProviders] = useState<WatchProviderCountry | undefined>();
@@ -98,7 +99,7 @@ export function DiscoveryDetailScreen() {
   const overview = details?.overview ?? item.overview;
   const poster = details?.poster_path ? posterUrl(details.poster_path, 'w500') : (item.poster_path ? posterUrl(item.poster_path, 'w500') : item.images?.find((i: any) => i.coverType === 'poster')?.remoteUrl);
   const backdrop = details?.backdrop_path ? backdropUrl(details.backdrop_path) : (item.backdrop_path ? backdropUrl(item.backdrop_path) : item.images?.find((i: any) => i.coverType === 'fanart')?.remoteUrl);
-  const inLibrary = type === 'tv' ? isInSonarr(item.tvdbId ?? item.id) : isInRadarr(item.tmdbId ?? item.id);
+  const inLibrary = addedStatus !== null || (type === 'tv' ? isInSonarr(item.tvdbId ?? item.id) : isInRadarr(item.tmdbId ?? item.id));
   const arrType = type === 'tv' ? 'sonarr' as const : 'radarr' as const;
 
   const releaseDate = details?.first_air_date ?? details?.release_date ?? item.first_air_date ?? item.release_date ?? item.firstAired;
@@ -142,7 +143,9 @@ export function DiscoveryDetailScreen() {
             <Text style={styles.subtitle}>
               {year}{runtime ? ` · ${runtime}min` : ''}{network ? ` · ${network}` : ''}
             </Text>
-            {inLibrary && <Badge label="In Library" variant="inLibrary" style={{ alignSelf: 'flex-start', marginTop: 8 }} />}
+            {addedStatus === 'added_searching' && <Badge label="↓ Searching..." variant="downloading" style={{ alignSelf: 'flex-start', marginTop: 8 }} />}
+            {addedStatus === 'added' && <Badge label="Missing" variant="missing" style={{ alignSelf: 'flex-start', marginTop: 8 }} />}
+            {!addedStatus && inLibrary && <Badge label="In Library" variant="inLibrary" style={{ alignSelf: 'flex-start', marginTop: 8 }} />}
           </View>
         </View>
 
@@ -193,7 +196,7 @@ export function DiscoveryDetailScreen() {
         type={arrType}
         item={{ ...item, ...(details ? { number_of_seasons: details.number_of_seasons, seasons: details.seasons } : {}) }}
         onDismiss={() => setShowAddSheet(false)}
-        onAdded={() => {}}
+        onAdded={(status) => setAddedStatus(status)}
       />
     </>
   );
