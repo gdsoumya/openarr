@@ -17,14 +17,38 @@ export class TMDBClient {
   async getOnTheAirShows(): Promise<TMDBShow[]> { const { data } = await this.client.get('/tv/on_the_air'); return data.results; }
   async getNowPlayingMovies(): Promise<TMDBMovie[]> { const { data } = await this.client.get('/movie/now_playing'); return data.results; }
   async getUpcomingMovies(): Promise<TMDBMovie[]> { const { data } = await this.client.get('/movie/upcoming'); return data.results; }
-  async searchTV(query: string, page = 1): Promise<{ results: TMDBShow[]; totalResults: number }> {
-    const { data } = await this.client.get('/search/tv', { params: { query, page, include_adult: false } });
-    return { results: data.results, totalResults: data.total_results };
+  async searchTV(query: string, pages = 3): Promise<{ results: TMDBShow[]; totalResults: number }> {
+    const firstPage = await this.client.get('/search/tv', { params: { query, page: 1, include_adult: false } });
+    const totalPages = Math.min(pages, firstPage.data.total_pages ?? 1);
+    let results: TMDBShow[] = firstPage.data.results;
+
+    if (totalPages > 1) {
+      const remaining = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, i) =>
+          this.client.get('/search/tv', { params: { query, page: i + 2, include_adult: false } }).catch(() => ({ data: { results: [] } }))
+        )
+      );
+      for (const r of remaining) results = results.concat(r.data.results);
+    }
+
+    return { results, totalResults: firstPage.data.total_results };
   }
 
-  async searchMovies(query: string, page = 1): Promise<{ results: TMDBMovie[]; totalResults: number }> {
-    const { data } = await this.client.get('/search/movie', { params: { query, page, include_adult: false } });
-    return { results: data.results, totalResults: data.total_results };
+  async searchMovies(query: string, pages = 3): Promise<{ results: TMDBMovie[]; totalResults: number }> {
+    const firstPage = await this.client.get('/search/movie', { params: { query, page: 1, include_adult: false } });
+    const totalPages = Math.min(pages, firstPage.data.total_pages ?? 1);
+    let results: TMDBMovie[] = firstPage.data.results;
+
+    if (totalPages > 1) {
+      const remaining = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, i) =>
+          this.client.get('/search/movie', { params: { query, page: i + 2, include_adult: false } }).catch(() => ({ data: { results: [] } }))
+        )
+      );
+      for (const r of remaining) results = results.concat(r.data.results);
+    }
+
+    return { results, totalResults: firstPage.data.total_results };
   }
 
   async searchMulti(query: string, page = 1): Promise<{ results: Array<(TMDBShow | TMDBMovie) & { media_type: 'tv' | 'movie' }>; totalResults: number }> {
