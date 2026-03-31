@@ -4,6 +4,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
 import { SeasonSection } from '../components/SeasonSection';
+import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { Series, Episode, Season } from '../types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
@@ -14,6 +15,7 @@ export function SeriesDetailScreen() {
   const navigation = useNavigation<any>();
   const [series] = useState<Series | null>(route.params?.series ?? null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [loadingEpisodes, setLoadingEpisodes] = useState(true);
   const [activeTab, setActiveTab] = useState('seasons');
 
   const sonarrConfig = useServiceConfig('sonarr');
@@ -26,13 +28,14 @@ export function SeriesDetailScreen() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!adapter || !series) return;
+      if (!adapter || !series) { setLoadingEpisodes(false); return; }
       try {
         const eps = await adapter.getEpisodes(series.id);
         setEpisodes(eps);
       } catch (e) {
         console.error('SeriesDetail fetch error:', e);
       }
+      setLoadingEpisodes(false);
     }
     fetchData();
   }, [adapter, series]);
@@ -203,7 +206,8 @@ export function SeriesDetailScreen() {
           ))}
         </View>
 
-        {activeTab === 'seasons' && series.seasons?.filter(s => s.seasonNumber > 0).map(season => (
+        {activeTab === 'seasons' && loadingEpisodes && <LoadingSpinner message="Loading episodes..." />}
+        {activeTab === 'seasons' && !loadingEpisodes && series.seasons?.filter(s => s.seasonNumber > 0).map(season => (
           <SeasonSection
             key={season.seasonNumber}
             season={season}

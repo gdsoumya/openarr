@@ -12,6 +12,7 @@ import { useConnectionStore } from '../../../stores/connectionStore';
 import { getSonarrAdapter } from '../../../services/adapterFactory';
 import { TMDBClient } from '../../tmdb/client';
 import { TMDB_API_KEY } from '../../../core/config';
+import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 
 const tmdb = new TMDBClient(TMDB_API_KEY);
 
@@ -58,6 +59,8 @@ export function TVHomeScreen() {
   }
 
   useEffect(() => { fetchData(); }, [adapter]);
+
+  if (loading) return <LoadingSpinner message="Loading TV shows..." />;
 
   const displayLibrary = searchQuery
     ? library.filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase()))

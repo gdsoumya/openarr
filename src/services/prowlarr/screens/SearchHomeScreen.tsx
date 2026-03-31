@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, TextInput } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { FilterChips } from '../../../core/components/FilterChips';
@@ -89,7 +89,12 @@ export function SearchHomeScreen() {
               onSubmitEditing={doSearch} />
           </View>
           <FilterChips chips={typeChips} activeId={searchType} onSelect={(id) => setSearchType(id as SearchType)} />
-          {loading && <View style={styles.placeholder}><Text style={styles.placeholderText}>Searching...</Text></View>}
+          {loading && (
+            <View style={styles.searchingRow}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.searchingText}>Searching...</Text>
+            </View>
+          )}
           {!loading && (
             <FlashList data={results} estimatedItemSize={80}
               renderItem={({ item }) => (
@@ -191,4 +196,6 @@ const styles = StyleSheet.create({
   resultStat: { ...typography.micro, color: colors.textMuted },
   placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
   placeholderText: { ...typography.body, color: colors.textMuted, textAlign: 'center' },
+  searchingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
+  searchingText: { ...typography.caption, color: colors.textMuted },
 });

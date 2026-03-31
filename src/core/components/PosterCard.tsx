@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, Pressable, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ViewStyle } from 'react-native';
 import { colors, spacing, radii, typography } from '../theme/tokens';
 import { Badge } from './Badge';
 import { ProgressBar } from './ProgressBar';
+import { CachedImage } from './CachedImage';
 
 type PosterSize = 'sm' | 'md' | 'lg' | 'xl';
 const posterWidths: Record<PosterSize, number> = { sm: 90, md: 120, lg: 130, xl: 150 };
@@ -32,7 +33,7 @@ export function PosterCard({
     <Pressable style={[{ width }, style]} onPress={onPress}>
       <View style={[styles.poster, { width, height }]}>
         {posterUrl ? (
-          <Image source={{ uri: posterUrl }} style={styles.posterImage} />
+          <CachedImage uri={posterUrl} style={styles.posterImage as any} />
         ) : (
           <View style={[styles.placeholder, { width, height }]}>
             <Text style={styles.placeholderText}>{placeholderText ?? title.slice(0, 3)}</Text>

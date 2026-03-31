@@ -12,6 +12,7 @@ import { getRadarrAdapter } from '../../../services/adapterFactory';
 import { useLibraryCache } from '../../../stores/libraryCache';
 import { TMDBClient } from '../../tmdb/client';
 import { TMDB_API_KEY } from '../../../core/config';
+import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 
 const tmdb = new TMDBClient(TMDB_API_KEY);
 
@@ -58,6 +59,8 @@ export function MoviesHomeScreen() {
   }
 
   useEffect(() => { fetchData(); }, [adapter]);
+
+  if (loading) return <LoadingSpinner message="Loading movies..." />;
 
   const displayLibrary = searchQuery
     ? library.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()))

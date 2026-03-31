@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Image, StyleSheet, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../core/theme/tokens';
 import { Badge } from '../core/components/Badge';
+import { CachedImage } from '../core/components/CachedImage';
 import { useLibraryCache } from '../stores/libraryCache';
 import { posterUrl, backdropUrl } from '../services/tmdb/types';
 import { AddItemSheet } from '../services/shared-arr/components/AddItemSheet';
@@ -29,11 +30,11 @@ export function DiscoveryDetailScreen() {
   return (
     <>
       <ScrollView style={styles.container}>
-        {backdrop && <Image source={{ uri: backdrop }} style={styles.backdrop} />}
+        {backdrop && <CachedImage uri={backdrop} style={styles.backdrop as any} />}
         <View style={styles.heroOverlay} />
 
         <View style={styles.heroContent}>
-          {poster && <Image source={{ uri: poster }} style={styles.poster} />}
+          {poster && <CachedImage uri={poster} style={styles.poster as any} />}
           <View style={styles.titleBlock}>
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.subtitle}>{year} · ★ {rating?.toFixed(1)}</Text>

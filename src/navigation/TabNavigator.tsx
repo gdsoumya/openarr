@@ -8,6 +8,7 @@ import { MoviesStack } from './stacks/MoviesStack';
 import { SearchStack } from './stacks/SearchStack';
 import { SubsStack } from './stacks/SubsStack';
 import { colors, typography } from '../core/theme/tokens';
+import { useConnectionStore } from '../stores/connectionStore';
 
 const Tab = createBottomTabNavigator();
 
@@ -21,6 +22,8 @@ const tabIcons: Record<string, string> = {
 };
 
 export function TabNavigator() {
+  const subsBadge = useConnectionStore((s) => s.subsBadgeCount);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -48,7 +51,11 @@ export function TabNavigator() {
       <Tab.Screen name="TV" component={TVStack} />
       <Tab.Screen name="Movies" component={MoviesStack} />
       <Tab.Screen name="Search" component={SearchStack} />
-      <Tab.Screen name="Subs" component={SubsStack} />
+      <Tab.Screen name="Subs" component={SubsStack}
+        options={{
+          tabBarBadge: subsBadge > 0 ? subsBadge : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.error, fontSize: 10, fontWeight: '700' },
+        }} />
     </Tab.Navigator>
   );
 }

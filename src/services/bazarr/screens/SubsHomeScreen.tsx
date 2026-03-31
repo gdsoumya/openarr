@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { SubtitleBadge } from '../components/SubtitleBadge';
+import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { EpisodeSubtitles, MovieSubtitles } from '../types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
@@ -16,10 +17,12 @@ export function SubsHomeScreen() {
   const [activeTab, setActiveTab] = useState('wantedEp');
   const [wantedEpisodes, setWantedEpisodes] = useState<EpisodeSubtitles[]>([]);
   const [wantedMovies, setWantedMovies] = useState<MovieSubtitles[]>([]);
+  const [loading, setLoading] = useState(true);
+  const setSubsBadgeCount = useConnectionStore((s) => s.setSubsBadgeCount);
 
   useEffect(() => {
     async function fetchData() {
-      if (!adapter) return;
+      if (!adapter) { setLoading(false); return; }
       try {
         const [wEp, wMov] = await Promise.all([
           adapter.getWantedEpisodes(),
@@ -27,9 +30,11 @@ export function SubsHomeScreen() {
         ]);
         setWantedEpisodes(wEp.records);
         setWantedMovies(wMov.records);
+        setSubsBadgeCount(wEp.records.length + wMov.records.length);
       } catch (e) {
         console.error('Bazarr fetch error:', e);
       }
+      setLoading(false);
     }
     fetchData();
   }, [adapter]);
@@ -62,7 +67,9 @@ export function SubsHomeScreen() {
         </View>
       )}
 
-      {config && activeTab === 'wantedEp' && (
+      {config && loading && <LoadingSpinner message="Loading subtitles..." />}
+
+      {config && !loading && activeTab === 'wantedEp' && (
         <FlashList data={wantedEpisodes} estimatedItemSize={80}
           renderItem={({ item }) => (
             <Pressable style={styles.wantedItem}>
@@ -79,7 +86,7 @@ export function SubsHomeScreen() {
         />
       )}
 
-      {config && activeTab === 'wantedMov' && (
+      {config && !loading && activeTab === 'wantedMov' && (
         <FlashList data={wantedMovies} estimatedItemSize={80}
           renderItem={({ item }) => (
             <Pressable style={styles.wantedItem}>

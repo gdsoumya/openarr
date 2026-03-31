@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { colors, spacing, radii, typography, serviceConfig, ServiceId } from '../theme/tokens';
+import { ServiceIcon } from './ServiceIcon';
 
 interface ServiceCardProps {
   serviceId: ServiceId;
@@ -15,9 +16,7 @@ export function ServiceCard({ serviceId, summary, connected, metric, onPress }: 
   return (
     <Pressable style={styles.card} onPress={onPress}>
       <View style={[styles.accent, { backgroundColor: svc.color }]} />
-      <View style={[styles.icon, { backgroundColor: svc.color }]}>
-        <Text style={styles.iconText}>{svc.icon}</Text>
-      </View>
+      <ServiceIcon serviceId={serviceId} />
       <View style={styles.info}>
         <Text style={styles.name}>{svc.label}</Text>
         <Text style={styles.summary}>{summary}</Text>
@@ -45,8 +44,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl, position: 'relative', overflow: 'hidden',
   },
   accent: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, borderTopRightRadius: 3, borderBottomRightRadius: 3 },
-  icon: { width: 44, height: 44, borderRadius: radii.md, justifyContent: 'center', alignItems: 'center' },
-  iconText: { color: '#fff', fontSize: 18, fontWeight: '700' },
   info: { flex: 1 },
   name: { ...typography.bodyBold, color: colors.textPrimary },
   summary: { ...typography.caption, color: colors.textMuted, marginTop: 2 },

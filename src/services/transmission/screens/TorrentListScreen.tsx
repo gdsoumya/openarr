@@ -12,6 +12,7 @@ import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getTransmissionAdapter } from '../../../services/adapterFactory';
 import { usePolling } from '../../../core/hooks/usePolling';
+import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 
 type FilterId = 'all' | 'downloading' | 'seeding' | 'paused';
 const filterMap: Record<FilterId, (t: Torrent) => boolean> = {
@@ -100,6 +101,8 @@ export function TorrentListScreen() {
       </View>
     );
   }
+
+  if (loading && torrents.length === 0) return <LoadingSpinner message="Loading torrents..." />;
 
   return (
     <View style={styles.container}>
