@@ -57,11 +57,14 @@ export function SearchHomeScreen() {
   const doSearch = useCallback(async () => {
     if (!adapter || !query.trim()) return;
     setLoading(true);
+    setResults([]);
     try {
       const data = await adapter.search({ query: query.trim(), type: searchType });
       setResults(data);
-    } catch (e) {
-      console.error('Search error:', e);
+    } catch (e: any) {
+      Alert.alert('Search Failed', e.response
+        ? `HTTP ${e.response.status}: ${e.config?.baseURL || ''}${e.config?.url || ''}`
+        : e.message || 'Unknown error');
     }
     setLoading(false);
   }, [adapter, query, searchType]);

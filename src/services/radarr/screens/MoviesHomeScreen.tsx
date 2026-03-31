@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ScrollView, View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../../core/theme/tokens';
 import { Carousel } from '../../../core/components/Carousel';
@@ -32,6 +33,7 @@ function getMovieBadge(m: Movie) {
 
 export function MoviesHomeScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const config = useServiceConfig('radarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getRadarrAdapter(config, isLocal) : null, [config, isLocal]);
@@ -121,25 +123,25 @@ export function MoviesHomeScreen() {
         </View>
       )}
 
-      <Carousel title="My Library" count={displayLibrary.length} onSeeAll={() => {}}
+      <Carousel title="My Library" count={displayLibrary.length} onSeeAll={() => { /* TODO: navigate to grid view */ }}
         status={!config ? 'empty' : libraryStatus}>
         {displayLibrary.map((m) => (
           <PosterCard key={m.id} title={m.title} subtitle={`${m.year} · ${m.genres?.[0] ?? ''}`}
-            posterUrl={m.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getMovieBadge(m)} onPress={() => {}} />
+            posterUrl={m.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getMovieBadge(m)} onPress={() => navigation.navigate('MovieDetail', { movie: m })} />
         ))}
       </Carousel>
 
-      <Carousel title="Trending This Week" onSeeAll={() => {}}
+      <Carousel title="Trending This Week"
         status={trendingStatus} errorMessage={trendingError}>
         {trending.map((m) => (
-          <PosterCard key={m.id} title={m.title} subtitle={m.release_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => {}} />
+          <PosterCard key={m.id} title={m.title} subtitle={m.release_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' })} />
         ))}
       </Carousel>
 
-      <Carousel title="Recently Released" onSeeAll={() => {}}
+      <Carousel title="Recently Released"
         status={recentStatus} errorMessage={recentError}>
         {recentlyReleased.map((m) => (
-          <PosterCard key={m.id} title={m.title} subtitle={m.release_date ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => {}} />
+          <PosterCard key={m.id} title={m.title} subtitle={m.release_date ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' })} />
         ))}
       </Carousel>
     </ScrollView>

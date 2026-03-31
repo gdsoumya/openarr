@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ScrollView, View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../../core/theme/tokens';
 import { Carousel } from '../../../core/components/Carousel';
@@ -32,6 +33,7 @@ function getSeriesBadge(s: Series) {
 
 export function TVHomeScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const config = useServiceConfig('sonarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getSonarrAdapter(config, isLocal) : null, [config, isLocal]);
@@ -121,25 +123,25 @@ export function TVHomeScreen() {
         </View>
       )}
 
-      <Carousel title="My Library" count={displayLibrary.length} onSeeAll={() => {}}
+      <Carousel title="My Library" count={displayLibrary.length} onSeeAll={() => { /* TODO: navigate to grid view */ }}
         status={!config ? 'empty' : libraryStatus}>
         {displayLibrary.map((s) => (
           <PosterCard key={s.id} title={s.title} subtitle={`${s.network} · ${s.status === 'continuing' ? 'Airing' : 'Ended'}`}
-            posterUrl={s.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getSeriesBadge(s)} onPress={() => {}} />
+            posterUrl={s.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getSeriesBadge(s)} onPress={() => navigation.navigate('SeriesDetail', { series: s })} />
         ))}
       </Carousel>
 
-      <Carousel title="Trending This Week" onSeeAll={() => {}}
+      <Carousel title="Trending This Week"
         status={trendingStatus} errorMessage={trendingError}>
         {trending.map((s) => (
-          <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md" onPress={() => {}} />
+          <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' })} />
         ))}
       </Carousel>
 
-      <Carousel title="Recently Aired" onSeeAll={() => {}}
+      <Carousel title="Recently Aired"
         status={recentStatus} errorMessage={recentError}>
         {recentlyAired.map((s) => (
-          <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md" onPress={() => {}} />
+          <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' })} />
         ))}
       </Carousel>
     </ScrollView>
