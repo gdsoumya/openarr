@@ -28,7 +28,7 @@ export function TabNavigator() {
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={({ route, navigation }) => ({
         headerShown: false,
         tabBarStyle: {
           backgroundColor: 'rgba(15, 16, 35, 0.95)',
@@ -49,16 +49,18 @@ export function TabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeStack} />
-      <Tab.Screen name="Torrents" component={TorrentsStack} />
-      <Tab.Screen name="TV" component={TVStack} />
-      <Tab.Screen name="Movies" component={MoviesStack} />
-      <Tab.Screen name="Search" component={SearchStack} />
+      <Tab.Screen name="Home" component={HomeStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Home', { screen: 'Dashboard' }) })} />
+      <Tab.Screen name="Torrents" component={TorrentsStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Torrents', { screen: 'TorrentList' }) })} />
+      <Tab.Screen name="TV" component={TVStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('TV', { screen: 'TVHome' }) })} />
+      <Tab.Screen name="Movies" component={MoviesStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Movies', { screen: 'MoviesHome' }) })} />
+      <Tab.Screen name="Search" component={SearchStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Search', { screen: 'SearchHome' }) })} />
       <Tab.Screen name="Subs" component={SubsStack}
         options={{
           tabBarBadge: subsBadge > 0 ? subsBadge : undefined,
           tabBarBadgeStyle: { backgroundColor: colors.error, fontSize: 10, fontWeight: '700' },
-        }} />
+        }}
+        listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Subs', { screen: 'SubsHome' }) })}
+      />
     </Tab.Navigator>
   );
 }
