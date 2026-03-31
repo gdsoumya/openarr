@@ -11,16 +11,23 @@ export class BazarrAdapter {
   constructor(config: ServiceConfig, isLocal: boolean) { this.client = createServiceClient(config, isLocal); }
 
   async testConnection(): Promise<boolean> {
-    await this.client.get('/api/system/status');
+    // /api/system/status can hang on some Bazarr versions; use /api/system/health instead
+    await this.client.get('/api/system/health');
     return true;
   }
 
   async getStatus(): Promise<ServiceStatus> {
     try {
-      const badges = await this.getBadges();
-      const wanted = badges.episodes + badges.movies;
+      // Use /api/system/health (reliable) instead of /api/badges (can hang)
+      await this.client.get('/api/system/health');
+      // Try to get badge counts but don't block on it
+      let wanted = 0;
+      try {
+        const badges = await this.getBadges();
+        wanted = badges.episodes + badges.movies;
+      } catch {}
       return { serviceId: 'bazarr', connection: { status: 'connected', isLocal: true, lastChecked: Date.now() },
-        summary: wanted > 0 ? `${wanted} wanted subtitles` : 'All subtitles found',
+        summary: wanted > 0 ? `${wanted} wanted subtitles` : 'Connected',
         metric: wanted > 0 ? { value: wanted, label: 'wanted' } : undefined };
     } catch (e: any) {
       return { serviceId: 'bazarr', connection: { status: 'error', isLocal: true, lastChecked: Date.now(), error: e.message }, summary: 'Connection failed' };

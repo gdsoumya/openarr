@@ -22,9 +22,13 @@ export function createServiceClient(config: ServiceConfig, isLocal: boolean): Ax
     client.interceptors.request.use((req: InternalAxiosRequestConfig) => {
       if (config.serviceId === 'bazarr') {
         // Bazarr: use query param (header can be blocked by reverse proxies)
-        // Also set header as fallback for direct connections
         req.params = { ...req.params, apikey: config.apiKey };
         req.headers.set('X-API-KEY', config.apiKey);
+        // Bazarr (Flask-RESTX) requires trailing slash on API paths
+        // Without it, Flask does a 308 redirect that hangs
+        if (req.url && !req.url.endsWith('/') && !req.url.includes('.')) {
+          req.url = req.url + '/';
+        }
       } else {
         req.headers.set('X-Api-Key', config.apiKey);
       }
