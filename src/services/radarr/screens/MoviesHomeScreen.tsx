@@ -23,8 +23,8 @@ type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
 
 interface QueueInfo { movieId?: number; title: string; progress: number; status: string; }
 
-function getMovieBadge(m: Movie, queueMap: Map<number, QueueInfo>) {
-  const qi = queueMap.get(m.id);
+function getMovieBadge(m: Movie, queueMap?: Map<number, QueueInfo>) {
+  const qi = queueMap?.get(m.id);
   if (qi) return { label: `↓ ${Math.round(qi.progress)}%`, variant: 'downloading' as const };
 
   if (m.hasFile && m.movieFile) {
@@ -236,7 +236,7 @@ export function MoviesHomeScreen() {
             <PosterCard key={m.id} title={m.title} subtitle={`${m.year} · ${m.genres?.[0] ?? ''}`}
               posterUrl={m.images.find(i => i.coverType === 'poster')?.remoteUrl}
               badge={getMovieBadge(m, queueMap)}
-              progress={queueMap.has(m.id) ? (queueMap.get(m.id)!.progress / 100) : undefined}
+              progress={queueMap?.has(m.id) ? (queueMap.get(m.id)!.progress / 100) : undefined}
               onPress={() => navigation.navigate('MovieDetail', { movie: m })} />
           ))}
         </Carousel>

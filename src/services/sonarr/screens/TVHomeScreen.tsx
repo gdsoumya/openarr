@@ -23,9 +23,9 @@ type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
 
 interface QueueInfo { seriesId?: number; movieId?: number; title: string; progress: number; }
 
-function getSeriesBadge(s: Series, queueMap: Map<number, QueueInfo>) {
+function getSeriesBadge(s: Series, queueMap?: Map<number, QueueInfo>) {
   // Check if downloading
-  const qi = queueMap.get(s.id);
+  const qi = queueMap?.get(s.id);
   if (qi) return { label: `↓ ${Math.round(qi.progress)}%`, variant: 'downloading' as const };
 
   const st = s.statistics;
@@ -240,7 +240,7 @@ export function TVHomeScreen() {
             <PosterCard key={s.id} title={s.title} subtitle={`${s.network} · ${s.status === 'continuing' ? 'Airing' : 'Ended'}`}
               posterUrl={s.images.find(i => i.coverType === 'poster')?.remoteUrl}
               badge={getSeriesBadge(s, queueMap)}
-              progress={queueMap.has(s.id) ? (queueMap.get(s.id)!.progress / 100) : undefined}
+              progress={queueMap?.has(s.id) ? (queueMap.get(s.id)!.progress / 100) : undefined}
               onPress={() => navigation.navigate('SeriesDetail', { series: s })} />
           ))}
         </Carousel>
