@@ -147,7 +147,7 @@ export function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  content: { paddingHorizontal: spacing.xl, paddingBottom: 100 },
+  content: { paddingHorizontal: spacing.xl, paddingBottom: 20 },
   sectionTitle: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.md, marginTop: spacing.lg },
   row: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.lg, marginBottom: spacing.sm, gap: spacing.md },
   rowActive: { borderColor: colors.primaryBorder },

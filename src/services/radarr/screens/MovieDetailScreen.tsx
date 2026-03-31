@@ -274,7 +274,7 @@ export function MovieDetailScreen() {
         )}
 
         {activeTab === 'history' && (
-          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
             {historyItems.length === 0 && <View style={styles.emptyTab}><Text style={styles.emptyTabText}>No history</Text></View>}
             {historyItems.map((item, idx) => (
               <View key={idx} style={styles.historyItem}>
@@ -290,7 +290,7 @@ export function MovieDetailScreen() {
         )}
 
         {activeTab === 'files' && (
-          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
             {!movieFile && <View style={styles.emptyTab}><Text style={styles.emptyTabText}>No files</Text></View>}
             {movieFile && (
               <View style={styles.fileItem}>

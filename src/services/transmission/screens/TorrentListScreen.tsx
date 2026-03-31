@@ -156,7 +156,7 @@ export function TorrentListScreen() {
             tintColor={colors.primary}
           />
         }
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 20 }}
         ListEmptyComponent={
           loading
             ? <View style={styles.centered}><Text style={styles.emptyText}>Loading...</Text></View>

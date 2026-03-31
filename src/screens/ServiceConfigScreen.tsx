@@ -212,7 +212,7 @@ export function ServiceConfigScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  content: { padding: spacing.xl, paddingBottom: 100 },
+  content: { padding: spacing.xl, paddingBottom: 20 },
   headerIcon: { width: 56, height: 56, borderRadius: radii.lg, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: spacing.md, marginTop: spacing.md },
   headerIconText: { color: '#fff', fontSize: 24, fontWeight: '700' },
   headerTitle: { ...typography.h2, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.lg },

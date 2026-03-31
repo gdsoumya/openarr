@@ -150,7 +150,7 @@ export function SubsHomeScreen() {
               </View>
             )}
             keyExtractor={(item) => String(item.sonarrSeriesId)}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ paddingBottom: 20 }}
             ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No series found in Bazarr</Text></View>}
             onRefresh={onRefresh}
             refreshing={refreshing}
@@ -176,7 +176,7 @@ export function SubsHomeScreen() {
               </View>
             )}
             keyExtractor={(item) => String(item.radarrId)}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ paddingBottom: 20 }}
             ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No movies found in Bazarr</Text></View>}
             onRefresh={onRefresh}
             refreshing={refreshing}
@@ -201,7 +201,7 @@ export function SubsHomeScreen() {
               </View>
             )}
             keyExtractor={(_, idx) => String(idx)}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ paddingBottom: 20 }}
             ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No subtitle history yet</Text></View>}
           />
         )}
@@ -217,7 +217,7 @@ export function SubsHomeScreen() {
               </View>
             )}
             keyExtractor={(item) => item.name}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ paddingBottom: 20 }}
             ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No providers configured</Text></View>}
           />
         )}

@@ -417,7 +417,7 @@ export function SeriesDetailScreen() {
         ))}
 
         {activeTab === 'calendar' && (
-          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
             {calendarItems.length === 0 && <View style={styles.emptyTab}><Text style={styles.emptyTabText}>No upcoming episodes</Text></View>}
             {calendarItems.map((item, idx) => (
               <View key={idx} style={styles.calendarItem}>
@@ -429,7 +429,7 @@ export function SeriesDetailScreen() {
         )}
 
         {activeTab === 'history' && (
-          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
             {historyItems.length === 0 && <View style={styles.emptyTab}><Text style={styles.emptyTabText}>No history</Text></View>}
             {historyItems.map((item, idx) => (
               <View key={idx} style={styles.historyItem}>
@@ -445,7 +445,7 @@ export function SeriesDetailScreen() {
         )}
 
         {activeTab === 'files' && (
-          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
             {episodeFiles.length === 0 && <View style={styles.emptyTab}><Text style={styles.emptyTabText}>No files</Text></View>}
             {episodeFiles.map((file, idx) => (
               <View key={idx} style={styles.fileItem}>

@@ -157,7 +157,7 @@ export function SearchHomeScreen() {
                 </Pressable>
               )}
               keyExtractor={(item) => item.guid}
-              contentContainerStyle={{ paddingBottom: 100 }}
+              contentContainerStyle={{ paddingBottom: 20 }}
               ListEmptyComponent={
                 <View style={styles.placeholder}>
                   <Text style={styles.placeholderText}>Enter a search term and press return</Text>
@@ -173,7 +173,7 @@ export function SearchHomeScreen() {
           data={indexers}
          
           keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 20 }}
           ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No indexers configured</Text></View>}
           renderItem={({ item }) => (
             <View style={styles.resultItem}>
@@ -197,7 +197,7 @@ export function SearchHomeScreen() {
           data={indexerStats}
          
           keyExtractor={(item) => String(item.indexerId)}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 20 }}
           ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No stats available</Text></View>}
           renderItem={({ item }) => (
             <View style={styles.resultItem}>
@@ -230,7 +230,7 @@ export function SearchHomeScreen() {
             </View>
           )}
           keyExtractor={(_, idx) => String(idx)}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 20 }}
           ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No search history</Text></View>}
         />
       )}
