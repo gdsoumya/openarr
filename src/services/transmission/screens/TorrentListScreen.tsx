@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, RefreshControl, Alert, Platform, TextInput, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography, radii } from '../../../core/theme/tokens';
 import { SpeedBanner } from '../../../core/components/SpeedBanner';
 import { FilterChips } from '../../../core/components/FilterChips';
@@ -24,6 +25,7 @@ const filterMap: Record<FilterId, (t: Torrent) => boolean> = {
 };
 
 export function TorrentListScreen() {
+  const insets = useSafeAreaInsets();
   const config = useServiceConfig('transmission');
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getTransmissionAdapter(config, isLocal) : null, [config, isLocal]);
@@ -108,7 +110,7 @@ export function TorrentListScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}><Text style={styles.title}>Torrents</Text></View>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>Torrents</Text></View>
 
       {showAddInput && (
         <View style={styles.addInputRow}>
@@ -166,7 +168,7 @@ export function TorrentListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  header: { paddingHorizontal: spacing.xl, paddingTop: 60, paddingBottom: spacing.md },
+  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
   title: { ...typography.h1, color: colors.textPrimary },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
   emptyText: { ...typography.body, color: colors.textMuted, textAlign: 'center' },

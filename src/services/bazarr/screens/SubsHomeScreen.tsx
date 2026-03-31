@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { View, Text, StyleSheet, Pressable, Alert, RefreshControl, ScrollView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import BottomSheet from '@gorhom/bottom-sheet';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { SubtitleBadge } from '../components/SubtitleBadge';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
@@ -12,6 +13,7 @@ import { useConnectionStore } from '../../../stores/connectionStore';
 import { getBazarrAdapter } from '../../../services/adapterFactory';
 
 export function SubsHomeScreen() {
+  const insets = useSafeAreaInsets();
   const config = useServiceConfig('bazarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getBazarrAdapter(config, isLocal) : null, [config, isLocal]);
@@ -97,7 +99,7 @@ export function SubsHomeScreen() {
   return (
     <>
       <View style={styles.container}>
-        <View style={styles.header}><Text style={styles.title}>Subtitles</Text></View>
+        <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>Subtitles</Text></View>
 
         <View style={styles.tabs}>
           {tabs.map(tab => (
@@ -192,7 +194,7 @@ export function SubsHomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  header: { paddingHorizontal: spacing.xl, paddingTop: 60, paddingBottom: spacing.sm },
+  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.xl, borderBottomWidth: 1, borderBottomColor: colors.divider, marginBottom: spacing.md },
   tab: { paddingVertical: spacing.md, paddingHorizontal: spacing.md, borderBottomWidth: 2, borderBottomColor: 'transparent' },

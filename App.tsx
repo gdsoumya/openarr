@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './src/core/theme/ThemeProvider';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { useServerStore } from './src/stores/serverStore';
@@ -19,6 +20,7 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
       <ThemeProvider>
         <NavigationContainer
           theme={{
@@ -44,6 +46,7 @@ export default function App() {
           <Toast message={toast.message} type={toast.type} visible={toast.visible} onHide={toast.hide} />
         </NavigationContainer>
       </ThemeProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

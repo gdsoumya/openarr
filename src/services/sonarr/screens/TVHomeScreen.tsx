@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ScrollView, View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../../core/theme/tokens';
 import { Carousel } from '../../../core/components/Carousel';
 import { PosterCard } from '../../../core/components/PosterCard';
@@ -28,6 +29,7 @@ function getSeriesBadge(s: Series) {
 }
 
 export function TVHomeScreen() {
+  const insets = useSafeAreaInsets();
   const config = useServiceConfig('sonarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getSonarrAdapter(config, isLocal) : null, [config, isLocal]);
@@ -77,7 +79,7 @@ export function TVHomeScreen() {
           tintColor={colors.primary}
         />
       }>
-      <View style={styles.header}><Text style={styles.title}>TV Shows</Text></View>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>TV Shows</Text></View>
       <SearchBar placeholder="Search your library or discover new shows..." value={searchQuery} onChangeText={setSearchQuery} />
 
       {!config && (
@@ -112,7 +114,7 @@ export function TVHomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   content: { paddingBottom: 100 },
-  header: { paddingHorizontal: spacing.xl, paddingTop: 60, paddingBottom: spacing.md },
+  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
   title: { ...typography.h1, color: colors.textPrimary },
   notConfigured: { marginHorizontal: spacing.xl, marginBottom: spacing.lg, padding: spacing.lg, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, borderWidth: 1, borderColor: colors.divider },
   notConfiguredText: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },

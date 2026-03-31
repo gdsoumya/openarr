@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography, ServiceId } from '../core/theme/tokens';
 import { ServiceCard } from '../core/components/ServiceCard';
 import { SpeedBanner } from '../core/components/SpeedBanner';
@@ -25,6 +26,7 @@ function formatBytes(bytes: number): string {
 }
 
 export function DashboardScreen() {
+  const insets = useSafeAreaInsets();
   const server = useServerStore((s) => s.getActiveServer());
   const isLocal = useConnectionStore((s) => s.isLocal);
   const [statuses, setStatuses] = useState<Partial<Record<ServiceId, ServiceStatus>>>({});
@@ -101,7 +103,7 @@ export function DashboardScreen() {
 
   if (!server) {
     return (
-      <View style={styles.empty}>
+      <View style={[styles.empty, { paddingTop: insets.top }]}>
         <Text style={styles.emptyIcon}>🔧</Text>
         <Text style={styles.emptyTitle}>No Server Configured</Text>
         <Text style={styles.emptyText}>Add a server in Settings to get started.</Text>
@@ -115,7 +117,7 @@ export function DashboardScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.title}>Dashboard</Text>
         <View style={styles.headerActions}>
           <Pressable style={styles.headerBtn}><Text style={{ fontSize: 16 }}>🔔</Text></Pressable>
@@ -147,7 +149,7 @@ export function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   content: { paddingBottom: 100 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingTop: 60, paddingBottom: spacing.sm },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
   headerActions: { flexDirection: 'row', gap: spacing.sm },
   headerBtn: { width: 36, height: 36, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },

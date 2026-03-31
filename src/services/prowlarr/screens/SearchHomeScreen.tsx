@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { FilterChips } from '../../../core/components/FilterChips';
 import { SearchResult, SearchType, Indexer, IndexerStats } from '../types';
@@ -10,6 +11,7 @@ import { getProwlarrAdapter, getTransmissionAdapter } from '../../../services/ad
 import { useServerStore } from '../../../stores/serverStore';
 
 export function SearchHomeScreen() {
+  const insets = useSafeAreaInsets();
   const config = useServiceConfig('prowlarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getProwlarrAdapter(config, isLocal) : null, [config, isLocal]);
@@ -75,7 +77,7 @@ export function SearchHomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}><Text style={styles.title}>Search</Text></View>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>Search</Text></View>
 
       <View style={styles.tabs}>
         {tabs.map(tab => (
@@ -197,7 +199,7 @@ export function SearchHomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  header: { paddingHorizontal: spacing.xl, paddingTop: 60, paddingBottom: spacing.sm },
+  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.xl, borderBottomWidth: 1, borderBottomColor: colors.divider, marginBottom: spacing.md },
   tab: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg, borderBottomWidth: 2, borderBottomColor: 'transparent' },

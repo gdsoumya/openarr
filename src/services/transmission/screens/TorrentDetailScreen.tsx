@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Switch, Alert } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { ProgressBar } from '../../../core/components/ProgressBar';
 import { useServiceConfig } from '../../../core/hooks/useServer';
@@ -31,6 +32,7 @@ function formatEta(seconds: number): string {
 }
 
 export function TorrentDetailScreen() {
+  const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation();
   const initialTorrent: Torrent = route.params?.torrent;
@@ -76,7 +78,7 @@ export function TorrentDetailScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Pressable onPress={() => navigation.goBack()}><Text style={styles.back}>← Back</Text></Pressable>
       </View>
       <Text style={styles.name}>{torrent.name}</Text>
@@ -141,7 +143,7 @@ export function TorrentDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  header: { paddingHorizontal: spacing.xl, paddingTop: 56, paddingBottom: spacing.sm },
+  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   back: { ...typography.body, color: colors.primary },
   name: { ...typography.h3, color: colors.textPrimary, paddingHorizontal: spacing.xl, marginBottom: spacing.lg },
   progressBar: { marginHorizontal: spacing.xl, marginBottom: spacing.xl },
