@@ -24,7 +24,7 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
   const isLoading = visible && releases.length === 0;
 
   React.useEffect(() => {
-    if (visible) sheetRef.current?.snapToIndex(0);
+    if (visible) sheetRef.current?.snapToIndex(1); // Open to full height
     else sheetRef.current?.close();
   }, [visible]);
 
@@ -117,12 +117,19 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
     <BottomSheet
       ref={sheetRef}
       index={-1}
-      snapPoints={['85%']}
+      snapPoints={['50%', '95%']}
       enablePanDownToClose
+      enableDynamicSizing={false}
       onClose={onDismiss}
       backdropComponent={renderBackdrop}
       backgroundStyle={styles.background}
       handleIndicatorStyle={styles.handle}
+      // Open to full height when results arrive
+      onChange={(index) => {
+        if (index === 0 && sortedReleases.length > 0) {
+          sheetRef.current?.snapToIndex(1);
+        }
+      }}
     >
       {isLoading ? (
         <View style={styles.loadingContainer}>
@@ -137,6 +144,7 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
           renderItem={renderItem}
           ListHeaderComponent={ListHeader}
           contentContainerStyle={styles.listContent}
+          nestedScrollEnabled
         />
       )}
     </BottomSheet>
