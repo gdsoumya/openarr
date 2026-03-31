@@ -7,12 +7,14 @@ import { useServerStore } from '../stores/serverStore';
 import { useConnectionStore } from '../stores/connectionStore';
 import { getAdapter, clearAdapters } from '../services/adapterFactory';
 
-const SERVICE_HINTS: Record<ServiceId, { defaultPort: string; apiKeyHint: string }> = {
-  transmission: { defaultPort: '9091', apiKeyHint: 'Settings → Web → Authentication (if enabled)' },
-  sonarr: { defaultPort: '8989', apiKeyHint: 'Settings → General → API Key' },
-  radarr: { defaultPort: '7878', apiKeyHint: 'Settings → General → API Key' },
-  prowlarr: { defaultPort: '9696', apiKeyHint: 'Settings → General → API Key' },
-  bazarr: { defaultPort: '6767', apiKeyHint: 'Settings → General → API Key' },
+type AuthMode = 'apikey' | 'basic';
+
+const SERVICE_META: Record<ServiceId, { defaultPort: string; authMode: AuthMode; authHint: string; urlSuffix?: string }> = {
+  transmission: { defaultPort: '9091', authMode: 'basic', authHint: 'Username/password from Transmission → Settings → Web', urlSuffix: '/transmission/rpc' },
+  sonarr: { defaultPort: '8989', authMode: 'apikey', authHint: 'Settings → General → API Key' },
+  radarr: { defaultPort: '7878', authMode: 'apikey', authHint: 'Settings → General → API Key' },
+  prowlarr: { defaultPort: '9696', authMode: 'apikey', authHint: 'Settings → General → API Key' },
+  bazarr: { defaultPort: '6767', authMode: 'apikey', authHint: 'Settings → General → API Key' },
 };
 
 export function ServiceConfigScreen() {
@@ -21,7 +23,7 @@ export function ServiceConfigScreen() {
   const insets = useSafeAreaInsets();
   const { serverId, serviceId } = route.params as { serverId: string; serviceId: ServiceId };
   const cfg = serviceConfig[serviceId];
-  const hints = SERVICE_HINTS[serviceId];
+  const meta = SERVICE_META[serviceId];
 
   const server = useServerStore((s) => s.servers.find((srv) => srv.id === serverId));
   const updateServer = useServerStore((s) => s.updateServer);
@@ -32,30 +34,33 @@ export function ServiceConfigScreen() {
   const [localUrl, setLocalUrl] = useState(existing?.localUrl ?? '');
   const [remoteUrl, setRemoteUrl] = useState(existing?.remoteUrl ?? '');
   const [apiKey, setApiKey] = useState(existing?.apiKey ?? '');
-  const [sslIgnoreCert, setSslIgnoreCert] = useState(existing?.sslIgnoreCert ?? false);
-  const [basePath, setBasePath] = useState(existing?.basePath ?? '');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [username, setUsername] = useState(existing?.username ?? '');
   const [password, setPassword] = useState(existing?.password ?? '');
+  const [sslIgnoreCert, setSslIgnoreCert] = useState(existing?.sslIgnoreCert ?? false);
+  const [basePath, setBasePath] = useState(existing?.basePath ?? '');
+  const [showSecret, setShowSecret] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [testResult, setTestResult] = useState<'none' | 'testing' | 'success' | 'fail'>('none');
+
+  const usesApiKey = meta.authMode === 'apikey';
 
   const buildServiceConfig = () => ({
     serviceId,
     enabled: true,
     localUrl: localUrl.trim(),
     remoteUrl: remoteUrl.trim() || localUrl.trim(),
-    apiKey: apiKey.trim() || undefined,
-    username: username.trim() || undefined,
-    password: password.trim() || undefined,
+    // Only set the auth method this service uses
+    apiKey: usesApiKey ? (apiKey.trim() || undefined) : undefined,
+    username: !usesApiKey ? (username.trim() || undefined) : undefined,
+    password: !usesApiKey ? (password.trim() || undefined) : undefined,
     sslIgnoreCert,
     basePath: basePath.trim() || undefined,
   });
 
   const testConnection = async () => {
     const svcConfig = buildServiceConfig();
-    if (!svcConfig.localUrl && !svcConfig.remoteUrl) {
-      Alert.alert('Error', 'Enter at least a Local URL');
+    if (!svcConfig.localUrl) {
+      Alert.alert('Error', 'Enter a Local URL');
       return;
     }
     setTestResult('testing');
@@ -86,6 +91,10 @@ export function ServiceConfigScreen() {
     navigation.goBack();
   };
 
+  const defaultPlaceholder = meta.urlSuffix
+    ? `http://192.168.1.100:${meta.defaultPort}${meta.urlSuffix}`
+    : `http://192.168.1.100:${meta.defaultPort}`;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={[styles.headerIcon, { backgroundColor: cfg.color }]}>
@@ -99,7 +108,7 @@ export function ServiceConfigScreen() {
         style={styles.input}
         value={localUrl}
         onChangeText={(t) => { setLocalUrl(t); setTestResult('none'); }}
-        placeholder={`http://192.168.1.100:${hints.defaultPort}`}
+        placeholder={defaultPlaceholder}
         placeholderTextColor={colors.textMuted}
         autoCapitalize="none"
         autoCorrect={false}
@@ -118,31 +127,68 @@ export function ServiceConfigScreen() {
         keyboardType="url"
       />
 
-      {/* API Key — shown for ALL services */}
-      <Text style={styles.label}>API Key *</Text>
-      <Text style={styles.hint}>{hints.apiKeyHint}</Text>
-      <View style={styles.apiKeyRow}>
-        <TextInput
-          style={[styles.input, { flex: 1 }]}
-          value={apiKey}
-          onChangeText={(t) => { setApiKey(t); setTestResult('none'); }}
-          placeholder="Paste your API key here"
-          placeholderTextColor={colors.textMuted}
-          secureTextEntry={!showApiKey}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <Pressable style={styles.showBtn} onPress={() => setShowApiKey(!showApiKey)}>
-          <Text style={styles.showToggle}>{showApiKey ? 'Hide' : 'Show'}</Text>
-        </Pressable>
-      </View>
+      {/* Auth — API key OR username/password depending on service */}
+      {usesApiKey ? (
+        <>
+          <Text style={styles.label}>API Key *</Text>
+          <Text style={styles.hint}>{meta.authHint}</Text>
+          <View style={styles.secretRow}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              value={apiKey}
+              onChangeText={(t) => { setApiKey(t); setTestResult('none'); }}
+              placeholder="Paste your API key here"
+              placeholderTextColor={colors.textMuted}
+              secureTextEntry={!showSecret}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <Pressable style={styles.showBtn} onPress={() => setShowSecret(!showSecret)}>
+              <Text style={styles.showToggle}>{showSecret ? 'Hide' : 'Show'}</Text>
+            </Pressable>
+          </View>
+        </>
+      ) : (
+        <>
+          <Text style={styles.label}>Authentication</Text>
+          <Text style={styles.hint}>{meta.authHint}</Text>
+
+          <Text style={[styles.label, { marginTop: spacing.md }]}>Username</Text>
+          <TextInput
+            style={styles.input}
+            value={username}
+            onChangeText={(t) => { setUsername(t); setTestResult('none'); }}
+            placeholder="Username"
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          <Text style={styles.label}>Password</Text>
+          <View style={styles.secretRow}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              value={password}
+              onChangeText={(t) => { setPassword(t); setTestResult('none'); }}
+              placeholder="Password"
+              placeholderTextColor={colors.textMuted}
+              secureTextEntry={!showSecret}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <Pressable style={styles.showBtn} onPress={() => setShowSecret(!showSecret)}>
+              <Text style={styles.showToggle}>{showSecret ? 'Hide' : 'Show'}</Text>
+            </Pressable>
+          </View>
+        </>
+      )}
 
       {/* Test + Save */}
       <Pressable style={styles.testButton} onPress={testConnection}>
         <Text style={styles.testButtonText}>{testResult === 'testing' ? 'Testing...' : 'Test Connection'}</Text>
       </Pressable>
       {testResult === 'success' && <Text style={styles.testSuccess}>✓ Connection successful</Text>}
-      {testResult === 'fail' && <Text style={styles.testFail}>✕ Connection failed — check URL and API key</Text>}
+      {testResult === 'fail' && <Text style={styles.testFail}>✕ Connection failed — check URL and credentials</Text>}
 
       <Pressable style={styles.saveButton} onPress={save}>
         <Text style={styles.saveButtonText}>Save</Text>
@@ -157,12 +203,6 @@ export function ServiceConfigScreen() {
         <View style={styles.advancedSection}>
           <Text style={styles.label}>Base Path (for reverse proxy subpaths)</Text>
           <TextInput style={styles.input} value={basePath} onChangeText={setBasePath} placeholder={`/${serviceId}`} placeholderTextColor={colors.textMuted} autoCapitalize="none" />
-
-          <Text style={styles.label}>Username (HTTP basic auth)</Text>
-          <TextInput style={styles.input} value={username} onChangeText={setUsername} placeholder="Username" placeholderTextColor={colors.textMuted} autoCapitalize="none" />
-
-          <Text style={styles.label}>Password (HTTP basic auth)</Text>
-          <TextInput style={styles.input} value={password} onChangeText={setPassword} placeholder="Password" placeholderTextColor={colors.textMuted} secureTextEntry autoCapitalize="none" />
 
           <View style={styles.switchRow}>
             <Text style={styles.switchLabel}>Ignore SSL Certificate Errors</Text>
@@ -183,7 +223,7 @@ const styles = StyleSheet.create({
   label: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.xs, marginTop: spacing.lg },
   hint: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.sm, fontStyle: 'italic' },
   input: { ...typography.body, color: colors.textPrimary, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.md, padding: spacing.md },
-  apiKeyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  secretRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   showBtn: { paddingVertical: spacing.md, paddingHorizontal: spacing.sm },
   showToggle: { ...typography.caption, color: colors.primary },
   testButton: { backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.primaryBorder, borderRadius: radii.md, padding: spacing.lg, alignItems: 'center', marginTop: spacing.xxl },
