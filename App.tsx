@@ -11,6 +11,7 @@ import { Toast } from './src/core/components/Toast';
 import { useToastStore } from './src/core/hooks/useToast';
 import { ThemedAlertProvider } from './src/core/components/ThemedAlert';
 import { ErrorBoundary } from './src/core/components/ErrorBoundary';
+import { startConnectionMonitoring } from './src/core/network/connectionManager';
 
 export default function App() {
   const loadFromStorage = useServerStore((s) => s.loadFromStorage);
@@ -18,6 +19,8 @@ export default function App() {
 
   useEffect(() => {
     loadFromStorage();
+    const stopMonitoring = startConnectionMonitoring(15000); // Check every 15s
+    return () => stopMonitoring();
   }, []);
 
   return (

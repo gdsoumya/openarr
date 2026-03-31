@@ -61,11 +61,11 @@ export function SettingsScreen() {
       <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Connection</Text>
       <View style={styles.row}>
         <View style={styles.rowIcon}>
-          <Ionicons name="wifi" size={20} color={isLocal ? colors.success : colors.info} />
+          <Ionicons name={isLocal ? 'wifi' : 'cellular'} size={20} color={isLocal ? colors.success : colors.info} />
         </View>
         <View style={styles.rowContent}>
-          <Text style={styles.rowTitle}>Network Status</Text>
-          <Text style={styles.rowSub}>{isLocal ? 'Connected via Local Network' : 'Connected via Remote'}</Text>
+          <Text style={styles.rowTitle}>{isLocal ? 'Local Network (WiFi)' : 'Remote (Cellular/VPN)'}</Text>
+          <Text style={styles.rowSub}>{isLocal ? 'Using local server URLs' : 'Using remote server URLs'}</Text>
         </View>
         <View style={[styles.statusDot, { backgroundColor: isLocal ? colors.success : colors.info }]} />
       </View>
