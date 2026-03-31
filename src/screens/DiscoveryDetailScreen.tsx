@@ -5,6 +5,7 @@ import { colors, spacing, radii, typography } from '../core/theme/tokens';
 import { Badge } from '../core/components/Badge';
 import { useLibraryCache } from '../stores/libraryCache';
 import { posterUrl, backdropUrl } from '../services/tmdb/types';
+import { AddItemSheet } from '../services/shared-arr/components/AddItemSheet';
 
 export function DiscoveryDetailScreen() {
   const route = useRoute<any>();
@@ -12,6 +13,7 @@ export function DiscoveryDetailScreen() {
   const { item, type } = route.params ?? {}; // type: 'tv' | 'movie'
   const isInSonarr = useLibraryCache((s) => s.isInSonarr);
   const isInRadarr = useLibraryCache((s) => s.isInRadarr);
+  const [showAddSheet, setShowAddSheet] = useState(false);
 
   if (!item) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;
 
@@ -22,36 +24,49 @@ export function DiscoveryDetailScreen() {
   const poster = posterUrl(item.poster_path, 'w500');
   const backdrop = backdropUrl(item.backdrop_path);
   const inLibrary = type === 'tv' ? isInSonarr(item.id) : isInRadarr(item.id);
+  const arrType = type === 'tv' ? 'sonarr' : 'radarr';
 
   return (
-    <ScrollView style={styles.container}>
-      {backdrop && <Image source={{ uri: backdrop }} style={styles.backdrop} />}
-      <View style={styles.heroOverlay} />
+    <>
+      <ScrollView style={styles.container}>
+        {backdrop && <Image source={{ uri: backdrop }} style={styles.backdrop} />}
+        <View style={styles.heroOverlay} />
 
-      <View style={styles.heroContent}>
-        {poster && <Image source={{ uri: poster }} style={styles.poster} />}
-        <View style={styles.titleBlock}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{year} · ★ {rating?.toFixed(1)}</Text>
-          {inLibrary && <Badge label="In Library" variant="inLibrary" style={{ alignSelf: 'flex-start', marginTop: 8 }} />}
+        <View style={styles.heroContent}>
+          {poster && <Image source={{ uri: poster }} style={styles.poster} />}
+          <View style={styles.titleBlock}>
+            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.subtitle}>{year} · ★ {rating?.toFixed(1)}</Text>
+            {inLibrary && <Badge label="In Library" variant="inLibrary" style={{ alignSelf: 'flex-start', marginTop: 8 }} />}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.overview}>{overview}</Text>
-      </View>
-
-      {!inLibrary && (
         <View style={styles.section}>
-          <Pressable style={styles.addButton} onPress={() => {}}>
-            <Text style={styles.addButtonText}>Add to {type === 'tv' ? 'Sonarr' : 'Radarr'}</Text>
-          </Pressable>
-          <Pressable style={styles.addSearchButton} onPress={() => {}}>
-            <Text style={styles.addSearchButtonText}>Add + Search</Text>
-          </Pressable>
+          <Text style={styles.overview}>{overview}</Text>
         </View>
-      )}
-    </ScrollView>
+
+        {!inLibrary && (
+          <View style={styles.section}>
+            <Pressable style={styles.addButton} onPress={() => setShowAddSheet(true)}>
+              <Text style={styles.addButtonText}>Add to {type === 'tv' ? 'Sonarr' : 'Radarr'}</Text>
+            </Pressable>
+            <Pressable style={styles.addSearchButton} onPress={() => setShowAddSheet(true)}>
+              <Text style={styles.addSearchButtonText}>Add + Search</Text>
+            </Pressable>
+          </View>
+        )}
+      </ScrollView>
+
+      <AddItemSheet
+        visible={showAddSheet}
+        type={arrType}
+        item={item}
+        onDismiss={() => setShowAddSheet(false)}
+        onAdded={() => {
+          // Library cache will refresh on next poll; nothing extra needed here
+        }}
+      />
+    </>
   );
 }
 
