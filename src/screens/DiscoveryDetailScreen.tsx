@@ -116,18 +116,24 @@ export function DiscoveryDetailScreen() {
   return (
     <>
       <ScrollView style={styles.container}>
-        {backdrop && <CachedImage uri={backdrop} style={styles.backdrop as any} />}
-        <View style={styles.heroOverlay} />
-
-        <Pressable style={[styles.backButton, { top: insets.top + 8 }]} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </Pressable>
+        {/* Hero — backdrop or solid fallback */}
+        <View style={styles.heroContainer}>
+          {backdrop ? (
+            <CachedImage uri={backdrop} style={styles.backdrop as any} />
+          ) : (
+            <View style={styles.backdropFallback} />
+          )}
+          <View style={styles.heroOverlay} />
+          <Pressable style={[styles.backButton, { top: insets.top + 8 }]} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color="#fff" />
+          </Pressable>
+        </View>
 
         <View style={styles.heroContent}>
           {poster ? (
             <CachedImage uri={poster} style={styles.poster as any} />
           ) : (
-            <View style={[styles.posterFallback]}>
+            <View style={styles.posterFallback}>
               <Text style={styles.posterFallbackText}>{(title ?? '').slice(0, 2)}</Text>
             </View>
           )}
@@ -185,7 +191,7 @@ export function DiscoveryDetailScreen() {
       <AddItemSheet
         visible={showAddSheet}
         type={arrType}
-        item={item}
+        item={{ ...item, ...(details ? { number_of_seasons: details.number_of_seasons, seasons: details.seasons } : {}) }}
         onDismiss={() => setShowAddSheet(false)}
         onAdded={() => {}}
       />
@@ -196,8 +202,10 @@ export function DiscoveryDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   loading: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 100 },
+  heroContainer: { height: 220, position: 'relative' },
   backdrop: { width: '100%', height: 220 },
-  heroOverlay: { position: 'absolute', top: 0, left: 0, right: 0, height: 220, backgroundColor: 'rgba(15,16,35,0.5)' },
+  backdropFallback: { width: '100%', height: 220, backgroundColor: colors.surfaceElevated },
+  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,16,35,0.5)' },
   backButton: { position: 'absolute', left: spacing.lg, zIndex: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   heroContent: { flexDirection: 'row', gap: spacing.lg, paddingHorizontal: spacing.xl, marginTop: -60 },
   poster: { width: 100, height: 150, borderRadius: radii.md, overflow: 'hidden' },
