@@ -1,3 +1,6 @@
+export ANDROID_HOME ?= $(HOME)/Android/Sdk
+export PATH := $(ANDROID_HOME)/platform-tools:$(PATH)
+
 .PHONY: help prebuild dev android ios clean nuke test lint start
 
 help: ## Show this help
@@ -8,13 +11,15 @@ help: ## Show this help
 install: ## Install dependencies
 	npm install
 
-prebuild: ## Generate native Android/iOS projects
+prebuild: install ## Generate native Android/iOS projects
 	npx expo prebuild
+	@test -d android && echo "sdk.dir=$(ANDROID_HOME)" > android/local.properties || true
 
-prebuild-android: ## Generate native Android project only
+prebuild-android: install ## Generate native Android project only
 	npx expo prebuild --platform android
+	@echo "sdk.dir=$(ANDROID_HOME)" > android/local.properties
 
-prebuild-ios: ## Generate native iOS project only
+prebuild-ios: install ## Generate native iOS project only
 	npx expo prebuild --platform ios
 
 # ─── Development ────────────────────────────────────────
@@ -25,16 +30,16 @@ dev: ## Start Expo dev server
 start: ## Start Expo dev server (alias)
 	npx expo start --dev-client
 
-android: ## Build and run on connected Android device
+android: prebuild-android ## Build and run on connected Android device
 	npx expo run:android
 
-android-release: ## Build Android release APK
+android-release: prebuild-android ## Build Android release APK
 	cd android && ./gradlew assembleRelease
 
-ios: ## Build and run on iOS simulator
+ios: prebuild-ios ## Build and run on iOS simulator
 	npx expo run:ios
 
-ios-device: ## Build and run on connected iOS device
+ios-device: prebuild-ios ## Build and run on connected iOS device
 	npx expo run:ios --device
 
 # ─── Testing ────────────────────────────────────────────

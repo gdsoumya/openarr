@@ -1,43 +1,100 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet, Pressable, Switch } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography, serviceConfig, ServiceId } from '../core/theme/tokens';
 import { useServerStore } from '../stores/serverStore';
-import { ServerConfig, ServiceConfig } from '../core/types/services';
+import { ServerConfig, ServiceConfig as SvcConfig } from '../core/types/services';
 
 export function ServerSetupScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const serverId = route.params?.serverId;
-  const existingServer = useServerStore((s) => s.servers.find(srv => srv.id === serverId));
+  const insets = useSafeAreaInsets();
+  const paramServerId = route.params?.serverId;
+
+  const servers = useServerStore((s) => s.servers);
   const addServer = useServerStore((s) => s.addServer);
   const updateServer = useServerStore((s) => s.updateServer);
   const removeServer = useServerStore((s) => s.removeServer);
   const setActiveServer = useServerStore((s) => s.setActiveServer);
 
+  // For new servers, create an ID immediately so ServiceConfig can reference it
+  const [serverId] = useState(() => paramServerId ?? Date.now().toString());
+  const existingServer = servers.find((srv) => srv.id === serverId);
+
   const [name, setName] = useState(existingServer?.name ?? '');
-  const [services, setServices] = useState<ServiceConfig[]>(
-    existingServer?.services ?? Object.keys(serviceConfig).map((id) => ({
-      serviceId: id as ServiceId, enabled: false, localUrl: '', remoteUrl: '',
-    })),
-  );
   const [homeSSIDs, setHomeSSIDs] = useState(existingServer?.homeSSIDs.join(', ') ?? '');
 
+  // Initialize services from existing or create defaults
+  const [services, setServices] = useState<SvcConfig[]>(
+    existingServer?.services ?? Object.keys(serviceConfig).map((id) => ({
+      serviceId: id as ServiceId,
+      enabled: false,
+      localUrl: '',
+      remoteUrl: '',
+    })),
+  );
+
+  // Re-read from store in case ServiceConfigScreen updated it
+  const currentServer = useServerStore((s) => s.servers.find((srv) => srv.id === serverId));
+  const displayServices = currentServer?.services ?? services;
+
   const toggleService = (serviceId: ServiceId) => {
-    setServices(prev => prev.map(s => s.serviceId === serviceId ? { ...s, enabled: !s.enabled } : s));
+    const updated = displayServices.map((s) =>
+      s.serviceId === serviceId ? { ...s, enabled: !s.enabled } : s,
+    );
+    setServices(updated);
+
+    // Persist immediately so ServiceConfigScreen can read it
+    const server: ServerConfig = {
+      id: serverId,
+      name: name || 'My Server',
+      services: updated,
+      homeSSIDs: homeSSIDs.split(',').map((s) => s.trim()).filter(Boolean),
+    };
+    if (currentServer) {
+      updateServer(server);
+    } else {
+      addServer(server);
+      setActiveServer(serverId);
+    }
+  };
+
+  const openServiceConfig = (serviceId: ServiceId) => {
+    // Ensure server is saved before navigating
+    const server: ServerConfig = {
+      id: serverId,
+      name: name || 'My Server',
+      services: displayServices,
+      homeSSIDs: homeSSIDs.split(',').map((s) => s.trim()).filter(Boolean),
+    };
+    if (currentServer) {
+      updateServer(server);
+    } else {
+      addServer(server);
+      setActiveServer(serverId);
+    }
+
+    navigation.navigate('ServiceConfig', { serverId, serviceId });
   };
 
   const save = () => {
     const server: ServerConfig = {
-      id: serverId ?? Date.now().toString(),
+      id: serverId,
       name: name || 'My Server',
-      services,
-      homeSSIDs: homeSSIDs.split(',').map(s => s.trim()).filter(Boolean),
+      services: displayServices,
+      homeSSIDs: homeSSIDs.split(',').map((s) => s.trim()).filter(Boolean),
     };
-    if (serverId) updateServer(server);
-    else { addServer(server); setActiveServer(server.id); }
+    if (currentServer) {
+      updateServer(server);
+    } else {
+      addServer(server);
+      setActiveServer(serverId);
+    }
     navigation.goBack();
   };
+
+  const hasConfigured = (svc: SvcConfig) => !!svc.localUrl;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -48,26 +105,44 @@ export function ServerSetupScreen() {
       <TextInput style={styles.input} value={homeSSIDs} onChangeText={setHomeSSIDs} placeholder="MyWiFi, HomeNetwork" placeholderTextColor={colors.textMuted} />
 
       <Text style={[styles.label, { marginTop: spacing.xl }]}>Services</Text>
-      {services.map((svc) => {
+      <Text style={styles.hint}>Enable a service, then tap it to configure the URL and API key.</Text>
+
+      {displayServices.map((svc) => {
         const cfg = serviceConfig[svc.serviceId];
+        const configured = hasConfigured(svc);
         return (
-          <Pressable key={svc.serviceId} style={styles.serviceRow}
-            onPress={() => { if (svc.enabled) navigation.navigate('ServiceConfig', { serverId: serverId ?? 'new', serviceId: svc.serviceId, services, setServices }); }}>
+          <Pressable
+            key={svc.serviceId}
+            style={[styles.serviceRow, svc.enabled && configured && styles.serviceRowConfigured]}
+            onPress={() => { if (svc.enabled) openServiceConfig(svc.serviceId); }}
+          >
             <View style={[styles.serviceIcon, { backgroundColor: cfg.color }]}>
               <Text style={styles.serviceIconText}>{cfg.icon}</Text>
             </View>
-            <Text style={styles.serviceLabel}>{cfg.label}</Text>
-            <Switch value={svc.enabled} onValueChange={() => toggleService(svc.serviceId)}
-              trackColor={{ true: colors.primary, false: 'rgba(255,255,255,0.1)' }} thumbColor="#fff" />
+            <View style={styles.serviceInfo}>
+              <Text style={styles.serviceLabel}>{cfg.label}</Text>
+              {svc.enabled && !configured && (
+                <Text style={styles.serviceStatus}>⚠ Tap to configure</Text>
+              )}
+              {svc.enabled && configured && (
+                <Text style={styles.serviceConfigured}>✓ {svc.localUrl}</Text>
+              )}
+            </View>
+            <Switch
+              value={svc.enabled}
+              onValueChange={() => toggleService(svc.serviceId)}
+              trackColor={{ true: colors.primary, false: 'rgba(255,255,255,0.1)' }}
+              thumbColor="#fff"
+            />
           </Pressable>
         );
       })}
 
       <Pressable style={styles.saveButton} onPress={save}>
-        <Text style={styles.saveButtonText}>{serverId ? 'Update Server' : 'Add Server'}</Text>
+        <Text style={styles.saveButtonText}>Done</Text>
       </Pressable>
 
-      {serverId && (
+      {paramServerId && (
         <Pressable style={styles.deleteButton} onPress={() => { removeServer(serverId); navigation.goBack(); }}>
           <Text style={styles.deleteButtonText}>Delete Server</Text>
         </Pressable>
@@ -80,11 +155,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   content: { padding: spacing.xl, paddingBottom: 100 },
   label: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.sm, marginTop: spacing.lg },
+  hint: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.md },
   input: { ...typography.body, color: colors.textPrimary, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.md, padding: spacing.md },
   serviceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm },
+  serviceRowConfigured: { borderColor: 'rgba(100, 255, 218, 0.15)' },
   serviceIcon: { width: 36, height: 36, borderRadius: radii.sm, justifyContent: 'center', alignItems: 'center' },
   serviceIconText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  serviceLabel: { ...typography.bodyBold, color: colors.textPrimary, flex: 1 },
+  serviceInfo: { flex: 1 },
+  serviceLabel: { ...typography.bodyBold, color: colors.textPrimary },
+  serviceStatus: { ...typography.micro, color: colors.warning, marginTop: 2 },
+  serviceConfigured: { ...typography.micro, color: colors.success, marginTop: 2 },
   saveButton: { backgroundColor: colors.primary, borderRadius: radii.md, padding: spacing.lg, alignItems: 'center', marginTop: spacing.xxl },
   saveButtonText: { ...typography.bodyBold, color: '#0f1023' },
   deleteButton: { borderWidth: 1, borderColor: colors.error, borderRadius: radii.md, padding: spacing.lg, alignItems: 'center', marginTop: spacing.md },
