@@ -55,22 +55,21 @@ export function SeriesDetailScreen() {
 
   // Fetch OMDB ratings + watch providers
   useEffect(() => {
-    if (series?.imdbId && OMDB_API_KEY !== '__OMDB_API_KEY__') {
+    if (OMDB_API_KEY !== '__OMDB_API_KEY__' && series) {
       setRatingsLoading(true);
       const omdb = new OMDBClient(OMDB_API_KEY);
-      omdb.getByImdbId(series.imdbId).then(setOmdbRatings).finally(() => setRatingsLoading(false));
+      const fetchRatings = series.imdbId
+        ? omdb.getByImdbId(series.imdbId)
+        : omdb.getByTitle(series.title, String(series.year));
+      fetchRatings.then(setOmdbRatings).finally(() => setRatingsLoading(false));
     }
-    // Watch providers via TMDB (need TMDB ID — fetch from external IDs using TVDB ID)
-    if (series?.tvdbId) {
-      tmdb.getShowExternalIds(series.tvdbId).catch(() => null);
-      // Actually, Sonarr series have tvdbId, but TMDB watch providers need tmdbId
-      // We can search TMDB by name to get the tmdbId, then fetch providers
+    // Watch providers via TMDB
+    if (series?.title) {
       tmdb.searchTV(series.title, 1).then(async (result) => {
         const match = result.results?.[0];
         if (match) {
           const providers = await tmdb.getTVWatchProviders(match.id);
-          const locale = 'US';
-          setWatchProviders(providers[locale] ?? providers['GB'] ?? Object.values(providers)[0]);
+          setWatchProviders(providers['US'] ?? providers['GB'] ?? Object.values(providers)[0]);
         }
       }).catch(() => {});
     }

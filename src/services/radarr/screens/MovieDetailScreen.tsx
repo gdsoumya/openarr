@@ -52,22 +52,22 @@ export function MovieDetailScreen() {
 
   // Fetch OMDB ratings + watch providers
   useEffect(() => {
-    const imdbId = movie?.imdbId;
-    if (imdbId && OMDB_API_KEY !== '__OMDB_API_KEY__') {
+    if (OMDB_API_KEY !== '__OMDB_API_KEY__' && movie) {
       setRatingsLoading(true);
       const omdb = new OMDBClient(OMDB_API_KEY);
-      omdb.getByImdbId(imdbId).then(setOmdbRatings).finally(() => setRatingsLoading(false));
+      const fetchRatings = movie.imdbId
+        ? omdb.getByImdbId(movie.imdbId)
+        : omdb.getByTitle(movie.title, String(movie.year));
+      fetchRatings.then(setOmdbRatings).finally(() => setRatingsLoading(false));
     }
-    // Watch providers from TMDB (use tmdbId)
+    // Watch providers from TMDB
     const tmdbId = movie?.tmdbId;
     if (tmdbId) {
       tmdb.getMovieWatchProviders(tmdbId).then((providers) => {
-        // Try user's locale, fall back to US
-        const locale = 'US'; // Could detect from device
-        setWatchProviders(providers[locale] ?? providers['GB'] ?? Object.values(providers)[0]);
+        setWatchProviders(providers['US'] ?? providers['GB'] ?? Object.values(providers)[0]);
       }).catch(() => {});
     }
-  }, [movie?.imdbId, movie?.tmdbId]);
+  }, [movie?.imdbId, movie?.tmdbId, movie?.title]);
 
   useEffect(() => {
     async function fetchData() {

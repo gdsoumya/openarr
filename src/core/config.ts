@@ -5,4 +5,4 @@ export const TMDB_READ_ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiYzkyZTVj
 
 // OMDB API key for IMDB + Rotten Tomatoes ratings
 // Get a free key at https://www.omdbapi.com/apikey.aspx (1,000 requests/day)
-export const OMDB_API_KEY = '__OMDB_API_KEY__';
+export const OMDB_API_KEY = 'd6758163';

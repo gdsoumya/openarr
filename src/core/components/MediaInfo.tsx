@@ -26,7 +26,7 @@ export function MediaInfo({
   if (status) infoItems.push({ label: 'Status', value: status });
   if (network) infoItems.push({ label: 'Network', value: network });
   if (originCountry?.length) infoItems.push({ label: 'Country', value: originCountry.join(', ') });
-  if (originalLanguage) infoItems.push({ label: 'Language', value: getLanguageName(originalLanguage) });
+  if (originalLanguage && typeof originalLanguage === 'string') infoItems.push({ label: 'Language', value: getLanguageName(originalLanguage) });
   if (genres?.length) infoItems.push({ label: 'Genres', value: genres.slice(0, 3).join(', ') });
   if (runtime) infoItems.push({ label: 'Runtime', value: `${runtime} min` });
   if (seasonCount) infoItems.push({ label: 'Seasons', value: String(seasonCount) });
@@ -116,6 +116,7 @@ function getLanguageName(code: string): string {
     ta: 'Tamil', te: 'Telugu', ml: 'Malayalam', kn: 'Kannada', mr: 'Marathi',
     bn: 'Bengali', pa: 'Punjabi', gu: 'Gujarati', ur: 'Urdu',
   };
+  if (!code) return '';
   return langs[code] ?? code.toUpperCase();
 }
 

@@ -21,34 +21,47 @@ export class OMDBClient {
     });
   }
 
+  async getByTitle(title: string, year?: string): Promise<OMDBRatings | null> {
+    try {
+      const params: any = { t: title, plot: 'short' };
+      if (year) params.y = year;
+      const { data } = await this.client.get('/', { params });
+      if (data.Response === 'False') return null;
+      return this.parseResponse(data);
+    } catch {
+      return null;
+    }
+  }
+
   async getByImdbId(imdbId: string): Promise<OMDBRatings | null> {
     try {
       const { data } = await this.client.get('/', { params: { i: imdbId, plot: 'short' } });
       if (data.Response === 'False') return null;
-
-      const ratings: OMDBRatings = {
-        imdbRating: data.imdbRating ?? 'N/A',
-        imdbVotes: data.imdbVotes ?? '',
-        rated: data.Rated,
-        awards: data.Awards !== 'N/A' ? data.Awards : undefined,
-      };
-
-      // Extract Rotten Tomatoes ratings
-      if (data.Ratings && Array.isArray(data.Ratings)) {
-        for (const r of data.Ratings) {
-          if (r.Source === 'Rotten Tomatoes') {
-            ratings.rottenTomatoesCritic = r.Value; // e.g. "95%"
-          }
-          if (r.Source === 'Metacritic') {
-            ratings.metacritic = r.Value; // e.g. "85/100"
-          }
-        }
-      }
-
-      // RT audience score isn't in OMDB directly, but we have the critic score
-      return ratings;
+      return this.parseResponse(data);
     } catch {
       return null;
     }
+  }
+
+  private parseResponse(data: any): OMDBRatings {
+    const ratings: OMDBRatings = {
+      imdbRating: data.imdbRating ?? 'N/A',
+      imdbVotes: data.imdbVotes ?? '',
+      rated: data.Rated,
+      awards: data.Awards !== 'N/A' ? data.Awards : undefined,
+    };
+
+    if (data.Ratings && Array.isArray(data.Ratings)) {
+      for (const r of data.Ratings) {
+        if (r.Source === 'Rotten Tomatoes') {
+          ratings.rottenTomatoesCritic = r.Value;
+        }
+        if (r.Source === 'Metacritic') {
+          ratings.metacritic = r.Value;
+        }
+      }
+    }
+
+    return ratings;
   }
 }
