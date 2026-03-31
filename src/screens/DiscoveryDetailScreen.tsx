@@ -62,11 +62,8 @@ export function DiscoveryDetailScreen() {
         // Sonarr item with TVDB ID — exact lookup via TMDB /find
         const found = await tmdb.findByExternalId(String(item.tvdbId), 'tvdb_id').catch(() => ({ tv_results: [], movie_results: [] }));
         resolvedTmdbId = found.tv_results[0]?.id;
-      } else {
-        // Last resort — fuzzy title search
-        const searchResult = await tmdb.searchTV(item.title ?? item.name, 1).catch(() => ({ results: [] }));
-        resolvedTmdbId = searchResult.results?.[0]?.id;
       }
+      // No fuzzy search fallback — if we can't get an exact match, render with Sonarr data only
       if (resolvedTmdbId) {
         const d = await tmdb.getShowDetails(resolvedTmdbId).catch(() => null);
         if (!cancelled.value && d) setDetails(d);
