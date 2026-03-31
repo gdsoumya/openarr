@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, TextInput } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { FilterChips } from '../../../core/components/FilterChips';
-import { SearchResult, SearchType } from '../types';
+import { SearchResult, SearchType, Indexer, IndexerStats } from '../types';
+import { useServiceConfig } from '../../../core/hooks/useServer';
+import { useConnectionStore } from '../../../stores/connectionStore';
+import { getProwlarrAdapter } from '../../../services/adapterFactory';
 
 export function SearchHomeScreen() {
+  const config = useServiceConfig('prowlarr');
+  const isLocal = useConnectionStore((s) => s.isLocal);
+  const adapter = useMemo(() => config ? getProwlarrAdapter(config, isLocal) : null, [config, isLocal]);
+
   const [query, setQuery] = useState('');
   const [searchType, setSearchType] = useState<SearchType>('search');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('search');
+  const [indexers, setIndexers] = useState<Indexer[]>([]);
+  const [indexerStats, setIndexerStats] = useState<IndexerStats[]>([]);
 
   const typeChips = [
     { id: 'search', label: 'All' }, { id: 'tvsearch', label: 'TV' },
@@ -30,6 +40,27 @@ export function SearchHomeScreen() {
     return `${hours}h`;
   }
 
+  const doSearch = useCallback(async () => {
+    if (!adapter || !query.trim()) return;
+    setLoading(true);
+    try {
+      const data = await adapter.search({ query: query.trim(), type: searchType });
+      setResults(data);
+    } catch (e) {
+      console.error('Search error:', e);
+    }
+    setLoading(false);
+  }, [adapter, query, searchType]);
+
+  useEffect(() => {
+    if (!adapter) return;
+    if (activeTab === 'indexers') {
+      adapter.getIndexers().then(setIndexers).catch(() => {});
+    } else if (activeTab === 'stats') {
+      adapter.getIndexerStats().then(setIndexerStats).catch(() => {});
+    }
+  }, [adapter, activeTab]);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}><Text style={styles.title}>Search</Text></View>
@@ -43,40 +74,98 @@ export function SearchHomeScreen() {
         ))}
       </View>
 
-      {activeTab === 'search' && (
+      {!config && (
+        <View style={styles.placeholder}>
+          <Text style={styles.placeholderText}>Prowlarr not configured. Add it in Settings to search indexers.</Text>
+        </View>
+      )}
+
+      {config && activeTab === 'search' && (
         <>
           <View style={styles.searchRow}>
             <TextInput style={styles.searchInput} value={query} onChangeText={setQuery}
-              placeholder="Search indexers..." placeholderTextColor={colors.textMuted} returnKeyType="search" autoCapitalize="none" />
+              placeholder="Search indexers..." placeholderTextColor={colors.textMuted}
+              returnKeyType="search" autoCapitalize="none"
+              onSubmitEditing={doSearch} />
           </View>
           <FilterChips chips={typeChips} activeId={searchType} onSelect={(id) => setSearchType(id as SearchType)} />
-          <FlashList data={results} estimatedItemSize={80}
-            renderItem={({ item }) => (
-              <Pressable style={styles.resultItem}>
-                <View style={styles.resultTop}>
-                  <Text style={styles.resultTitle} numberOfLines={2}>{item.title}</Text>
+          {loading && <View style={styles.placeholder}><Text style={styles.placeholderText}>Searching...</Text></View>}
+          {!loading && (
+            <FlashList data={results} estimatedItemSize={80}
+              renderItem={({ item }) => (
+                <Pressable style={styles.resultItem}>
+                  <View style={styles.resultTop}>
+                    <Text style={styles.resultTitle} numberOfLines={2}>{item.title}</Text>
+                  </View>
+                  <View style={styles.resultStats}>
+                    <Text style={styles.resultStat}>{formatSize(item.size)}</Text>
+                    <Text style={styles.resultStat}>{formatAge(item.ageHours)}</Text>
+                    {item.seeders !== undefined && <Text style={styles.resultStat}>S:{item.seeders}</Text>}
+                    {item.leechers !== undefined && <Text style={styles.resultStat}>L:{item.leechers}</Text>}
+                    <Text style={[styles.resultStat, { color: colors.primary }]}>{item.indexer}</Text>
+                  </View>
+                </Pressable>
+              )}
+              keyExtractor={(item) => item.guid}
+              contentContainerStyle={{ paddingBottom: 100 }}
+              ListEmptyComponent={
+                <View style={styles.placeholder}>
+                  <Text style={styles.placeholderText}>Enter a search term and press return</Text>
                 </View>
-                <View style={styles.resultStats}>
-                  <Text style={styles.resultStat}>{formatSize(item.size)}</Text>
-                  <Text style={styles.resultStat}>{formatAge(item.ageHours)}</Text>
-                  {item.seeders !== undefined && <Text style={styles.resultStat}>S:{item.seeders}</Text>}
-                  {item.leechers !== undefined && <Text style={styles.resultStat}>L:{item.leechers}</Text>}
-                  <Text style={[styles.resultStat, { color: colors.primary }]}>{item.indexer}</Text>
-                </View>
-              </Pressable>
-            )}
-            keyExtractor={(item) => item.guid}
-            contentContainerStyle={{ paddingBottom: 100 }}
-          />
+              }
+            />
+          )}
         </>
       )}
 
-      {activeTab === 'indexers' && (
-        <View style={styles.placeholder}><Text style={styles.placeholderText}>Indexer status will appear when connected to Prowlarr</Text></View>
+      {config && activeTab === 'indexers' && (
+        <FlashList
+          data={indexers}
+          estimatedItemSize={60}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No indexers configured</Text></View>}
+          renderItem={({ item }) => (
+            <View style={styles.resultItem}>
+              <View style={styles.resultTop}>
+                <Text style={styles.resultTitle}>{item.name}</Text>
+              </View>
+              <View style={styles.resultStats}>
+                <Text style={[styles.resultStat, { color: item.enable ? colors.primary : colors.textMuted }]}>
+                  {item.enable ? 'Enabled' : 'Disabled'}
+                </Text>
+                <Text style={styles.resultStat}>{item.protocol}</Text>
+                <Text style={styles.resultStat}>Priority: {item.priority}</Text>
+              </View>
+            </View>
+          )}
+        />
       )}
-      {activeTab === 'stats' && (
-        <View style={styles.placeholder}><Text style={styles.placeholderText}>Indexer statistics will appear when connected</Text></View>
+
+      {config && activeTab === 'stats' && (
+        <FlashList
+          data={indexerStats}
+          estimatedItemSize={80}
+          keyExtractor={(item) => String(item.indexerId)}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No stats available</Text></View>}
+          renderItem={({ item }) => (
+            <View style={styles.resultItem}>
+              <View style={styles.resultTop}>
+                <Text style={styles.resultTitle}>{item.indexerName}</Text>
+              </View>
+              <View style={styles.resultStats}>
+                <Text style={styles.resultStat}>Queries: {item.numberOfQueries}</Text>
+                <Text style={styles.resultStat}>Grabs: {item.numberOfGrabs}</Text>
+                <Text style={[styles.resultStat, { color: item.numberOfFailedQueries > 0 ? 'rgba(255,100,100,0.8)' : colors.textMuted }]}>
+                  Failed: {item.numberOfFailedQueries}
+                </Text>
+              </View>
+            </View>
+          )}
+        />
       )}
+
       {activeTab === 'history' && (
         <View style={styles.placeholder}><Text style={styles.placeholderText}>Search history will appear when connected</Text></View>
       )}

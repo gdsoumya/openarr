@@ -1,16 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
 import { SeasonSection } from '../components/SeasonSection';
 import { Series, Episode } from '../types';
+import { useServiceConfig } from '../../../core/hooks/useServer';
+import { useConnectionStore } from '../../../stores/connectionStore';
+import { getSonarrAdapter } from '../../../services/adapterFactory';
+import { getBazarrAdapter } from '../../../services/adapterFactory';
 
 export function SeriesDetailScreen() {
   const route = useRoute<any>();
   const [series] = useState<Series | null>(route.params?.series ?? null);
-  const [episodes] = useState<Episode[]>([]);
+  const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [activeTab, setActiveTab] = useState('seasons');
+
+  const sonarrConfig = useServiceConfig('sonarr');
+  const bazarrConfig = useServiceConfig('bazarr');
+  const isLocal = useConnectionStore((s) => s.isLocal);
+
+  useEffect(() => {
+    async function fetchData() {
+      if (!sonarrConfig || !series) return;
+      try {
+        const sonarr = getSonarrAdapter(sonarrConfig, isLocal);
+        const eps = await sonarr.getEpisodes(series.id);
+        setEpisodes(eps);
+      } catch (e) {
+        console.error('SeriesDetail fetch error:', e);
+      }
+    }
+    fetchData();
+  }, [series, sonarrConfig, isLocal]);
 
   if (!series) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;
 

@@ -1,14 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Linking } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
 import { Movie } from '../types';
+import { useServiceConfig } from '../../../core/hooks/useServer';
+import { useConnectionStore } from '../../../stores/connectionStore';
+import { getRadarrAdapter } from '../../../services/adapterFactory';
 
 export function MovieDetailScreen() {
   const route = useRoute<any>();
-  const [movie] = useState<Movie | null>(route.params?.movie ?? null);
+  const [movie, setMovie] = useState<Movie | null>(route.params?.movie ?? null);
   const [activeTab, setActiveTab] = useState('info');
+
+  const radarrConfig = useServiceConfig('radarr');
+  const isLocal = useConnectionStore((s) => s.isLocal);
+
+  useEffect(() => {
+    async function fetchData() {
+      // If we have the movie from params but want fresh data, re-fetch by id
+      const movieId = route.params?.movieId ?? movie?.id;
+      if (!radarrConfig || !movieId) return;
+      try {
+        const radarr = getRadarrAdapter(radarrConfig, isLocal);
+        const fresh = await radarr.getMovieById(movieId);
+        setMovie(fresh);
+      } catch (e) {
+        console.error('MovieDetail fetch error:', e);
+      }
+    }
+    fetchData();
+  }, [radarrConfig, isLocal]);
 
   if (!movie) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;
 

@@ -1,14 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { SubtitleBadge } from '../components/SubtitleBadge';
 import { EpisodeSubtitles, MovieSubtitles } from '../types';
+import { useServiceConfig } from '../../../core/hooks/useServer';
+import { useConnectionStore } from '../../../stores/connectionStore';
+import { getBazarrAdapter } from '../../../services/adapterFactory';
 
 export function SubsHomeScreen() {
+  const config = useServiceConfig('bazarr');
+  const isLocal = useConnectionStore((s) => s.isLocal);
+  const adapter = useMemo(() => config ? getBazarrAdapter(config, isLocal) : null, [config, isLocal]);
+
   const [activeTab, setActiveTab] = useState('wantedEp');
-  const [wantedEpisodes] = useState<EpisodeSubtitles[]>([]);
-  const [wantedMovies] = useState<MovieSubtitles[]>([]);
+  const [wantedEpisodes, setWantedEpisodes] = useState<EpisodeSubtitles[]>([]);
+  const [wantedMovies, setWantedMovies] = useState<MovieSubtitles[]>([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      if (!adapter) return;
+      try {
+        const [wEp, wMov] = await Promise.all([
+          adapter.getWantedEpisodes(),
+          adapter.getWantedMovies(),
+        ]);
+        setWantedEpisodes(wEp.records);
+        setWantedMovies(wMov.records);
+      } catch (e) {
+        console.error('Bazarr fetch error:', e);
+      }
+    }
+    fetchData();
+  }, [adapter]);
 
   const tabs = [
     { id: 'wantedEp', label: 'Episodes', count: wantedEpisodes.length },
@@ -32,7 +56,13 @@ export function SubsHomeScreen() {
         ))}
       </View>
 
-      {activeTab === 'wantedEp' && (
+      {!config && (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>Bazarr not configured. Add it in Settings to manage subtitles.</Text>
+        </View>
+      )}
+
+      {config && activeTab === 'wantedEp' && (
         <FlashList data={wantedEpisodes} estimatedItemSize={80}
           renderItem={({ item }) => (
             <Pressable style={styles.wantedItem}>
@@ -49,7 +79,7 @@ export function SubsHomeScreen() {
         />
       )}
 
-      {activeTab === 'wantedMov' && (
+      {config && activeTab === 'wantedMov' && (
         <FlashList data={wantedMovies} estimatedItemSize={80}
           renderItem={({ item }) => (
             <Pressable style={styles.wantedItem}>
@@ -89,5 +119,5 @@ const styles = StyleSheet.create({
   wantedSub: { ...typography.micro, color: colors.textMuted, marginTop: 2 },
   subRow: { flexDirection: 'row', marginTop: spacing.sm },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
-  emptyText: { ...typography.body, color: colors.textMuted },
+  emptyText: { ...typography.body, color: colors.textMuted, textAlign: 'center', paddingHorizontal: spacing.xl },
 });

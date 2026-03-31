@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, spacing, typography, ServiceId } from '../core/theme/tokens';
@@ -7,6 +7,8 @@ import { SpeedBanner } from '../core/components/SpeedBanner';
 import { useServerStore } from '../stores/serverStore';
 import { useConnectionStore } from '../stores/connectionStore';
 import { ServiceStatus } from '../core/types/services';
+import { getTransmissionAdapter, getSonarrAdapter, getRadarrAdapter, getProwlarrAdapter, getBazarrAdapter } from '../services/adapterFactory';
+import { usePolling } from '../core/hooks/usePolling';
 
 function formatSpeed(bytesPerSec: number): string {
   if (bytesPerSec >= 1048576) return `${(bytesPerSec / 1048576).toFixed(1)} MB/s`;
@@ -23,19 +25,61 @@ function formatBytes(bytes: number): string {
 export function DashboardScreen() {
   const server = useServerStore((s) => s.getActiveServer());
   const isLocal = useConnectionStore((s) => s.isLocal);
-  const [statuses] = useState<Partial<Record<ServiceId, ServiceStatus>>>({});
-  const [downloadSpeed] = useState(0);
-  const [uploadSpeed] = useState(0);
-  const [freeSpace] = useState(0);
+  const [statuses, setStatuses] = useState<Partial<Record<ServiceId, ServiceStatus>>>({});
+  const [downloadSpeed, setDownloadSpeed] = useState(0);
+  const [uploadSpeed, setUploadSpeed] = useState(0);
+  const [freeSpace, setFreeSpace] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation<any>();
 
-  const enabledServices = server?.services.filter((s) => s.enabled) ?? [];
+  const enabledServices = useMemo(() => server?.services.filter((s) => s.enabled) ?? [], [server]);
   const tabMap: Partial<Record<ServiceId, string>> = {
     transmission: 'Torrents', sonarr: 'TV', radarr: 'Movies', prowlarr: 'Search', bazarr: 'Subs',
   };
 
-  const onRefresh = useCallback(async () => { setRefreshing(true); setRefreshing(false); }, []);
+  const fetchStatuses = useCallback(async () => {
+    if (!server) return;
+    const newStatuses: Partial<Record<ServiceId, ServiceStatus>> = {};
+
+    for (const svc of enabledServices) {
+      try {
+        const config = server.services.find(s => s.serviceId === svc.serviceId);
+        if (!config) continue;
+        let adapter: any;
+        switch (svc.serviceId) {
+          case 'transmission': adapter = getTransmissionAdapter(config, isLocal); break;
+          case 'sonarr': adapter = getSonarrAdapter(config, isLocal); break;
+          case 'radarr': adapter = getRadarrAdapter(config, isLocal); break;
+          case 'prowlarr': adapter = getProwlarrAdapter(config, isLocal); break;
+          case 'bazarr': adapter = getBazarrAdapter(config, isLocal); break;
+        }
+        if (adapter) newStatuses[svc.serviceId] = await adapter.getStatus();
+      } catch {}
+    }
+    setStatuses(newStatuses);
+
+    // Transmission speed data
+    const txConfig = server.services.find(s => s.serviceId === 'transmission' && s.enabled);
+    if (txConfig) {
+      try {
+        const tx = getTransmissionAdapter(txConfig, isLocal);
+        const stats = await tx.getSessionStats();
+        setDownloadSpeed(stats.downloadSpeed);
+        setUploadSpeed(stats.uploadSpeed);
+        const session = await tx.getSession();
+        const free = await tx.getFreeSpace(session.downloadDir);
+        setFreeSpace(free);
+      } catch {}
+    }
+  }, [server, enabledServices, isLocal]);
+
+  usePolling(fetchStatuses, 10000, !!server);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchStatuses();
+    setRefreshing(false);
+  }, [fetchStatuses]);
 
   if (!server) {
     return (
@@ -72,8 +116,10 @@ export function DashboardScreen() {
         const status = statuses[svc.serviceId];
         return (
           <ServiceCard key={svc.serviceId} serviceId={svc.serviceId}
-            summary={status?.summary ?? 'Connecting...'} connected={status?.connection.status === 'connected'}
-            metric={status?.metric} onPress={() => { const tab = tabMap[svc.serviceId]; if (tab) navigation.navigate(tab); }} />
+            summary={status?.summary ?? 'Connecting...'}
+            connected={status?.connection.status === 'connected'}
+            metric={status?.metric}
+            onPress={() => { const tab = tabMap[svc.serviceId]; if (tab) navigation.navigate(tab); }} />
         );
       })}
     </ScrollView>
