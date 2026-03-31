@@ -35,6 +35,9 @@ export class BazarrAdapter {
   }
 
   async getBadges(): Promise<Badges> { const { data } = await this.client.get('/api/badges'); return data.data; }
+
+  async getAllSeries(): Promise<any[]> { const { data } = await this.client.get('/api/series'); return data.data ?? []; }
+  async getAllMovies(): Promise<any[]> { const { data } = await this.client.get('/api/movies'); return data.data ?? []; }
   async getEpisodeSubtitles(seriesId: number): Promise<EpisodeSubtitles[]> { const { data } = await this.client.get('/api/episodes', { params: { 'seriesid[]': seriesId } }); return data.data; }
   async searchEpisodeSubtitles(episodeId: number): Promise<SubtitleSearchResult[]> { const { data } = await this.client.get('/api/providers/episodes', { params: { episodeid: episodeId } }); return data.data; }
   async downloadEpisodeSubtitle(body: Record<string, any>): Promise<void> { await this.client.post('/api/providers/episodes', body); }

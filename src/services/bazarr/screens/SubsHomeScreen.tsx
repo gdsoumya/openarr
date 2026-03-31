@@ -20,9 +20,11 @@ export function SubsHomeScreen() {
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getBazarrAdapter(config, isLocal) : null, [config, isLocal]);
 
-  const [activeTab, setActiveTab] = useState('wantedEp');
-  const [wantedEpisodes, setWantedEpisodes] = useState<EpisodeSubtitles[]>([]);
-  const [wantedMovies, setWantedMovies] = useState<MovieSubtitles[]>([]);
+  const [activeTab, setActiveTab] = useState('series');
+  const [series, setSeries] = useState<any[]>([]);
+  const [movies, setMovies] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [providers, setProviders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const setSubsBadgeCount = useConnectionStore((s) => s.setSubsBadgeCount);
@@ -35,13 +37,19 @@ export function SubsHomeScreen() {
   const fetchData = useCallback(async () => {
     if (!adapter) { setLoading(false); return; }
     try {
-      const [wEp, wMov] = await Promise.all([
-        adapter.getWantedEpisodes(),
-        adapter.getWantedMovies(),
+      const [seriesData, moviesData, hist, prov] = await Promise.all([
+        adapter.getAllSeries().catch(() => []),
+        adapter.getAllMovies().catch(() => []),
+        adapter.getEpisodeHistory().catch(() => ({ records: [] })),
+        adapter.getProviders().catch(() => []),
       ]);
-      setWantedEpisodes(wEp.records ?? []);
-      setWantedMovies(wMov.records ?? []);
-      setSubsBadgeCount((wEp.records?.length ?? 0) + (wMov.records?.length ?? 0));
+      setSeries(seriesData);
+      setMovies(moviesData);
+      setHistory(hist.records ?? []);
+      setProviders(Array.isArray(prov) ? prov : []);
+      const wantedEps = seriesData.reduce((sum: number, s: any) => sum + (s.episodeMissingCount ?? 0), 0);
+      const wantedMovs = moviesData.filter((m: any) => (m.missing_subtitles?.length ?? 0) > 0).length;
+      setSubsBadgeCount(wantedEps + wantedMovs);
     } catch (e) {
       console.error('Bazarr fetch error:', e);
     }
@@ -92,8 +100,8 @@ export function SubsHomeScreen() {
   };
 
   const tabs = [
-    { id: 'wantedEp', label: 'Episodes', count: wantedEpisodes.length },
-    { id: 'wantedMov', label: 'Movies', count: wantedMovies.length },
+    { id: 'series', label: 'Series', count: series.length },
+    { id: 'movies', label: 'Movies', count: movies.length },
     { id: 'history', label: 'History' },
     { id: 'providers', label: 'Providers' },
   ];
@@ -122,48 +130,98 @@ export function SubsHomeScreen() {
 
         {config && loading && <LoadingSpinner message="Loading subtitles..." />}
 
-        {config && !loading && activeTab === 'wantedEp' && (
-          <FlashList data={wantedEpisodes} estimatedItemSize={80}
-            renderItem={({ item }) => (
-              <Pressable style={styles.wantedItem} onPress={() => searchEpisodeSubs(item.sonarrEpisodeId)}>
-                <Text style={styles.wantedTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.wantedSub}>S{String(item.season).padStart(2, '0')}E{String(item.episode).padStart(2, '0')}</Text>
-                <View style={styles.subRow}>
-                  {item.missing_subtitles.map((s, i) => <SubtitleBadge key={i} code={s.code2} has={false} />)}
+        {config && !loading && activeTab === 'series' && (
+          <FlashList data={series} estimatedItemSize={70}
+            renderItem={({ item: s }) => (
+              <View style={styles.seriesItem}>
+                <View style={styles.seriesInfo}>
+                  <Text style={styles.seriesTitle} numberOfLines={1}>{s.title}</Text>
+                  <Text style={styles.seriesMeta}>
+                    {s.episodeFileCount ?? 0} episodes · {s.episodeMissingCount ?? 0} missing subs
+                  </Text>
                 </View>
-              </Pressable>
+                <View style={[styles.seriesStatus, (s.episodeMissingCount ?? 0) > 0 ? styles.seriesStatusWarn : styles.seriesStatusOk]}>
+                  <Text style={[styles.seriesStatusText, (s.episodeMissingCount ?? 0) > 0 ? styles.seriesStatusTextWarn : styles.seriesStatusTextOk]}>
+                    {(s.episodeMissingCount ?? 0) > 0 ? s.episodeMissingCount : '✓'}
+                  </Text>
+                </View>
+              </View>
             )}
-            keyExtractor={(item) => String(item.sonarrEpisodeId)}
+            keyExtractor={(item) => String(item.sonarrSeriesId)}
             contentContainerStyle={{ paddingBottom: 100 }}
-            ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No episodes missing subtitles</Text></View>}
+            ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No series found in Bazarr</Text></View>}
             onRefresh={onRefresh}
             refreshing={refreshing}
           />
         )}
 
-        {config && !loading && activeTab === 'wantedMov' && (
-          <FlashList data={wantedMovies} estimatedItemSize={80}
-            renderItem={({ item }) => (
-              <Pressable style={styles.wantedItem} onPress={() => searchMovieSubs(item.radarrId)}>
-                <Text style={styles.wantedTitle} numberOfLines={1}>{item.title}</Text>
-                <View style={styles.subRow}>
-                  {item.missing_subtitles.map((s, i) => <SubtitleBadge key={i} code={s.code2} has={false} />)}
+        {config && !loading && activeTab === 'movies' && (
+          <FlashList data={movies} estimatedItemSize={70}
+            renderItem={({ item: m }) => (
+              <View style={styles.seriesItem}>
+                <View style={styles.seriesInfo}>
+                  <Text style={styles.seriesTitle} numberOfLines={1}>{m.title}</Text>
+                  <View style={styles.subRow}>
+                    {(m.subtitles ?? []).map((s: any, i: number) => <SubtitleBadge key={`h${i}`} code={s.code2} has={true} />)}
+                    {(m.missing_subtitles ?? []).map((s: any, i: number) => <SubtitleBadge key={`m${i}`} code={s.code2} has={false} />)}
+                  </View>
                 </View>
-              </Pressable>
+                <View style={[styles.seriesStatus, (m.missing_subtitles?.length ?? 0) > 0 ? styles.seriesStatusWarn : styles.seriesStatusOk]}>
+                  <Text style={[styles.seriesStatusText, (m.missing_subtitles?.length ?? 0) > 0 ? styles.seriesStatusTextWarn : styles.seriesStatusTextOk]}>
+                    {(m.missing_subtitles?.length ?? 0) > 0 ? m.missing_subtitles.length : '✓'}
+                  </Text>
+                </View>
+              </View>
             )}
             keyExtractor={(item) => String(item.radarrId)}
             contentContainerStyle={{ paddingBottom: 100 }}
-            ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No movies missing subtitles</Text></View>}
+            ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No movies found in Bazarr</Text></View>}
             onRefresh={onRefresh}
             refreshing={refreshing}
           />
         )}
 
         {activeTab === 'history' && (
-          <View style={styles.empty}><Text style={styles.emptyText}>Subtitle history will appear when connected to Bazarr</Text></View>
+          <FlashList data={history} estimatedItemSize={80}
+            renderItem={({ item: h }) => (
+              <View style={styles.historyItem}>
+                <View style={styles.historyHeader}>
+                  <Text style={styles.historyTitle} numberOfLines={1}>{h.seriesTitle ?? h.title}</Text>
+                  <Text style={styles.historyEp}>{h.episode_number ?? ''}</Text>
+                </View>
+                <Text style={styles.historyDesc} numberOfLines={2}>{h.description}</Text>
+                <View style={styles.historyMeta}>
+                  {h.provider && <Text style={styles.historyProvider}>{h.provider}</Text>}
+                  {h.language?.name && <Text style={styles.historyLang}>{h.language.name}</Text>}
+                  {h.score && <Text style={styles.historyScore}>{h.score}</Text>}
+                  <Text style={styles.historyTime}>{h.timestamp}</Text>
+                </View>
+              </View>
+            )}
+            keyExtractor={(_, idx) => String(idx)}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No subtitle history yet</Text></View>}
+            onRefresh={onRefresh}
+            refreshing={refreshing}
+          />
         )}
         {activeTab === 'providers' && (
-          <View style={styles.empty}><Text style={styles.emptyText}>Provider status will appear when connected to Bazarr</Text></View>
+          <FlashList data={providers} estimatedItemSize={60}
+            renderItem={({ item: p }) => (
+              <View style={styles.providerItem}>
+                <Text style={styles.providerName}>{p.name}</Text>
+                <View style={styles.providerStatus}>
+                  <View style={[styles.providerDot, { backgroundColor: p.status === 'Good' ? colors.success : colors.warning }]} />
+                  <Text style={[styles.providerStatusText, { color: p.status === 'Good' ? colors.success : colors.warning }]}>{p.status}</Text>
+                </View>
+              </View>
+            )}
+            keyExtractor={(item) => item.name}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No providers configured</Text></View>}
+            onRefresh={onRefresh}
+            refreshing={refreshing}
+          />
         )}
       </View>
 
@@ -203,10 +261,35 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: colors.primary },
   tabText: { ...typography.caption, fontWeight: '500', color: colors.textMuted },
   tabTextActive: { color: colors.primary },
-  wantedItem: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
-  wantedTitle: { ...typography.bodyBold, color: colors.textPrimary },
-  wantedSub: { ...typography.micro, color: colors.textMuted, marginTop: 2 },
-  subRow: { flexDirection: 'row', marginTop: spacing.sm },
+  // Series/Movie list items
+  seriesItem: { flexDirection: 'row', alignItems: 'center', marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md, gap: spacing.md },
+  seriesInfo: { flex: 1 },
+  seriesTitle: { ...typography.bodyBold, color: colors.textPrimary },
+  seriesMeta: { ...typography.micro, color: colors.textMuted, marginTop: 2 },
+  seriesStatus: { width: 32, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  seriesStatusOk: { backgroundColor: 'rgba(100, 255, 218, 0.2)', borderWidth: 1, borderColor: 'rgba(100, 255, 218, 0.3)' },
+  seriesStatusWarn: { backgroundColor: 'rgba(233, 69, 96, 0.2)', borderWidth: 1, borderColor: 'rgba(233, 69, 96, 0.3)' },
+  seriesStatusText: { fontSize: 12, fontWeight: '700' },
+  seriesStatusTextOk: { color: colors.success },
+  seriesStatusTextWarn: { color: colors.error },
+  subRow: { flexDirection: 'row', marginTop: spacing.sm, flexWrap: 'wrap', gap: 2 },
+  // History items
+  historyItem: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
+  historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  historyTitle: { ...typography.bodyBold, color: colors.textPrimary, flex: 1, marginRight: spacing.sm },
+  historyEp: { ...typography.micro, color: colors.textMuted },
+  historyDesc: { ...typography.caption, color: colors.textMuted, marginTop: 4 },
+  historyMeta: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm, flexWrap: 'wrap' },
+  historyProvider: { ...typography.micro, color: colors.primary },
+  historyLang: { ...typography.micro, color: colors.bazarr },
+  historyScore: { ...typography.micro, color: colors.success },
+  historyTime: { ...typography.micro, color: colors.textMuted },
+  // Provider items
+  providerItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
+  providerName: { ...typography.bodyBold, color: colors.textPrimary },
+  providerStatus: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  providerDot: { width: 8, height: 8, borderRadius: 4 },
+  providerStatusText: { ...typography.micro, fontWeight: '600' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
   emptyText: { ...typography.body, color: colors.textMuted, textAlign: 'center', paddingHorizontal: spacing.xl },
   sheetTitle: { ...typography.h3, color: colors.textPrimary, marginBottom: spacing.md, paddingHorizontal: spacing.xl },
