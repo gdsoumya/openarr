@@ -163,7 +163,7 @@ export function SearchHomeScreen() {
       )}
 
       {config && activeTab === 'indexers' && (
-        <FlashList
+        <FlatList
           data={indexers}
          
           keyExtractor={(item) => String(item.id)}
@@ -187,7 +187,7 @@ export function SearchHomeScreen() {
       )}
 
       {config && activeTab === 'stats' && (
-        <FlashList
+        <FlatList
           data={indexerStats}
          
           keyExtractor={(item) => String(item.indexerId)}
