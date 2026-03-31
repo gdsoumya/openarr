@@ -1,17 +1,19 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { FilterChips } from '../../../core/components/FilterChips';
 import { SearchResult, SearchType, Indexer, IndexerStats } from '../types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
-import { getProwlarrAdapter } from '../../../services/adapterFactory';
+import { getProwlarrAdapter, getTransmissionAdapter } from '../../../services/adapterFactory';
+import { useServerStore } from '../../../stores/serverStore';
 
 export function SearchHomeScreen() {
   const config = useServiceConfig('prowlarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getProwlarrAdapter(config, isLocal) : null, [config, isLocal]);
+  const txConfig = useServerStore((s) => s.getServiceConfig('transmission'));
 
   const [query, setQuery] = useState('');
   const [searchType, setSearchType] = useState<SearchType>('search');
@@ -39,6 +41,16 @@ export function SearchHomeScreen() {
     if (hours >= 24) return `${Math.floor(hours / 24)}d`;
     return `${hours}h`;
   }
+
+  const grabResult = async (item: SearchResult) => {
+    if (!item.downloadUrl) { Alert.alert('Error', 'No download URL available'); return; }
+    if (!txConfig) { Alert.alert('Error', 'Transmission not configured'); return; }
+    try {
+      const tx = getTransmissionAdapter(txConfig, isLocal);
+      await tx.addTorrent({ filename: item.downloadUrl });
+      Alert.alert('Sent to Transmission', item.title);
+    } catch (e: any) { Alert.alert('Error', e.message); }
+  };
 
   const doSearch = useCallback(async () => {
     if (!adapter || !query.trim()) return;
@@ -98,7 +110,12 @@ export function SearchHomeScreen() {
           {!loading && (
             <FlashList data={results} estimatedItemSize={80}
               renderItem={({ item }) => (
-                <Pressable style={styles.resultItem}>
+                <Pressable style={styles.resultItem} onPress={() => {
+                  Alert.alert(item.title, `${formatSize(item.size)} · ${item.indexer}`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Grab', onPress: () => grabResult(item) },
+                  ]);
+                }}>
                   <View style={styles.resultTop}>
                     <Text style={styles.resultTitle} numberOfLines={2}>{item.title}</Text>
                   </View>

@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { View, Text, ScrollView, StyleSheet, Pressable, Alert, RefreshControl } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
 import { SeasonSection } from '../components/SeasonSection';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
+import { ManualSearchSheet } from '../../shared-arr/components/ManualSearchSheet';
 import { Series, Episode, Season } from '../types';
+import { Release } from '../../shared-arr/types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getSonarrAdapter } from '../../../services/adapterFactory';
@@ -13,10 +15,13 @@ import { getSonarrAdapter } from '../../../services/adapterFactory';
 export function SeriesDetailScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const [series] = useState<Series | null>(route.params?.series ?? null);
+  const [series, setSeries] = useState<Series | null>(route.params?.series ?? null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loadingEpisodes, setLoadingEpisodes] = useState(true);
   const [activeTab, setActiveTab] = useState('seasons');
+  const [manualSearchReleases, setManualSearchReleases] = useState<Release[]>([]);
+  const [showManualSearch, setShowManualSearch] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const sonarrConfig = useServiceConfig('sonarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
@@ -40,6 +45,21 @@ export function SeriesDetailScreen() {
     fetchData();
   }, [adapter, series]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    if (adapter && series) {
+      try {
+        const [freshSeries, eps] = await Promise.all([
+          adapter.getSeriesById(series.id),
+          adapter.getEpisodes(series.id),
+        ]);
+        setSeries(freshSeries);
+        setEpisodes(eps);
+      } catch {}
+    }
+    setRefreshing(false);
+  }, [adapter, series]);
+
   // --- Episode actions ---
   function handleEpisodePress(episode: Episode) {
     const options: Array<{ text: string; onPress?: () => void; style?: 'cancel' | 'destructive' | 'default' }> = [
@@ -51,8 +71,13 @@ export function SeriesDetailScreen() {
       },
       {
         text: 'Manual Search',
-        onPress: () => {
-          console.log('Manual search episode', episode.id);
+        onPress: async () => {
+          if (!adapter) return;
+          try {
+            const releases = await adapter.manualSearchEpisode(episode.id);
+            setManualSearchReleases(releases);
+            setShowManualSearch(true);
+          } catch (e: any) { Alert.alert('Error', e.message); }
         },
       },
       {
@@ -180,8 +205,9 @@ export function SeriesDetailScreen() {
   const pills = [series.seriesType, `${series.runtime}min`, series.monitored ? 'Monitored' : 'Unmonitored', series.path];
 
   return (
+    <>
     <View style={styles.container}>
-      <ScrollView style={styles.scroll}>
+      <ScrollView style={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
         <View style={styles.hero}>
           <View style={styles.heroBg} />
           <View style={styles.heroContent}>
@@ -219,7 +245,19 @@ export function SeriesDetailScreen() {
       </ScrollView>
 
       <View style={styles.actionBar}>
-        <Pressable style={styles.actionBtn} onPress={() => Alert.alert('Edit', 'Coming soon')}>
+        <Pressable style={styles.actionBtn} onPress={() => {
+          if (!adapter || !series) return;
+          Alert.alert('Edit Series', 'Toggle monitoring?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: series.monitored ? 'Unmonitor' : 'Monitor', onPress: async () => {
+              try {
+                const updated = { ...series, monitored: !series.monitored };
+                await adapter.editSeries(updated);
+                setSeries(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
+              } catch (e: any) { Alert.alert('Error', e.message); }
+            }},
+          ]);
+        }}>
           <Text style={styles.actionBtnText}>Edit</Text>
         </Pressable>
         <Pressable style={[styles.actionBtn, styles.actionBtnPrimary]} onPress={handleSearchAll}>
@@ -230,6 +268,20 @@ export function SeriesDetailScreen() {
         </Pressable>
       </View>
     </View>
+    <ManualSearchSheet
+      visible={showManualSearch}
+      releases={manualSearchReleases}
+      onGrab={async (release) => {
+        if (!adapter) return;
+        try {
+          await adapter.grabRelease(release.guid, release.indexerId);
+          Alert.alert('Success', 'Release grabbed');
+          setShowManualSearch(false);
+        } catch (e: any) { Alert.alert('Error', e.message); }
+      }}
+      onDismiss={() => setShowManualSearch(false)}
+    />
+    </>
   );
 }
 

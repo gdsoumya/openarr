@@ -13,6 +13,7 @@ import { useConnectionStore } from '../../../stores/connectionStore';
 import { getTransmissionAdapter } from '../../../services/adapterFactory';
 import { usePolling } from '../../../core/hooks/usePolling';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
+import { useToastStore } from '../../../core/hooks/useToast';
 
 type FilterId = 'all' | 'downloading' | 'seeding' | 'paused';
 const filterMap: Record<FilterId, (t: Torrent) => boolean> = {
@@ -34,6 +35,7 @@ export function TorrentListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showAddInput, setShowAddInput] = useState(false);
   const [addInputText, setAddInputText] = useState('');
+  const showToast = useToastStore((s) => s.show);
 
   const fetchTorrents = useCallback(async () => {
     if (!adapter) return;
@@ -41,8 +43,8 @@ export function TorrentListScreen() {
       const data = await adapter.getTorrents();
       setTorrents(data);
       setLoading(false);
-    } catch (e) {
-      console.error('Failed to fetch torrents:', e);
+    } catch (e: any) {
+      showToast(e.message ?? 'Failed to fetch torrents', 'error');
       setLoading(false);
     }
   }, [adapter]);

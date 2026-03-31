@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, spacing, typography, ServiceId } from '../core/theme/tokens';
@@ -9,6 +9,8 @@ import { useConnectionStore } from '../stores/connectionStore';
 import { ServiceStatus } from '../core/types/services';
 import { getTransmissionAdapter, getSonarrAdapter, getRadarrAdapter, getProwlarrAdapter, getBazarrAdapter } from '../services/adapterFactory';
 import { usePolling } from '../core/hooks/usePolling';
+import { checkForCompletedDownloads } from '../core/notifications/downloadMonitor';
+import { useToastStore } from '../core/hooks/useToast';
 
 function formatSpeed(bytesPerSec: number): string {
   if (bytesPerSec >= 1048576) return `${(bytesPerSec / 1048576).toFixed(1)} MB/s`;
@@ -36,6 +38,8 @@ export function DashboardScreen() {
   const tabMap: Partial<Record<ServiceId, string>> = {
     transmission: 'Torrents', sonarr: 'TV', radarr: 'Movies', prowlarr: 'Search', bazarr: 'Subs',
   };
+  const previousQueueRef = useRef<Array<{ id: number; title: string }>>([]);
+  const showToast = useToastStore((s) => s.show);
 
   const fetchStatuses = useCallback(async () => {
     if (!server) return;
@@ -54,11 +58,13 @@ export function DashboardScreen() {
           case 'bazarr': adapter = getBazarrAdapter(config, isLocal); break;
         }
         if (adapter) newStatuses[svc.serviceId] = await adapter.getStatus();
-      } catch {}
+      } catch (e: any) {
+        showToast(`${svc.serviceId}: ${e.message ?? 'Connection failed'}`, 'error');
+      }
     }
     setStatuses(newStatuses);
 
-    // Transmission speed data
+    // Transmission speed data + queue comparison for download notifications
     const txConfig = server.services.find(s => s.serviceId === 'transmission' && s.enabled);
     if (txConfig) {
       try {
@@ -69,6 +75,18 @@ export function DashboardScreen() {
         const session = await tx.getSession();
         const free = await tx.getFreeSpace(session.downloadDir);
         setFreeSpace(free);
+      } catch {}
+    }
+
+    // Sonarr queue for download completion notifications
+    const sonarrConfig = server.services.find(s => s.serviceId === 'sonarr' && s.enabled);
+    if (sonarrConfig) {
+      try {
+        const sonarr = getSonarrAdapter(sonarrConfig, isLocal);
+        const queueData = await sonarr.getQueue(1, 50);
+        const currentQueue = (queueData.records ?? []).map((q: any) => ({ id: q.id, title: q.title }));
+        checkForCompletedDownloads(currentQueue, previousQueueRef.current);
+        previousQueueRef.current = currentQueue;
       } catch {}
     }
   }, [server, enabledServices, isLocal]);

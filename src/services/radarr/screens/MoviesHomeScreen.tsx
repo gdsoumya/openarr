@@ -13,6 +13,7 @@ import { useLibraryCache } from '../../../stores/libraryCache';
 import { TMDBClient } from '../../tmdb/client';
 import { TMDB_API_KEY } from '../../../core/config';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
+import { useToastStore } from '../../../core/hooks/useToast';
 
 const tmdb = new TMDBClient(TMDB_API_KEY);
 
@@ -38,6 +39,7 @@ export function MoviesHomeScreen() {
   const [recentlyReleased, setRecentlyReleased] = useState<TMDBMovie[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const showToast = useToastStore((s) => s.show);
 
   async function fetchData() {
     try {
@@ -52,8 +54,8 @@ export function MoviesHomeScreen() {
       ]);
       setTrending(trendingData);
       setRecentlyReleased(nowPlayingData);
-    } catch (e) {
-      console.error('Movies fetch error:', e);
+    } catch (e: any) {
+      showToast(e.message ?? 'Failed to fetch movies', 'error');
     }
     setLoading(false);
   }

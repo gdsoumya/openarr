@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Linking, Alert } from 'react-native';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { View, Text, ScrollView, StyleSheet, Pressable, Linking, Alert, RefreshControl } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
+import { ManualSearchSheet } from '../../shared-arr/components/ManualSearchSheet';
 import { Movie } from '../types';
+import { Release } from '../../shared-arr/types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getRadarrAdapter } from '../../../services/adapterFactory';
@@ -13,6 +15,9 @@ export function MovieDetailScreen() {
   const navigation = useNavigation<any>();
   const [movie, setMovie] = useState<Movie | null>(route.params?.movie ?? null);
   const [activeTab, setActiveTab] = useState('info');
+  const [manualSearchReleases, setManualSearchReleases] = useState<Release[]>([]);
+  const [showManualSearch, setShowManualSearch] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const radarrConfig = useServiceConfig('radarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
@@ -36,14 +41,30 @@ export function MovieDetailScreen() {
     fetchData();
   }, [adapter]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    if (adapter && movie) {
+      try {
+        const fresh = await adapter.getMovieById(movie.id);
+        setMovie(fresh);
+      } catch {}
+    }
+    setRefreshing(false);
+  }, [adapter, movie]);
+
   // --- Movie actions ---
   function handleSearch() {
     if (!movie) return;
     adapter?.searchMovie(movie.id).catch((e) => console.error('searchMovie error:', e));
   }
 
-  function handleManualSearch() {
-    console.log('Manual search movie', movie?.id);
+  async function handleManualSearch() {
+    if (!adapter || !movie) return;
+    try {
+      const releases = await adapter.manualSearchMovie(movie.id);
+      setManualSearchReleases(releases);
+      setShowManualSearch(true);
+    } catch (e: any) { Alert.alert('Error', e.message); }
   }
 
   function handleDelete() {
@@ -102,8 +123,9 @@ export function MovieDetailScreen() {
   const pills = [movie.minimumAvailability, movie.monitored ? 'Monitored' : 'Unmonitored', `${movie.runtime}min`, movie.path];
 
   return (
+    <>
     <View style={styles.container}>
-      <ScrollView style={styles.scroll}>
+      <ScrollView style={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
         <View style={styles.hero}>
           <View style={styles.heroBg} />
           <View style={styles.heroContent}>
@@ -147,11 +169,40 @@ export function MovieDetailScreen() {
         <Pressable style={styles.actionBtn} onPress={handleManualSearch}>
           <Text style={styles.actionBtnText}>Manual Search</Text>
         </Pressable>
+        <Pressable style={styles.actionBtn} onPress={() => {
+          if (!adapter || !movie) return;
+          Alert.alert('Edit Movie', 'Toggle monitoring?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: movie.monitored ? 'Unmonitor' : 'Monitor', onPress: async () => {
+              try {
+                const updated = { ...movie, monitored: !movie.monitored };
+                await adapter.editMovie(updated);
+                setMovie(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
+              } catch (e: any) { Alert.alert('Error', e.message); }
+            }},
+          ]);
+        }}>
+          <Text style={styles.actionBtnText}>Edit</Text>
+        </Pressable>
         <Pressable style={[styles.actionBtn, styles.actionBtnDanger]} onPress={handleDelete}>
           <Text style={[styles.actionBtnText, styles.actionBtnTextDanger]}>Delete</Text>
         </Pressable>
       </View>
     </View>
+    <ManualSearchSheet
+      visible={showManualSearch}
+      releases={manualSearchReleases}
+      onGrab={async (release) => {
+        if (!adapter) return;
+        try {
+          await adapter.grabRelease(release.guid, release.indexerId);
+          Alert.alert('Success', 'Release grabbed');
+          setShowManualSearch(false);
+        } catch (e: any) { Alert.alert('Error', e.message); }
+      }}
+      onDismiss={() => setShowManualSearch(false)}
+    />
+    </>
   );
 }
 
