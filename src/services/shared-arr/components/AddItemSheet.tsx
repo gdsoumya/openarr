@@ -31,16 +31,21 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
   // Season monitoring — track which seasons are checked
   const [seasonMonitored, setSeasonMonitored] = useState<Map<number, boolean>>(new Map());
 
-  // Get seasons from the item (Sonarr lookup results include seasons)
+  // Get seasons from the item — handles both Sonarr (seasonNumber) and TMDB (season_number) formats
   const seasons: Array<{ seasonNumber: number }> = useMemo(() => {
     if (type !== 'sonarr') return [];
-    const s = item?.seasons ?? item?.seasonCount;
-    if (Array.isArray(s)) return s.filter((season: any) => season.seasonNumber > 0);
-    // If only a count, generate season numbers
-    if (typeof s === 'number') return Array.from({ length: s }, (_, i) => ({ seasonNumber: i + 1 }));
-    // Try number_of_seasons from TMDB
+    const s = item?.seasons;
+    if (Array.isArray(s) && s.length > 0) {
+      // Normalize: Sonarr uses seasonNumber, TMDB uses season_number
+      return s
+        .map((season: any) => ({ seasonNumber: season.seasonNumber ?? season.season_number }))
+        .filter((season) => season.seasonNumber > 0);
+    }
+    // Fallback to count
     const count = item?.number_of_seasons ?? item?.seasonCount;
-    if (typeof count === 'number' && count > 0) return Array.from({ length: count }, (_, i) => ({ seasonNumber: i + 1 }));
+    if (typeof count === 'number' && count > 0) {
+      return Array.from({ length: count }, (_, i) => ({ seasonNumber: i + 1 }));
+    }
     return [];
   }, [item, type]);
 
