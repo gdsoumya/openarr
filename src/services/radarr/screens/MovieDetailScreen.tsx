@@ -5,6 +5,7 @@ import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
+import { ProgressBar } from '../../../core/components/ProgressBar';
 import { ManualSearchSheet } from '../../shared-arr/components/ManualSearchSheet';
 import { CachedImage } from '../../../core/components/CachedImage';
 import { ActionSheet, ActionSheetOption } from '../../../core/components/ActionSheet';
@@ -37,6 +38,7 @@ export function MovieDetailScreen() {
   const [omdbRatings, setOmdbRatings] = useState<OMDBRatings | null>(null);
   const [ratingsLoading, setRatingsLoading] = useState(false);
   const [watchProviders, setWatchProviders] = useState<WatchProviderCountry | undefined>();
+  const [downloadProgress, setDownloadProgress] = useState<number | undefined>();
 
   const { alert } = useThemedAlert();
   const radarrConfig = useServiceConfig('radarr');
@@ -66,8 +68,18 @@ export function MovieDetailScreen() {
       const movieId = route.params?.movieId ?? movie?.id;
       if (!adapter || !movieId) return;
       try {
-        const fresh = await adapter.getMovieById(movieId);
+        const [fresh, queueResult] = await Promise.all([
+          adapter.getMovieById(movieId),
+          adapter.getQueue(1, 50).catch(() => ({ records: [], totalRecords: 0, page: 1, pageSize: 50 })),
+        ]);
         setMovie(fresh);
+        // Check if this movie is in the queue
+        const qi = queueResult.records.find((q: any) => (q as any).movieId === movieId);
+        if (qi && qi.size > 0) {
+          setDownloadProgress(((qi.size - qi.sizeleft) / qi.size) * 100);
+        } else {
+          setDownloadProgress(undefined);
+        }
       } catch (e) {
         console.error('MovieDetail fetch error:', e);
       }
@@ -203,6 +215,18 @@ export function MovieDetailScreen() {
         </View>
 
         <MetadataPills pills={pills} />
+
+        {/* Download progress bar */}
+        {downloadProgress !== undefined && (
+          <View style={styles.downloadBar}>
+            <View style={styles.downloadBarHeader}>
+              <Text style={styles.downloadBarIcon}>↓</Text>
+              <Text style={styles.downloadBarText}>Downloading · {Math.round(downloadProgress)}%</Text>
+            </View>
+            <ProgressBar progress={downloadProgress / 100} height={4} />
+          </View>
+        )}
+
         <RatingsBar ratings={omdbRatings} tmdbRating={movie.ratings?.tmdb?.value} loading={ratingsLoading} title={movie.title} imdbId={movie.imdbId} tmdbId={movie.tmdbId} type="movie" />
 
         <View style={styles.tabs}>
@@ -345,6 +369,10 @@ const styles = StyleSheet.create({
   imdbButton: { backgroundColor: 'rgba(255, 193, 7, 0.1)', borderWidth: 1, borderColor: 'rgba(255, 193, 7, 0.3)', borderRadius: radii.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.lg },
   imdbText: { ...typography.bodyBold, color: colors.radarr },
   fileBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm, backgroundColor: 'rgba(100, 255, 218, 0.06)', borderTopWidth: 1, borderTopColor: 'rgba(100, 255, 218, 0.1)' },
+  downloadBar: { marginHorizontal: spacing.xl, marginVertical: spacing.sm, padding: spacing.md, backgroundColor: 'rgba(100, 255, 218, 0.06)', borderRadius: radii.md, borderWidth: 1, borderColor: 'rgba(100, 255, 218, 0.15)' },
+  downloadBarHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  downloadBarIcon: { fontSize: 16, color: colors.primary, fontWeight: '700' },
+  downloadBarText: { ...typography.caption, color: colors.primary, fontWeight: '600' },
   fileBarIcon: { fontSize: 14, color: colors.success },
   fileBarText: { ...typography.micro, color: colors.success },
   actionBar: { flexDirection: 'row', gap: spacing.sm, padding: spacing.md, paddingHorizontal: spacing.lg, borderTopWidth: 1, borderTopColor: colors.divider, backgroundColor: colors.surfaceElevated },

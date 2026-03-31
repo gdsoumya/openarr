@@ -29,6 +29,7 @@ export function SeriesDetailScreen() {
   const [series, setSeries] = useState<Series | null>(route.params?.series ?? null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loadingEpisodes, setLoadingEpisodes] = useState(true);
+  const [episodeQueueMap, setEpisodeQueueMap] = useState<Map<number, number>>(new Map()); // episodeId → progress %
   const [activeTab, setActiveTab] = useState('seasons');
   const [manualSearchReleases, setManualSearchReleases] = useState<Release[]>([]);
   const [showManualSearch, setShowManualSearch] = useState(false);
@@ -78,8 +79,21 @@ export function SeriesDetailScreen() {
     async function fetchData() {
       if (!adapter || !series) { setLoadingEpisodes(false); return; }
       try {
-        const eps = await adapter.getEpisodes(series.id);
+        const [eps, queueResult] = await Promise.all([
+          adapter.getEpisodes(series.id),
+          adapter.getQueue(1, 50).catch(() => ({ records: [], totalRecords: 0, page: 1, pageSize: 50 })),
+        ]);
         setEpisodes(eps);
+        // Build episode queue map
+        const qm = new Map<number, number>();
+        for (const qi of queueResult.records) {
+          const epId = (qi as any).episodeId;
+          if (epId) {
+            const progress = qi.size > 0 ? ((qi.size - qi.sizeleft) / qi.size) * 100 : 0;
+            qm.set(epId, progress);
+          }
+        }
+        setEpisodeQueueMap(qm);
       } catch (e) {
         console.error('SeriesDetail fetch error:', e);
       }
@@ -348,6 +362,7 @@ export function SeriesDetailScreen() {
             episodes={episodes}
             onEpisodePress={handleEpisodePress}
             onSeasonMenu={() => handleSeasonMenu(season)}
+            episodeQueueMap={episodeQueueMap}
           />
         ))}
       </ScrollView>

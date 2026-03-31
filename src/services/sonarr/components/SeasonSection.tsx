@@ -4,9 +4,9 @@ import { colors, spacing, typography } from '../../../core/theme/tokens';
 import { EpisodeItem } from './EpisodeItem';
 import { Episode, Season } from '../types';
 
-interface SeasonSectionProps { season: Season; episodes: Episode[]; onEpisodePress: (ep: Episode) => void; onSeasonMenu?: () => void; }
+interface SeasonSectionProps { season: Season; episodes: Episode[]; onEpisodePress: (ep: Episode) => void; onSeasonMenu?: () => void; episodeQueueMap?: Map<number, number>; }
 
-export function SeasonSection({ season, episodes, onEpisodePress, onSeasonMenu }: SeasonSectionProps) {
+export function SeasonSection({ season, episodes, onEpisodePress, onSeasonMenu, episodeQueueMap }: SeasonSectionProps) {
   const [expanded, setExpanded] = useState(season.seasonNumber === Math.max(...episodes.map(e => e.seasonNumber)));
   const seasonEps = episodes.filter(e => e.seasonNumber === season.seasonNumber);
   const fileCount = seasonEps.filter(e => e.hasFile).length;
@@ -24,7 +24,7 @@ export function SeasonSection({ season, episodes, onEpisodePress, onSeasonMenu }
         <Text style={styles.chevron}>{expanded ? '▾' : '▸'}</Text>
       </Pressable>
       {expanded && seasonEps.map(ep => (
-        <EpisodeItem key={ep.id} episode={ep} onPress={() => onEpisodePress(ep)} />
+        <EpisodeItem key={ep.id} episode={ep} downloadProgress={episodeQueueMap?.get(ep.id)} onPress={() => onEpisodePress(ep)} />
       ))}
     </View>
   );
