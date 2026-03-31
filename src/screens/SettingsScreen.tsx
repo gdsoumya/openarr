@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { exportBackup } from '../core/storage/backup';
 import { colors, spacing, radii, typography, serviceConfig } from '../core/theme/tokens';
 import { useServerStore } from '../stores/serverStore';
 
@@ -30,7 +31,18 @@ export function SettingsScreen() {
 
       <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>General</Text>
       {['Home Network', 'Notifications', 'Appearance', 'Backup / Restore', 'About'].map((item) => (
-        <Pressable key={item} style={styles.row}>
+        <Pressable
+          key={item}
+          style={styles.row}
+          onPress={() => {
+            if (item === 'Backup / Restore') {
+              Alert.alert('Backup', 'What would you like to do?', [
+                { text: 'Export Backup', onPress: () => exportBackup() },
+                { text: 'Cancel', style: 'cancel' },
+              ]);
+            }
+          }}
+        >
           <Text style={styles.rowTitle}>{item}</Text>
           <Text style={styles.chevron}>›</Text>
         </Pressable>
