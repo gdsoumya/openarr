@@ -182,10 +182,9 @@ export function SubsHomeScreen() {
         )}
 
         {activeTab === 'history' && (
-          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-            {history.length === 0 && <View style={styles.empty}><Text style={styles.emptyText}>No subtitle history yet</Text></View>}
-            {history.map((h, idx) => (
-              <View key={idx} style={styles.historyItem}>
+          <FlatList data={history}
+            renderItem={({ item: h }) => (
+              <View style={styles.historyItem}>
                 <View style={styles.historyHeader}>
                   <Text style={styles.historyTitle} numberOfLines={1}>{h.seriesTitle ?? h.title}</Text>
                   <Text style={styles.historyEp}>{h.episode_number ?? ''}</Text>
@@ -198,22 +197,27 @@ export function SubsHomeScreen() {
                   <Text style={styles.historyTime}>{h.timestamp}</Text>
                 </View>
               </View>
-            ))}
-          </ScrollView>
+            )}
+            keyExtractor={(_, idx) => String(idx)}
+            contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
+            ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No subtitle history yet</Text></View>}
+          />
         )}
         {activeTab === 'providers' && (
-          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-            {providers.length === 0 && <View style={styles.empty}><Text style={styles.emptyText}>No providers configured</Text></View>}
-            {providers.map((p) => (
-              <View key={p.name} style={styles.providerItem}>
+          <FlatList data={providers}
+            renderItem={({ item: p }) => (
+              <View style={styles.providerItem}>
                 <Text style={styles.providerName}>{p.name}</Text>
                 <View style={styles.providerStatus}>
                   <View style={[styles.providerDot, { backgroundColor: p.status === 'Good' ? colors.success : colors.warning }]} />
                   <Text style={[styles.providerStatusText, { color: p.status === 'Good' ? colors.success : colors.warning }]}>{p.status}</Text>
                 </View>
               </View>
-            ))}
-          </ScrollView>
+            )}
+            keyExtractor={(item) => item.name}
+            contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
+            ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No providers configured</Text></View>}
+          />
         )}
         </View>
       </View>

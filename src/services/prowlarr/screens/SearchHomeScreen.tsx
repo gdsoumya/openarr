@@ -109,6 +109,7 @@ export function SearchHomeScreen() {
         ))}
       </ScrollView>
 
+      <View style={{ flex: 1 }}>
       {!config && (
         <View style={styles.placeholder}>
           <Text style={styles.placeholderText}>Prowlarr not configured. Add it in Settings to search indexers.</Text>
@@ -151,7 +152,7 @@ export function SearchHomeScreen() {
                 </Pressable>
               )}
               keyExtractor={(item) => item.guid}
-              contentContainerStyle={{ paddingBottom: 100 }}
+              contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
               ListEmptyComponent={
                 <View style={styles.placeholder}>
                   <Text style={styles.placeholderText}>Enter a search term and press return</Text>
@@ -167,7 +168,7 @@ export function SearchHomeScreen() {
           data={indexers}
          
           keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
           ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No indexers configured</Text></View>}
           renderItem={({ item }) => (
             <View style={styles.resultItem}>
@@ -191,7 +192,7 @@ export function SearchHomeScreen() {
           data={indexerStats}
          
           keyExtractor={(item) => String(item.indexerId)}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
           ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No stats available</Text></View>}
           renderItem={({ item }) => (
             <View style={styles.resultItem}>
@@ -213,6 +214,7 @@ export function SearchHomeScreen() {
       {activeTab === 'history' && (
         <View style={styles.placeholder}><Text style={styles.placeholderText}>Search history will appear when connected</Text></View>
       )}
+      </View>
     </View>
   );
 }
