@@ -12,7 +12,10 @@ export class ProwlarrAdapter {
 
   constructor(config: ServiceConfig, isLocal: boolean) { this.client = createServiceClient(config, isLocal); }
 
-  async testConnection(): Promise<boolean> { try { await this.client.get('/api/v1/system/status'); return true; } catch { return false; } }
+  async testConnection(): Promise<boolean> {
+    await this.client.get('/api/v1/system/status');
+    return true;
+  }
 
   async getStatus(): Promise<ServiceStatus> {
     try {

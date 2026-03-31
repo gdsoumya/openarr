@@ -14,7 +14,8 @@ export abstract class ArrServiceAdapter {
   }
 
   async testConnection(): Promise<boolean> {
-    try { await this.client.get('/api/v3/system/status'); return true; } catch { return false; }
+    await this.client.get('/api/v3/system/status');
+    return true;
   }
 
   async getStatus(): Promise<ServiceStatus> {
