@@ -1,0 +1,21 @@
+import axios, { AxiosInstance } from 'axios';
+import { TMDBShow, TMDBMovie, TMDBExternalIds, TMDBCredits } from './types';
+
+export class TMDBClient {
+  private client: AxiosInstance;
+
+  constructor(apiKey: string) {
+    this.client = axios.create({ baseURL: 'https://api.themoviedb.org/3', params: { api_key: apiKey }, timeout: 10000 });
+  }
+
+  async getTrendingShows(): Promise<TMDBShow[]> { const { data } = await this.client.get('/trending/tv/week'); return data.results; }
+  async getTrendingMovies(): Promise<TMDBMovie[]> { const { data } = await this.client.get('/trending/movie/week'); return data.results; }
+  async getOnTheAirShows(): Promise<TMDBShow[]> { const { data } = await this.client.get('/tv/on_the_air'); return data.results; }
+  async getNowPlayingMovies(): Promise<TMDBMovie[]> { const { data } = await this.client.get('/movie/now_playing'); return data.results; }
+  async getUpcomingMovies(): Promise<TMDBMovie[]> { const { data } = await this.client.get('/movie/upcoming'); return data.results; }
+  async getShowDetails(id: number): Promise<TMDBShow & { number_of_seasons: number; status: string }> { const { data } = await this.client.get(`/tv/${id}`); return data; }
+  async getMovieDetails(id: number): Promise<TMDBMovie & { runtime: number; budget: number; revenue: number; genres: any[] }> { const { data } = await this.client.get(`/movie/${id}`); return data; }
+  async getShowExternalIds(id: number): Promise<TMDBExternalIds> { const { data } = await this.client.get(`/tv/${id}/external_ids`); return data; }
+  async getShowCredits(id: number): Promise<TMDBCredits> { const { data } = await this.client.get(`/tv/${id}/credits`); return data; }
+  async getMovieCredits(id: number): Promise<TMDBCredits> { const { data } = await this.client.get(`/movie/${id}/credits`); return data; }
+}
