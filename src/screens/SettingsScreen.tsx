@@ -14,17 +14,29 @@ export function SettingsScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.sectionTitle}>Servers</Text>
-      {servers.map((srv) => (
-        <Pressable key={srv.id} style={[styles.row, srv.id === activeServerId && styles.rowActive]}
-          onPress={() => { setActiveServer(srv.id); }}
-          onLongPress={() => navigation.navigate('ServerSetup', { serverId: srv.id })}>
-          <View>
-            <Text style={styles.rowTitle}>{srv.name}</Text>
-            <Text style={styles.rowSub}>{srv.services.filter(s => s.enabled).length} services · {srv.id === activeServerId ? 'Active' : 'Tap to activate'}</Text>
-          </View>
-          <Text style={styles.chevron}>›</Text>
-        </Pressable>
-      ))}
+      {servers.map((srv) => {
+        const isActive = srv.id === activeServerId;
+        const enabledCount = srv.services.filter(s => s.enabled).length;
+        const configuredCount = srv.services.filter(s => s.enabled && s.localUrl).length;
+        return (
+          <Pressable key={srv.id} style={[styles.row, isActive && styles.rowActive]}
+            onPress={() => navigation.navigate('ServerSetup', { serverId: srv.id })}>
+            <View style={styles.rowContent}>
+              <View style={styles.rowHeader}>
+                <Text style={styles.rowTitle}>{srv.name}</Text>
+                {isActive && <View style={styles.activeBadge}><Text style={styles.activeBadgeText}>Active</Text></View>}
+              </View>
+              <Text style={styles.rowSub}>{configuredCount}/{enabledCount} services configured</Text>
+              {!isActive && (
+                <Pressable style={styles.activateBtn} onPress={(e) => { e.stopPropagation; setActiveServer(srv.id); }}>
+                  <Text style={styles.activateBtnText}>Set Active</Text>
+                </Pressable>
+              )}
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </Pressable>
+        );
+      })}
       <Pressable style={styles.addButton} onPress={() => navigation.navigate('ServerSetup', { serverId: undefined })}>
         <Text style={styles.addButtonText}>+ Add Server</Text>
       </Pressable>
@@ -57,8 +69,14 @@ const styles = StyleSheet.create({
   sectionTitle: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.md, marginTop: spacing.lg },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.lg, marginBottom: spacing.sm },
   rowActive: { borderColor: colors.primaryBorder },
+  rowContent: { flex: 1, marginRight: spacing.sm },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   rowTitle: { ...typography.bodyBold, color: colors.textPrimary },
   rowSub: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  activeBadge: { backgroundColor: colors.primaryMuted, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, borderWidth: 1, borderColor: colors.primaryBorder },
+  activeBadgeText: { ...typography.badge, color: colors.primary },
+  activateBtn: { marginTop: spacing.sm, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider },
+  activateBtnText: { ...typography.micro, color: colors.textMuted },
   chevron: { fontSize: 20, color: colors.textMuted },
   addButton: { backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder, borderRadius: radii.lg, padding: spacing.lg, alignItems: 'center', marginTop: spacing.sm },
   addButtonText: { ...typography.bodyBold, color: colors.primary },
