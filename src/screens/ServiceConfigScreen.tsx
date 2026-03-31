@@ -74,10 +74,11 @@ export function ServiceConfigScreen() {
       if (!ok) setTestError('Connection returned false — check URL and credentials');
     } catch (e: any) {
       setTestResult('fail');
-      const msg = e.response
-        ? `HTTP ${e.response.status}: ${e.response.statusText || ''}`
-        : e.message || 'Unknown error';
-      setTestError(msg);
+      const url = e.config?.baseURL
+        ? `${e.config.baseURL}${e.config.url || ''}`
+        : svcConfig.localUrl;
+      const status = e.response?.status ? `HTTP ${e.response.status}` : e.code || 'Network Error';
+      setTestError(`${status} → ${url}\n${e.message || ''}`);
     }
   };
 
