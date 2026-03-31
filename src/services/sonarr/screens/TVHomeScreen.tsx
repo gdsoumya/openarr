@@ -21,7 +21,13 @@ const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
 
 type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
 
-function getSeriesBadge(s: Series) {
+interface QueueInfo { seriesId?: number; movieId?: number; title: string; progress: number; }
+
+function getSeriesBadge(s: Series, queueMap: Map<number, QueueInfo>) {
+  // Check if downloading
+  const qi = queueMap.get(s.id);
+  if (qi) return { label: `↓ ${Math.round(qi.progress)}%`, variant: 'downloading' as const };
+
   const st = s.statistics;
   if (!st) return undefined;
   if (st.episodeFileCount === st.totalEpisodeCount && st.totalEpisodeCount > 0) return { label: '✓ All', variant: 'completed' as const };
@@ -47,6 +53,7 @@ export function TVHomeScreen() {
   const [sonarrSearchResults, setSonarrSearchResults] = useState<Series[]>([]);
   const [tmdbSearchResults, setTmdbSearchResults] = useState<TMDBShow[]>([]);
   const [searching, setSearching] = useState(false);
+  const [queueMap, setQueueMap] = useState<Map<number, QueueInfo>>(new Map());
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const showToast = useToastStore((s) => s.show);
@@ -61,9 +68,23 @@ export function TVHomeScreen() {
     if (adapter) {
       setLibraryStatus('loading');
       try {
-        const series = await adapter.getSeries();
+        const [series, queueResult] = await Promise.all([
+          adapter.getSeries(),
+          adapter.getQueue(1, 50).catch(() => ({ records: [], totalRecords: 0, page: 1, pageSize: 50 })),
+        ]);
         setLibrary(series);
         setSonarrIds(adapter.getTvdbIds(series));
+        // Build queue map: seriesId → download info
+        const qm = new Map<number, QueueInfo>();
+        for (const qi of queueResult.records) {
+          const progress = qi.size > 0 ? ((qi.size - qi.sizeleft) / qi.size) * 100 : 0;
+          // Queue items have seriesId in Sonarr (not in our QueueItem type but the API returns it)
+          const seriesId = (qi as any).seriesId;
+          if (seriesId && !qm.has(seriesId)) {
+            qm.set(seriesId, { seriesId, title: qi.title, progress });
+          }
+        }
+        setQueueMap(qm);
         setLibraryStatus(series.length > 0 ? 'loaded' : 'empty');
       } catch (e: any) {
         setLibraryStatus('error');
@@ -217,7 +238,9 @@ export function TVHomeScreen() {
           status={!config ? 'empty' : libraryStatus}>
           {displayLibrary.map((s) => (
             <PosterCard key={s.id} title={s.title} subtitle={`${s.network} · ${s.status === 'continuing' ? 'Airing' : 'Ended'}`}
-              posterUrl={s.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getSeriesBadge(s)}
+              posterUrl={s.images.find(i => i.coverType === 'poster')?.remoteUrl}
+              badge={getSeriesBadge(s, queueMap)}
+              progress={queueMap.has(s.id) ? (queueMap.get(s.id)!.progress / 100) : undefined}
               onPress={() => navigation.navigate('SeriesDetail', { series: s })} />
           ))}
         </Carousel>

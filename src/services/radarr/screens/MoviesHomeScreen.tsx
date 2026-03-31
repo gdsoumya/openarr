@@ -21,7 +21,12 @@ const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
 
 type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
 
-function getMovieBadge(m: Movie) {
+interface QueueInfo { movieId?: number; title: string; progress: number; status: string; }
+
+function getMovieBadge(m: Movie, queueMap: Map<number, QueueInfo>) {
+  const qi = queueMap.get(m.id);
+  if (qi) return { label: `↓ ${Math.round(qi.progress)}%`, variant: 'downloading' as const };
+
   if (m.hasFile && m.movieFile) {
     const q = m.movieFile.quality.quality.name;
     return { label: `✓ ${q}`, variant: 'completed' as const };
@@ -46,6 +51,7 @@ export function MoviesHomeScreen() {
   const [radarrSearchResults, setRadarrSearchResults] = useState<Movie[]>([]);
   const [tmdbSearchResults, setTmdbSearchResults] = useState<TMDBMovie[]>([]);
   const [searching, setSearching] = useState(false);
+  const [queueMap, setQueueMap] = useState<Map<number, QueueInfo>>(new Map());
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const showToast = useToastStore((s) => s.show);
@@ -60,9 +66,22 @@ export function MoviesHomeScreen() {
     if (adapter) {
       setLibraryStatus('loading');
       try {
-        const movies = await adapter.getMovies();
+        const [movies, queueResult] = await Promise.all([
+          adapter.getMovies(),
+          adapter.getQueue(1, 50).catch(() => ({ records: [], totalRecords: 0, page: 1, pageSize: 50 })),
+        ]);
         setLibrary(movies);
         setRadarrIds(adapter.getTmdbIds(movies));
+        // Build queue map: movieId → download info
+        const qm = new Map<number, QueueInfo>();
+        for (const qi of queueResult.records) {
+          const progress = qi.size > 0 ? ((qi.size - qi.sizeleft) / qi.size) * 100 : 0;
+          const movieId = (qi as any).movieId;
+          if (movieId && !qm.has(movieId)) {
+            qm.set(movieId, { movieId, title: qi.title, progress, status: qi.status });
+          }
+        }
+        setQueueMap(qm);
         setLibraryStatus(movies.length > 0 ? 'loaded' : 'empty');
       } catch (e: any) {
         setLibraryStatus('error');
@@ -215,7 +234,9 @@ export function MoviesHomeScreen() {
           status={!config ? 'empty' : libraryStatus}>
           {displayLibrary.map((m) => (
             <PosterCard key={m.id} title={m.title} subtitle={`${m.year} · ${m.genres?.[0] ?? ''}`}
-              posterUrl={m.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getMovieBadge(m)}
+              posterUrl={m.images.find(i => i.coverType === 'poster')?.remoteUrl}
+              badge={getMovieBadge(m, queueMap)}
+              progress={queueMap.has(m.id) ? (queueMap.get(m.id)!.progress / 100) : undefined}
               onPress={() => navigation.navigate('MovieDetail', { movie: m })} />
           ))}
         </Carousel>
