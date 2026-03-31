@@ -132,12 +132,10 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
         const allMonitored = seasons.length === 0 || seasons.every(s => seasonMonitored.get(s.seasonNumber));
         const noneMonitored = seasons.length > 0 && seasons.every(s => !seasonMonitored.get(s.seasonNumber));
 
-        // Determine addOptions.monitor:
-        // - 'all' if all seasons selected (or no season info)
-        // - 'none' if no seasons selected
-        // - For partial selection: use 'none' but set per-season monitored flags
-        //   then after adding, the seasons array controls what's monitored
-        const monitorPreset = noneMonitored ? 'none' : allMonitored ? 'all' : 'none';
+        // Always use 'all' — the seasons array with per-season monitored flags
+        // controls which seasons are actually monitored. Using 'none' here
+        // would override the seasons array and unmonitor everything.
+        const monitorPreset = noneMonitored ? 'none' : 'all';
 
         const body: any = {
           ...seriesData,
