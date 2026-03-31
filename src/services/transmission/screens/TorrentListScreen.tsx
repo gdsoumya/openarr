@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, RefreshControl, Alert, Platform, TextInput, Pressable } from 'react-native';
+import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,6 +39,7 @@ export function TorrentListScreen() {
   const [showAddInput, setShowAddInput] = useState(false);
   const [addInputText, setAddInputText] = useState('');
   const showToast = useToastStore((s) => s.show);
+  const { alert } = useThemedAlert();
 
   const fetchTorrents = useCallback(async () => {
     if (!adapter) return;
@@ -59,7 +61,7 @@ export function TorrentListScreen() {
       await adapter.addTorrent({ filename: url.trim() });
       fetchTorrents();
     } catch (e: any) {
-      Alert.alert('Error', e.message);
+      alert('Error', e.message);
     }
   };
 

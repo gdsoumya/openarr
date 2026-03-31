@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, RefreshControl, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl, ScrollView } from 'react-native';
+import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { FlashList } from '@shopify/flash-list';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +14,7 @@ import { useConnectionStore } from '../../../stores/connectionStore';
 import { getBazarrAdapter } from '../../../services/adapterFactory';
 
 export function SubsHomeScreen() {
+  const { alert } = useThemedAlert();
   const insets = useSafeAreaInsets();
   const config = useServiceConfig('bazarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
@@ -62,7 +64,7 @@ export function SubsHomeScreen() {
       const results = await adapter.searchEpisodeSubtitles(episodeId);
       setSubResults(results);
       subSheetRef.current?.snapToIndex(0);
-    } catch (e: any) { Alert.alert('Error', e.message); }
+    } catch (e: any) { alert('Error', e.message); }
   };
 
   const searchMovieSubs = async (radarrId: number) => {
@@ -73,7 +75,7 @@ export function SubsHomeScreen() {
       const results = await adapter.searchMovieSubtitles(radarrId);
       setSubResults(results);
       subSheetRef.current?.snapToIndex(0);
-    } catch (e: any) { Alert.alert('Error', e.message); }
+    } catch (e: any) { alert('Error', e.message); }
   };
 
   const downloadSub = async (sub: SubtitleSearchResult) => {
@@ -85,8 +87,8 @@ export function SubsHomeScreen() {
         await adapter.downloadMovieSubtitle({ radarrid: searchingMovieId, ...sub });
       }
       subSheetRef.current?.close();
-      Alert.alert('Success', 'Subtitle downloaded');
-    } catch (e: any) { Alert.alert('Error', e.message); }
+      alert('Success', 'Subtitle downloaded');
+    } catch (e: any) { alert('Error', e.message); }
   };
 
   const tabs = [

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, FlatList, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, FlatList } from 'react-native';
+import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { Release } from '../types';
@@ -19,6 +20,7 @@ function formatSize(bytes: number): string {
 }
 
 export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: ManualSearchSheetProps) {
+  const { alert } = useThemedAlert();
   const insets = useSafeAreaInsets();
   const [sortBy, setSortBy] = useState<SortBy>('seeders');
   const isLoading = visible && releases.length === 0;
@@ -45,7 +47,7 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
       `${item.age}d old`,
     ].filter(Boolean).join(' · ');
 
-    Alert.alert(
+    alert(
       'Download Release',
       `${item.title}\n\n${info}`,
       [

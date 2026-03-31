@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { useThemedAlert } from '../core/components/ThemedAlert';
 import { useNavigation } from '@react-navigation/native';
 import { exportBackup } from '../core/storage/backup';
 import { colors, spacing, radii, typography, serviceConfig } from '../core/theme/tokens';
@@ -10,6 +11,7 @@ export function SettingsScreen() {
   const activeServerId = useServerStore((s) => s.activeServerId);
   const setActiveServer = useServerStore((s) => s.setActiveServer);
   const navigation = useNavigation<any>();
+  const { alert } = useThemedAlert();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -48,7 +50,7 @@ export function SettingsScreen() {
           style={styles.row}
           onPress={() => {
             if (item === 'Backup / Restore') {
-              Alert.alert('Backup', 'What would you like to do?', [
+              alert('Backup', 'What would you like to do?', [
                 { text: 'Export Backup', onPress: () => exportBackup() },
                 { text: 'Cancel', style: 'cancel' },
               ]);

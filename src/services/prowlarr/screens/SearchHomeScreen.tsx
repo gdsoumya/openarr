@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator } from 'react-native';
+import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
@@ -11,6 +12,7 @@ import { getProwlarrAdapter, getTransmissionAdapter } from '../../../services/ad
 import { useServerStore } from '../../../stores/serverStore';
 
 export function SearchHomeScreen() {
+  const { alert } = useThemedAlert();
   const insets = useSafeAreaInsets();
   const config = useServiceConfig('prowlarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
@@ -45,25 +47,25 @@ export function SearchHomeScreen() {
   }
 
   const grabResult = async (item: SearchResult) => {
-    if (!item.downloadUrl) { Alert.alert('Error', 'No download URL available'); return; }
-    if (!txConfig) { Alert.alert('Error', 'Transmission not configured'); return; }
+    if (!item.downloadUrl) { alert('Error', 'No download URL available'); return; }
+    if (!txConfig) { alert('Error', 'Transmission not configured'); return; }
     try {
       const tx = getTransmissionAdapter(txConfig, isLocal);
       await tx.addTorrent({ filename: item.downloadUrl });
-      Alert.alert('Sent to Transmission', item.title);
-    } catch (e: any) { Alert.alert('Error', e.message); }
+      alert('Sent to Transmission', item.title);
+    } catch (e: any) { alert('Error', e.message); }
   };
 
   const doSearch = useCallback(async () => {
     if (!query.trim()) return;
-    if (!adapter) { Alert.alert('Not Configured', 'Set up Prowlarr in Settings to search indexers.'); return; }
+    if (!adapter) { alert('Not Configured', 'Set up Prowlarr in Settings to search indexers.'); return; }
     setLoading(true);
     setResults([]);
     try {
       const data = await adapter.search({ query: query.trim(), type: searchType });
       setResults(data);
     } catch (e: any) {
-      Alert.alert('Search Failed', e.response
+      alert('Search Failed', e.response
         ? `HTTP ${e.response.status}: ${e.config?.baseURL || ''}${e.config?.url || ''}`
         : e.message || 'Unknown error');
     }

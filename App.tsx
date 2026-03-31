@@ -9,6 +9,7 @@ import { useServerStore } from './src/stores/serverStore';
 import { colors } from './src/core/theme/tokens';
 import { Toast } from './src/core/components/Toast';
 import { useToastStore } from './src/core/hooks/useToast';
+import { ThemedAlertProvider } from './src/core/components/ThemedAlert';
 
 export default function App() {
   const loadFromStorage = useServerStore((s) => s.loadFromStorage);
@@ -22,6 +23,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
       <ThemeProvider>
+        <ThemedAlertProvider>
         <NavigationContainer
           theme={{
             dark: true,
@@ -45,6 +47,7 @@ export default function App() {
           <TabNavigator />
           <Toast message={toast.message} type={toast.type} visible={toast.visible} onHide={toast.hide} />
         </NavigationContainer>
+        </ThemedAlertProvider>
       </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

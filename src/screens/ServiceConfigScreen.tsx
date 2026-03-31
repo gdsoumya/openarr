@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, Switch, Pressable, Alert } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, Switch, Pressable } from 'react-native';
+import { useThemedAlert } from '../core/components/ThemedAlert';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography, serviceConfig, ServiceId } from '../core/theme/tokens';
@@ -43,6 +44,7 @@ export function ServiceConfigScreen() {
   const [testResult, setTestResult] = useState<'none' | 'testing' | 'success' | 'fail'>('none');
   const [testError, setTestError] = useState('');
 
+  const { alert } = useThemedAlert();
   const usesApiKey = meta.authMode === 'apikey';
 
   const buildServiceConfig = () => ({
@@ -61,7 +63,7 @@ export function ServiceConfigScreen() {
   const testConnection = async () => {
     const svcConfig = buildServiceConfig();
     if (!svcConfig.localUrl) {
-      Alert.alert('Error', 'Enter a Local URL');
+      alert('Error', 'Enter a Local URL');
       return;
     }
     setTestResult('testing');
@@ -86,7 +88,7 @@ export function ServiceConfigScreen() {
     if (!server) return;
     const svcConfig = buildServiceConfig();
     if (!svcConfig.localUrl) {
-      Alert.alert('Error', 'Local URL is required');
+      alert('Error', 'Local URL is required');
       return;
     }
 

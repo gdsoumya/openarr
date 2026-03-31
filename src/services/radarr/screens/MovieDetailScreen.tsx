@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Linking, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Linking, RefreshControl } from 'react-native';
+import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
@@ -27,6 +28,7 @@ export function MovieDetailScreen() {
     options: ActionSheetOption[];
   }>({ visible: false, title: '', options: [] });
 
+  const { alert } = useThemedAlert();
   const radarrConfig = useServiceConfig('radarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
 
@@ -67,9 +69,9 @@ export function MovieDetailScreen() {
     if (!adapter || !movie) return;
     try {
       await adapter.searchMovie(movie.id);
-      Alert.alert('Search Started', `Radarr is now searching indexers for "${movie.title}". Check the Activity tab in Radarr for progress.`);
+      alert('Search Started', `Radarr is now searching indexers for "${movie.title}". Check the Activity tab in Radarr for progress.`);
     } catch (e: any) {
-      Alert.alert('Search Failed', e.message);
+      alert('Search Failed', e.message);
     }
   }
 
@@ -82,11 +84,11 @@ export function MovieDetailScreen() {
       const releases = await adapter.manualSearchMovie(movie.id);
       setManualSearchReleases(releases);
       if (releases.length === 0) {
-        Alert.alert('No Results', 'No releases found. Make sure indexers are configured in Radarr (Settings → Indexers) or that Prowlarr is synced.');
+        alert('No Results', 'No releases found. Make sure indexers are configured in Radarr (Settings → Indexers) or that Prowlarr is synced.');
         setShowManualSearch(false);
       }
     } catch (e: any) {
-      Alert.alert('Search Failed', e.message);
+      alert('Search Failed', e.message);
       setShowManualSearch(false);
     }
     setSearchingManual(false);
@@ -94,7 +96,7 @@ export function MovieDetailScreen() {
 
   function handleDelete() {
     if (!movie) return;
-    Alert.alert('Delete Movie', `Delete "${movie.title}"?`, [
+    alert('Delete Movie', `Delete "${movie.title}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete (keep files)',
@@ -112,7 +114,7 @@ export function MovieDetailScreen() {
         text: 'Delete + Files',
         style: 'destructive',
         onPress: () => {
-          Alert.alert('Add to Exclusion List?', 'Also add this movie to the import exclusion list?', [
+          alert('Add to Exclusion List?', 'Also add this movie to the import exclusion list?', [
             {
               text: 'No',
               onPress: async () => {
@@ -221,7 +223,7 @@ export function MovieDetailScreen() {
               { label: 'Auto Search', icon: '🔍', onPress: () => handleSearch() },
               { label: 'Manual Search', icon: '📋', onPress: () => handleManualSearch() },
               ...(!movie.hasFile ? [] : [{ label: 'Delete File', icon: '🗑', onPress: () => {
-                Alert.alert('Delete File', 'Delete the movie file?', [
+                alert('Delete File', 'Delete the movie file?', [
                   { text: 'Cancel', style: 'cancel' as const },
                   { text: 'Delete', style: 'destructive' as const, onPress: () => adapter?.deleteMovieFile(movie.movieFile!.id).then(onRefresh) },
                 ]);
@@ -242,7 +244,7 @@ export function MovieDetailScreen() {
                   const updated = { ...movie, monitored: !movie.monitored };
                   await adapter.editMovie(updated);
                   setMovie(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
-                } catch (e: any) { Alert.alert('Error', e.message); }
+                } catch (e: any) { alert('Error', e.message); }
               }},
               { label: 'Open in IMDb', icon: '🎬', onPress: () => { if (movie.imdbId) Linking.openURL(`https://www.imdb.com/title/${movie.imdbId}`); }},
               { label: 'Delete Movie', icon: '🗑', onPress: () => handleDelete(), destructive: true },
@@ -260,9 +262,9 @@ export function MovieDetailScreen() {
         if (!adapter) return;
         try {
           await adapter.grabRelease(release.guid, release.indexerId);
-          Alert.alert('Success', 'Release grabbed');
+          alert('Success', 'Release grabbed');
           setShowManualSearch(false);
-        } catch (e: any) { Alert.alert('Error', e.message); }
+        } catch (e: any) { alert('Error', e.message); }
       }}
       onDismiss={() => setShowManualSearch(false)}
     />

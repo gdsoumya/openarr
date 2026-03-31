@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Switch, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Switch } from 'react-native';
+import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
@@ -53,6 +54,7 @@ export function TorrentDetailScreen() {
 
   usePolling(refresh, 3000, !!adapter);
 
+  const { alert } = useThemedAlert();
   const isPaused = torrent.status === TorrentStatus.Stopped;
 
   const togglePause = async () => {
@@ -63,7 +65,7 @@ export function TorrentDetailScreen() {
   };
 
   const confirmDelete = () => {
-    Alert.alert('Delete Torrent', `Delete "${torrent.name}"?`, [
+    alert('Delete Torrent', `Delete "${torrent.name}"?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => deleteTorrent(false) },
       { text: 'Delete + Files', style: 'destructive', onPress: () => deleteTorrent(true) },

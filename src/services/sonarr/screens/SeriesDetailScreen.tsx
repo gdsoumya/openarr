@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
+import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
@@ -15,6 +16,7 @@ import { useConnectionStore } from '../../../stores/connectionStore';
 import { getSonarrAdapter } from '../../../services/adapterFactory';
 
 export function SeriesDetailScreen() {
+  const { alert } = useThemedAlert();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const [series, setSeries] = useState<Series | null>(route.params?.series ?? null);
@@ -86,10 +88,10 @@ export function SeriesDetailScreen() {
             const releases = await adapter.manualSearchEpisode(episode.id);
             setManualSearchReleases(releases);
             if (releases.length === 0) {
-              Alert.alert('No Results', 'No releases found. Check that indexers are configured in Sonarr (Settings → Indexers).');
+              alert('No Results', 'No releases found. Check that indexers are configured in Sonarr (Settings → Indexers).');
               setShowManualSearch(false);
             }
-          } catch (e: any) { Alert.alert('Search Failed', e.message); setShowManualSearch(false); }
+          } catch (e: any) { alert('Search Failed', e.message); setShowManualSearch(false); }
         },
       });
       options.push({
@@ -97,9 +99,9 @@ export function SeriesDetailScreen() {
         icon: '🗑',
         destructive: true,
         onPress: () => {
-          Alert.alert('Delete File', `Delete file for S${String(episode.seasonNumber).padStart(2,'0')}E${String(episode.episodeNumber).padStart(2,'0')}?`, [
+          alert('Delete File', `Delete file for S${String(episode.seasonNumber).padStart(2,'0')}E${String(episode.episodeNumber).padStart(2,'0')}?`, [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Delete', style: 'destructive', onPress: () => adapter?.deleteEpisodeFile(episode.episodeFileId!).then(onRefresh).catch(e => Alert.alert('Error', e.message)) },
+            { text: 'Delete', style: 'destructive', onPress: () => adapter?.deleteEpisodeFile(episode.episodeFileId!).then(onRefresh).catch(e => alert('Error', e.message)) },
           ]);
         },
       });
@@ -112,8 +114,8 @@ export function SeriesDetailScreen() {
           if (!adapter) return;
           try {
             await adapter.searchEpisode(episode.id);
-            Alert.alert('Search Started', 'Sonarr is searching indexers for this episode. Check Activity for progress.');
-          } catch (e: any) { Alert.alert('Search Failed', e.message); }
+            alert('Search Started', 'Sonarr is searching indexers for this episode. Check Activity for progress.');
+          } catch (e: any) { alert('Search Failed', e.message); }
         },
       });
       options.push({
@@ -127,10 +129,10 @@ export function SeriesDetailScreen() {
             const releases = await adapter.manualSearchEpisode(episode.id);
             setManualSearchReleases(releases);
             if (releases.length === 0) {
-              Alert.alert('No Results', 'No releases found. Check that indexers are configured in Sonarr (Settings → Indexers) or that Prowlarr is synced.');
+              alert('No Results', 'No releases found. Check that indexers are configured in Sonarr (Settings → Indexers) or that Prowlarr is synced.');
               setShowManualSearch(false);
             }
-          } catch (e: any) { Alert.alert('Search Failed', e.message); setShowManualSearch(false); }
+          } catch (e: any) { alert('Search Failed', e.message); setShowManualSearch(false); }
         },
       });
     }
@@ -139,7 +141,7 @@ export function SeriesDetailScreen() {
     options.push({
       label: episode.monitored ? 'Unmonitor' : 'Monitor',
       icon: '👁',
-      onPress: () => adapter?.setEpisodeMonitored(episode.id, !episode.monitored).then(onRefresh).catch(e => Alert.alert('Error', e.message)),
+      onPress: () => adapter?.setEpisodeMonitored(episode.id, !episode.monitored).then(onRefresh).catch(e => alert('Error', e.message)),
     });
 
     const subtitle = episode.hasFile
@@ -175,7 +177,7 @@ export function SeriesDetailScreen() {
           icon: '🗑',
           destructive: true,
           onPress: () => {
-            Alert.alert(
+            alert(
               'Season Cleanup',
               'This will delete all episode files and unmonitor episodes in this season.',
               [
@@ -210,15 +212,15 @@ export function SeriesDetailScreen() {
     if (!adapter || !series) return;
     try {
       await adapter.searchSeries(series.id);
-      Alert.alert('Search Started', `Sonarr is now searching indexers for all episodes of "${series.title}". Check the Activity tab in Sonarr for progress.`);
+      alert('Search Started', `Sonarr is now searching indexers for all episodes of "${series.title}". Check the Activity tab in Sonarr for progress.`);
     } catch (e: any) {
-      Alert.alert('Search Failed', e.message);
+      alert('Search Failed', e.message);
     }
   }
 
   function handleDeleteSeries() {
     if (!series) return;
-    Alert.alert('Delete Series', `Delete "${series.title}"?`, [
+    alert('Delete Series', `Delete "${series.title}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete (keep files)',
@@ -319,7 +321,7 @@ export function SeriesDetailScreen() {
                   const updated = { ...series, monitored: !series.monitored };
                   await adapter.editSeries(updated);
                   setSeries(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
-                } catch (e: any) { Alert.alert('Error', e.message); }
+                } catch (e: any) { alert('Error', e.message); }
               }},
               { label: 'Delete Series', icon: '🗑', onPress: () => handleDeleteSeries(), destructive: true },
             ],
@@ -336,9 +338,9 @@ export function SeriesDetailScreen() {
         if (!adapter) return;
         try {
           await adapter.grabRelease(release.guid, release.indexerId);
-          Alert.alert('Success', 'Release grabbed');
+          alert('Success', 'Release grabbed');
           setShowManualSearch(false);
-        } catch (e: any) { Alert.alert('Error', e.message); }
+        } catch (e: any) { alert('Error', e.message); }
       }}
       onDismiss={() => setShowManualSearch(false)}
     />
