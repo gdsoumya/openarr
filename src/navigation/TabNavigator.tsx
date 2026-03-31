@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HomeStack } from './stacks/HomeStack';
 import { TorrentsStack } from './stacks/TorrentsStack';
 import { TVStack } from './stacks/TVStack';
@@ -23,6 +24,7 @@ const tabIconMap: Record<string, { lib: 'mci' | 'ion'; name: string }> = {
 
 export function TabNavigator() {
   const subsBadge = useConnectionStore((s) => s.subsBadgeCount);
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -33,6 +35,8 @@ export function TabNavigator() {
           borderTopColor: colors.divider,
           borderTopWidth: 1,
           paddingTop: 6,
+          paddingBottom: Math.max(insets.bottom, 8),
+          height: 56 + Math.max(insets.bottom, 8),
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
