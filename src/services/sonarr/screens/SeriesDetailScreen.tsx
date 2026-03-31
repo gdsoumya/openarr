@@ -6,6 +6,7 @@ import { MetadataPills } from '../../../core/components/MetadataPills';
 import { SeasonSection } from '../components/SeasonSection';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { ManualSearchSheet } from '../../shared-arr/components/ManualSearchSheet';
+import { CachedImage } from '../../../core/components/CachedImage';
 import { Series, Episode, Season } from '../types';
 import { Release } from '../../shared-arr/types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
@@ -62,15 +63,13 @@ export function SeriesDetailScreen() {
 
   // --- Episode actions ---
   function handleEpisodePress(episode: Episode) {
-    const options: Array<{ text: string; onPress?: () => void; style?: 'cancel' | 'destructive' | 'default' }> = [
-      {
-        text: 'Search',
-        onPress: () => {
-          adapter?.searchEpisode(episode.id).catch((e) => console.error('searchEpisode error:', e));
-        },
-      },
-      {
-        text: 'Manual Search',
+    const isAired = episode.airDateUtc ? new Date(episode.airDateUtc) < new Date() : false;
+    const options: Array<{ text: string; onPress?: () => void; style?: 'cancel' | 'destructive' | 'default' }> = [];
+
+    if (episode.hasFile) {
+      // Downloaded — offer upgrade search and delete
+      options.push({
+        text: '🔍 Search Upgrade',
         onPress: async () => {
           if (!adapter) return;
           try {
@@ -79,41 +78,53 @@ export function SeriesDetailScreen() {
             setShowManualSearch(true);
           } catch (e: any) { Alert.alert('Error', e.message); }
         },
-      },
-      {
-        text: episode.monitored ? 'Unmonitor' : 'Monitor',
-        onPress: () => {
-          adapter
-            ?.setEpisodeMonitored(episode.id, !episode.monitored)
-            .catch((e) => console.error('setEpisodeMonitored error:', e));
-        },
-      },
-    ];
-
-    if (episode.hasFile && episode.episodeFileId != null) {
+      });
       options.push({
-        text: 'Delete File',
+        text: '🗑 Delete File',
         style: 'destructive',
         onPress: () => {
-          Alert.alert('Delete File', 'Are you sure you want to delete this episode file?', [
+          Alert.alert('Delete File', `Delete file for S${String(episode.seasonNumber).padStart(2,'0')}E${String(episode.episodeNumber).padStart(2,'0')}?`, [
             { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Delete',
-              style: 'destructive',
-              onPress: () => {
-                adapter
-                  ?.deleteEpisodeFile(episode.episodeFileId!)
-                  .catch((e) => console.error('deleteEpisodeFile error:', e));
-              },
-            },
+            { text: 'Delete', style: 'destructive', onPress: () => adapter?.deleteEpisodeFile(episode.episodeFileId!).then(onRefresh).catch(e => Alert.alert('Error', e.message)) },
           ]);
+        },
+      });
+    } else if (isAired) {
+      // Missing — offer search
+      options.push({
+        text: '🔍 Auto Search',
+        onPress: () => adapter?.searchEpisode(episode.id).then(() => Alert.alert('Searching', 'Search triggered')).catch(e => Alert.alert('Error', e.message)),
+      });
+      options.push({
+        text: '📋 Manual Search',
+        onPress: async () => {
+          if (!adapter) return;
+          try {
+            const releases = await adapter.manualSearchEpisode(episode.id);
+            setManualSearchReleases(releases);
+            setShowManualSearch(true);
+          } catch (e: any) { Alert.alert('Error', e.message); }
         },
       });
     }
 
+    // Always offer monitor toggle
+    options.push({
+      text: episode.monitored ? '👁 Unmonitor' : '👁 Monitor',
+      onPress: () => adapter?.setEpisodeMonitored(episode.id, !episode.monitored).then(onRefresh).catch(e => Alert.alert('Error', e.message)),
+    });
+
     options.push({ text: 'Cancel', style: 'cancel' });
 
-    Alert.alert(`S${episode.seasonNumber}E${episode.episodeNumber} – ${episode.title}`, undefined, options);
+    const subtitle = episode.hasFile
+      ? `✓ Downloaded${episode.episodeFile ? ` · ${episode.episodeFile.quality?.quality?.name ?? ''}` : ''}`
+      : isAired ? '✕ Missing' : `Airs ${episode.airDateUtc ? new Date(episode.airDateUtc).toLocaleDateString() : 'TBA'}`;
+
+    Alert.alert(
+      `S${String(episode.seasonNumber).padStart(2,'0')}E${String(episode.episodeNumber).padStart(2,'0')} · ${episode.title}`,
+      subtitle,
+      options,
+    );
   }
 
   // --- Season actions ---
@@ -201,6 +212,9 @@ export function SeriesDetailScreen() {
 
   if (!series) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;
 
+  const posterUrl = series?.images?.find(i => i.coverType === 'poster')?.remoteUrl;
+  const fanartUrl = series?.images?.find(i => i.coverType === 'fanart')?.remoteUrl;
+
   const tabs = ['Seasons', 'Calendar', 'History', 'Files'];
   const pills = [series.seriesType, `${series.runtime}min`, series.monitored ? 'Monitored' : 'Unmonitored', series.path];
 
@@ -209,11 +223,20 @@ export function SeriesDetailScreen() {
     <View style={styles.container}>
       <ScrollView style={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
         <View style={styles.hero}>
-          <View style={styles.heroBg} />
+          {fanartUrl ? (
+            <CachedImage uri={fanartUrl} style={styles.heroBgImage} />
+          ) : (
+            <View style={styles.heroBg} />
+          )}
+          <View style={styles.heroOverlay} />
           <View style={styles.heroContent}>
-            <View style={[styles.poster, { backgroundColor: colors.sonarr }]}>
-              <Text style={styles.posterText}>{series.title.slice(0, 2)}</Text>
-            </View>
+            {posterUrl ? (
+              <CachedImage uri={posterUrl} style={styles.poster} />
+            ) : (
+              <View style={[styles.posterFallback, { backgroundColor: colors.sonarr }]}>
+                <Text style={styles.posterText}>{series.title.slice(0, 2)}</Text>
+              </View>
+            )}
             <View style={styles.titleBlock}>
               <Text style={styles.title}>{series.title}</Text>
               <Text style={styles.subtitle}>{series.network} · {series.year} · {series.status}</Text>
@@ -291,8 +314,11 @@ const styles = StyleSheet.create({
   loading: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 100 },
   hero: { height: 200, position: 'relative' },
   heroBg: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.surfaceElevated },
+  heroBgImage: { width: '100%', height: '100%', position: 'absolute' },
+  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 16, 35, 0.6)' },
   heroContent: { position: 'absolute', bottom: 16, left: spacing.xl, right: spacing.xl, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md },
-  poster: { width: 80, height: 120, borderRadius: radii.md, justifyContent: 'center', alignItems: 'center' },
+  poster: { width: 80, height: 120, borderRadius: radii.md, overflow: 'hidden' },
+  posterFallback: { width: 80, height: 120, borderRadius: radii.md, justifyContent: 'center', alignItems: 'center' },
   posterText: { fontSize: 28, fontWeight: '700', color: 'rgba(255,255,255,0.3)' },
   titleBlock: { flex: 1 },
   title: { ...typography.h2, color: colors.textPrimary },

@@ -4,6 +4,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
 import { ManualSearchSheet } from '../../shared-arr/components/ManualSearchSheet';
+import { CachedImage } from '../../../core/components/CachedImage';
 import { Movie } from '../types';
 import { Release } from '../../shared-arr/types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
@@ -119,6 +120,9 @@ export function MovieDetailScreen() {
 
   if (!movie) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;
 
+  const posterUrl = movie?.images?.find(i => i.coverType === 'poster')?.remoteUrl;
+  const fanartUrl = movie?.images?.find(i => i.coverType === 'fanart')?.remoteUrl;
+
   const tabs = ['Info', 'History', 'Files'];
   const pills = [movie.minimumAvailability, movie.monitored ? 'Monitored' : 'Unmonitored', `${movie.runtime}min`, movie.path];
 
@@ -127,11 +131,20 @@ export function MovieDetailScreen() {
     <View style={styles.container}>
       <ScrollView style={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
         <View style={styles.hero}>
-          <View style={styles.heroBg} />
+          {fanartUrl ? (
+            <CachedImage uri={fanartUrl} style={styles.heroBgImage} />
+          ) : (
+            <View style={styles.heroBg} />
+          )}
+          <View style={styles.heroOverlay} />
           <View style={styles.heroContent}>
-            <View style={[styles.poster, { backgroundColor: colors.radarr }]}>
-              <Text style={styles.posterText}>{movie.title.slice(0, 2)}</Text>
-            </View>
+            {posterUrl ? (
+              <CachedImage uri={posterUrl} style={styles.poster} />
+            ) : (
+              <View style={[styles.posterFallback, { backgroundColor: colors.radarr }]}>
+                <Text style={styles.posterText}>{movie.title.slice(0, 2)}</Text>
+              </View>
+            )}
             <View style={styles.titleBlock}>
               <Text style={styles.title}>{movie.title}</Text>
               <Text style={styles.subtitle}>{movie.year} · {movie.genres?.slice(0, 2).join(', ')} · {movie.runtime}min</Text>
@@ -164,7 +177,7 @@ export function MovieDetailScreen() {
 
       <View style={styles.actionBar}>
         <Pressable style={[styles.actionBtn, styles.actionBtnPrimary]} onPress={handleSearch}>
-          <Text style={[styles.actionBtnText, styles.actionBtnTextPrimary]}>Search</Text>
+          <Text style={[styles.actionBtnText, styles.actionBtnTextPrimary]}>{movie.hasFile ? 'Search Upgrade' : 'Search'}</Text>
         </Pressable>
         <Pressable style={styles.actionBtn} onPress={handleManualSearch}>
           <Text style={styles.actionBtnText}>Manual Search</Text>
@@ -212,8 +225,11 @@ const styles = StyleSheet.create({
   loading: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 100 },
   hero: { height: 200, position: 'relative' },
   heroBg: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.surfaceElevated },
+  heroBgImage: { width: '100%', height: '100%', position: 'absolute' },
+  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 16, 35, 0.6)' },
   heroContent: { position: 'absolute', bottom: 16, left: spacing.xl, right: spacing.xl, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md },
-  poster: { width: 80, height: 120, borderRadius: radii.md, justifyContent: 'center', alignItems: 'center' },
+  poster: { width: 80, height: 120, borderRadius: radii.md, overflow: 'hidden' },
+  posterFallback: { width: 80, height: 120, borderRadius: radii.md, justifyContent: 'center', alignItems: 'center' },
   posterText: { fontSize: 28, fontWeight: '700', color: 'rgba(255,255,255,0.3)' },
   titleBlock: { flex: 1 },
   title: { ...typography.h2, color: colors.textPrimary },
