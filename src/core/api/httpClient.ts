@@ -73,7 +73,11 @@ export function createTransmissionClient(config: ServiceConfig, isLocal: boolean
           error.config.headers['X-Transmission-Session-Id'] = csrfToken;
           // Re-apply auth for retry — axios doesn't carry defaults.auth on retried configs
           if (fixedConfig.username && fixedConfig.password) {
-            const encoded = btoa(`${fixedConfig.username}:${fixedConfig.password}`);
+            // Buffer.from works in both Node and React Native (Hermes), btoa may not
+            const credentials = `${fixedConfig.username}:${fixedConfig.password}`;
+            const encoded = typeof btoa === 'function'
+              ? btoa(credentials)
+              : Buffer.from(credentials).toString('base64');
             error.config.headers['Authorization'] = `Basic ${encoded}`;
           }
           return client.request(error.config);

@@ -41,6 +41,7 @@ export function ServiceConfigScreen() {
   const [showSecret, setShowSecret] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [testResult, setTestResult] = useState<'none' | 'testing' | 'success' | 'fail'>('none');
+  const [testError, setTestError] = useState('');
 
   const usesApiKey = meta.authMode === 'apikey';
 
@@ -64,13 +65,19 @@ export function ServiceConfigScreen() {
       return;
     }
     setTestResult('testing');
+    setTestError('');
     try {
       clearAdapters();
       const adapter = getAdapter(svcConfig, isLocal);
       const ok = await adapter.testConnection();
       setTestResult(ok ? 'success' : 'fail');
-    } catch {
+      if (!ok) setTestError('Connection returned false — check URL and credentials');
+    } catch (e: any) {
       setTestResult('fail');
+      const msg = e.response
+        ? `HTTP ${e.response.status}: ${e.response.statusText || ''}`
+        : e.message || 'Unknown error';
+      setTestError(msg);
     }
   };
 
@@ -188,7 +195,7 @@ export function ServiceConfigScreen() {
         <Text style={styles.testButtonText}>{testResult === 'testing' ? 'Testing...' : 'Test Connection'}</Text>
       </Pressable>
       {testResult === 'success' && <Text style={styles.testSuccess}>✓ Connection successful</Text>}
-      {testResult === 'fail' && <Text style={styles.testFail}>✕ Connection failed — check URL and credentials</Text>}
+      {testResult === 'fail' && <Text style={styles.testFail}>✕ Connection failed{testError ? `\n${testError}` : ''}</Text>}
 
       <Pressable style={styles.saveButton} onPress={save}>
         <Text style={styles.saveButtonText}>Save</Text>

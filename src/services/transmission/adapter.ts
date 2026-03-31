@@ -45,12 +45,8 @@ export class TransmissionAdapter {
   }
 
   async testConnection(): Promise<boolean> {
-    try {
-      await this.rpc('session-get');
-      return true;
-    } catch {
-      return false;
-    }
+    await this.rpc('session-get');
+    return true;
   }
 
   async getStatus(): Promise<ServiceStatus> {
