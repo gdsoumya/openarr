@@ -28,6 +28,7 @@ export function SearchHomeScreen() {
   const [activeTab, setActiveTab] = useState('search');
   const [indexers, setIndexers] = useState<Indexer[]>([]);
   const [indexerStats, setIndexerStats] = useState<IndexerStats[]>([]);
+  const [searchHistory, setSearchHistory] = useState<any[]>([]);
 
   const typeChips = [
     { id: 'search', label: 'All' }, { id: 'tvsearch', label: 'TV' },
@@ -80,6 +81,8 @@ export function SearchHomeScreen() {
       adapter.getIndexers().then(setIndexers).catch(() => {});
     } else if (activeTab === 'stats') {
       adapter.getIndexerStats().then(setIndexerStats).catch(() => {});
+    } else if (activeTab === 'history') {
+      adapter.getHistory(1, 50).then(r => setSearchHistory(r.records ?? [])).catch(() => {});
     }
   }, [adapter, activeTab]);
 
@@ -214,7 +217,22 @@ export function SearchHomeScreen() {
       )}
 
       {activeTab === 'history' && (
-        <View style={styles.placeholder}><Text style={styles.placeholderText}>Search history will appear when connected</Text></View>
+        <FlatList data={searchHistory}
+          renderItem={({ item: h }) => (
+            <View style={styles.resultItem}>
+              <Text style={styles.resultTitle} numberOfLines={1}>{h.data?.query ?? h.data?.source ?? 'Search'}</Text>
+              <View style={styles.resultStats}>
+                <Text style={[styles.resultStat, { color: h.successful ? colors.success : colors.error }]}>
+                  {h.successful ? 'Success' : 'Failed'}
+                </Text>
+                <Text style={styles.resultStat}>{h.date ? new Date(h.date).toLocaleDateString() : ''}</Text>
+              </View>
+            </View>
+          )}
+          keyExtractor={(_, idx) => String(idx)}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          ListEmptyComponent={<View style={styles.placeholder}><Text style={styles.placeholderText}>No search history</Text></View>}
+        />
       )}
       </View>
     </View>
