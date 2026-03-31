@@ -17,6 +17,21 @@ export interface TMDBCredits {
   crew: Array<{ id: number; name: string; job: string; department: string; profile_path: string | null }>;
 }
 
+export interface WatchProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
+}
+
+export interface WatchProviderCountry {
+  link?: string;
+  flatrate?: WatchProvider[];
+  rent?: WatchProvider[];
+  buy?: WatchProvider[];
+}
+
+export type WatchProviders = Record<string, WatchProviderCountry>;
+
 export function posterUrl(path: string | null, size: 'w185' | 'w342' | 'w500' | 'original' = 'w342'): string | undefined {
   if (!path) return undefined;
   return `https://image.tmdb.org/t/p/${size}${path}`;

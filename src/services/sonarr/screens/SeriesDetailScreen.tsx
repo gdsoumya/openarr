@@ -16,8 +16,13 @@ import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getSonarrAdapter } from '../../../services/adapterFactory';
 import { RatingsBar } from '../../../core/components/RatingsBar';
+import { MediaInfo } from '../../../core/components/MediaInfo';
 import { OMDBClient, OMDBRatings } from '../../omdb/client';
-import { OMDB_API_KEY } from '../../../core/config';
+import { OMDB_API_KEY, TMDB_READ_ACCESS_TOKEN } from '../../../core/config';
+import { TMDBClient } from '../../tmdb/client';
+import { WatchProviderCountry } from '../../tmdb/types';
+
+const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
 
 export function SeriesDetailScreen() {
   const { alert } = useThemedAlert();
@@ -32,6 +37,7 @@ export function SeriesDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [omdbRatings, setOmdbRatings] = useState<OMDBRatings | null>(null);
   const [ratingsLoading, setRatingsLoading] = useState(false);
+  const [watchProviders, setWatchProviders] = useState<WatchProviderCountry | undefined>();
   const [actionSheet, setActionSheet] = useState<{
     visible: boolean;
     title: string;
@@ -47,14 +53,28 @@ export function SeriesDetailScreen() {
     [sonarrConfig, isLocal],
   );
 
-  // Fetch OMDB ratings
+  // Fetch OMDB ratings + watch providers
   useEffect(() => {
-    const imdbId = series?.imdbId;
-    if (!imdbId || OMDB_API_KEY === '__OMDB_API_KEY__') return;
-    setRatingsLoading(true);
-    const omdb = new OMDBClient(OMDB_API_KEY);
-    omdb.getByImdbId(imdbId).then(setOmdbRatings).finally(() => setRatingsLoading(false));
-  }, [series?.imdbId]);
+    if (series?.imdbId && OMDB_API_KEY !== '__OMDB_API_KEY__') {
+      setRatingsLoading(true);
+      const omdb = new OMDBClient(OMDB_API_KEY);
+      omdb.getByImdbId(series.imdbId).then(setOmdbRatings).finally(() => setRatingsLoading(false));
+    }
+    // Watch providers via TMDB (need TMDB ID — fetch from external IDs using TVDB ID)
+    if (series?.tvdbId) {
+      tmdb.getShowExternalIds(series.tvdbId).catch(() => null);
+      // Actually, Sonarr series have tvdbId, but TMDB watch providers need tmdbId
+      // We can search TMDB by name to get the tmdbId, then fetch providers
+      tmdb.searchTV(series.title, 1).then(async (result) => {
+        const match = result.results?.[0];
+        if (match) {
+          const providers = await tmdb.getTVWatchProviders(match.id);
+          const locale = 'US';
+          setWatchProviders(providers[locale] ?? providers['GB'] ?? Object.values(providers)[0]);
+        }
+      }).catch(() => {});
+    }
+  }, [series?.imdbId, series?.tvdbId]);
 
   useEffect(() => {
     async function fetchData() {
@@ -300,6 +320,18 @@ export function SeriesDetailScreen() {
 
         <MetadataPills pills={pills} />
         <RatingsBar ratings={omdbRatings} loading={ratingsLoading} />
+        <MediaInfo
+          releaseDate={series.firstAired}
+          status={series.status}
+          network={series.network}
+          originCountry={undefined}
+          originalLanguage={undefined}
+          genres={undefined}
+          runtime={series.runtime}
+          seasonCount={series.seasonCount}
+          episodeCount={series.totalEpisodeCount}
+          watchProviders={watchProviders}
+        />
 
         <View style={styles.tabs}>
           {tabs.map(tab => (

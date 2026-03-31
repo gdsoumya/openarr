@@ -14,8 +14,14 @@ import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getRadarrAdapter } from '../../../services/adapterFactory';
 import { RatingsBar } from '../../../core/components/RatingsBar';
+import { MediaInfo } from '../../../core/components/MediaInfo';
 import { OMDBClient, OMDBRatings } from '../../omdb/client';
 import { OMDB_API_KEY } from '../../../core/config';
+import { TMDBClient } from '../../tmdb/client';
+import { TMDB_READ_ACCESS_TOKEN } from '../../../core/config';
+import { WatchProviderCountry } from '../../tmdb/types';
+
+const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
 
 export function MovieDetailScreen() {
   const route = useRoute<any>();
@@ -33,6 +39,7 @@ export function MovieDetailScreen() {
   }>({ visible: false, title: '', options: [] });
   const [omdbRatings, setOmdbRatings] = useState<OMDBRatings | null>(null);
   const [ratingsLoading, setRatingsLoading] = useState(false);
+  const [watchProviders, setWatchProviders] = useState<WatchProviderCountry | undefined>();
 
   const { alert } = useThemedAlert();
   const radarrConfig = useServiceConfig('radarr');
@@ -43,14 +50,24 @@ export function MovieDetailScreen() {
     [radarrConfig, isLocal],
   );
 
-  // Fetch OMDB ratings when we have an IMDB ID
+  // Fetch OMDB ratings + watch providers
   useEffect(() => {
     const imdbId = movie?.imdbId;
-    if (!imdbId || OMDB_API_KEY === '__OMDB_API_KEY__') return;
-    setRatingsLoading(true);
-    const omdb = new OMDBClient(OMDB_API_KEY);
-    omdb.getByImdbId(imdbId).then(setOmdbRatings).finally(() => setRatingsLoading(false));
-  }, [movie?.imdbId]);
+    if (imdbId && OMDB_API_KEY !== '__OMDB_API_KEY__') {
+      setRatingsLoading(true);
+      const omdb = new OMDBClient(OMDB_API_KEY);
+      omdb.getByImdbId(imdbId).then(setOmdbRatings).finally(() => setRatingsLoading(false));
+    }
+    // Watch providers from TMDB (use tmdbId)
+    const tmdbId = movie?.tmdbId;
+    if (tmdbId) {
+      tmdb.getMovieWatchProviders(tmdbId).then((providers) => {
+        // Try user's locale, fall back to US
+        const locale = 'US'; // Could detect from device
+        setWatchProviders(providers[locale] ?? providers['GB'] ?? Object.values(providers)[0]);
+      }).catch(() => {});
+    }
+  }, [movie?.imdbId, movie?.tmdbId]);
 
   useEffect(() => {
     async function fetchData() {
@@ -206,14 +223,27 @@ export function MovieDetailScreen() {
         </View>
 
         {activeTab === 'info' && (
-          <View style={styles.section}>
-            <Text style={styles.overview}>{movie.overview}</Text>
+          <>
+            <View style={styles.section}>
+              <Text style={styles.overview}>{movie.overview}</Text>
+            </View>
+            <MediaInfo
+              releaseDate={movie.inCinemas ?? movie.digitalRelease ?? movie.physicalRelease}
+              status={movie.status}
+              originCountry={(movie as any).originalCountry ? [(movie as any).originalCountry] : undefined}
+              originalLanguage={(movie as any).originalLanguage}
+              genres={movie.genres}
+              runtime={movie.runtime}
+              watchProviders={watchProviders}
+            />
             {movie.imdbId && (
-              <Pressable style={styles.imdbButton} onPress={() => Linking.openURL(`https://www.imdb.com/title/${movie.imdbId}`)}>
-                <Text style={styles.imdbText}>Open in IMDb</Text>
-              </Pressable>
+              <View style={styles.section}>
+                <Pressable style={styles.imdbButton} onPress={() => Linking.openURL(`https://www.imdb.com/title/${movie.imdbId}`)}>
+                  <Text style={styles.imdbText}>Open in IMDb</Text>
+                </Pressable>
+              </View>
             )}
-          </View>
+          </>
         )}
       </ScrollView>
 

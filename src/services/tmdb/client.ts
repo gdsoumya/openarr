@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { TMDBShow, TMDBMovie, TMDBExternalIds, TMDBCredits } from './types';
+import { TMDBShow, TMDBMovie, TMDBExternalIds, TMDBCredits, WatchProviders } from './types';
 
 export class TMDBClient {
   private client: AxiosInstance;
@@ -63,4 +63,14 @@ export class TMDBClient {
   async getShowExternalIds(id: number): Promise<TMDBExternalIds> { const { data } = await this.client.get(`/tv/${id}/external_ids`); return data; }
   async getShowCredits(id: number): Promise<TMDBCredits> { const { data } = await this.client.get(`/tv/${id}/credits`); return data; }
   async getMovieCredits(id: number): Promise<TMDBCredits> { const { data } = await this.client.get(`/movie/${id}/credits`); return data; }
+
+  async getMovieWatchProviders(id: number): Promise<WatchProviders> {
+    const { data } = await this.client.get(`/movie/${id}/watch/providers`);
+    return data.results ?? {};
+  }
+
+  async getTVWatchProviders(id: number): Promise<WatchProviders> {
+    const { data } = await this.client.get(`/tv/${id}/watch/providers`);
+    return data.results ?? {};
+  }
 }
