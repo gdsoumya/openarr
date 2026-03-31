@@ -240,14 +240,14 @@ export function MovieDetailScreen() {
 
         <RatingsBar ratings={omdbRatings} tmdbRating={movie.ratings?.tmdb?.value} loading={ratingsLoading} title={movie.title} imdbId={movie.imdbId} tmdbId={movie.tmdbId} type="movie" />
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={styles.tabs}>
+        <View style={styles.tabsWrapper}><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
           {tabs.map(tab => (
             <Pressable key={tab} style={[styles.tab, activeTab === tab.toLowerCase() && styles.tabActive]}
               onPress={() => setActiveTab(tab.toLowerCase())}>
               <Text style={[styles.tabText, activeTab === tab.toLowerCase() && styles.tabTextActive]}>{tab}</Text>
             </Pressable>
           ))}
-        </ScrollView>
+        </ScrollView></View>
 
         {activeTab === 'info' && (
           <>
@@ -409,7 +409,8 @@ const styles = StyleSheet.create({
   titleBlock: { flex: 1 },
   title: { ...typography.h2, color: colors.textPrimary },
   subtitle: { ...typography.caption, color: colors.textMuted, marginTop: 4 },
-  tabs: { flexDirection: 'row', paddingHorizontal: spacing.xl, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  tabsWrapper: { height: 44, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  tabs: { flexDirection: 'row', paddingHorizontal: spacing.xl, height: 44, alignItems: 'center' },
   tab: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg, borderBottomWidth: 2, borderBottomColor: 'transparent' },
   tabActive: { borderBottomColor: colors.primary },
   tabText: { ...typography.caption, fontWeight: '500', color: colors.textMuted },
