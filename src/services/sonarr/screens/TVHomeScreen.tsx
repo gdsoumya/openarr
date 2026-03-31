@@ -12,12 +12,9 @@ import { TMDBShow, posterUrl } from '../../tmdb/types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getSonarrAdapter } from '../../../services/adapterFactory';
-import { TMDBClient } from '../../tmdb/client';
-import { TMDB_READ_ACCESS_TOKEN } from '../../../core/config';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { useToastStore } from '../../../core/hooks/useToast';
-
-const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
+import { tmdb } from '../../tmdb/instance';
 
 type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
 
@@ -156,6 +153,18 @@ export function TVHomeScreen() {
   const hasSearchResults = sonarrSearchResults.length > 0 || tmdbSearchResults.length > 0;
   // Track which TVDB IDs are in library to show "In Library" badge
   const libraryTvdbIds = new Set(library.map(s => s.tvdbId));
+  // Map title (lowercase) → library series for TMDB cross-reference
+  const libraryByTitle = useMemo(() => {
+    const map = new Map<string, Series>();
+    library.forEach(s => map.set(s.title.toLowerCase(), s));
+    return map;
+  }, [library]);
+
+  const getTmdbItemBadge = (tmdbItem: TMDBShow) => {
+    const match = libraryByTitle.get(tmdbItem.name?.toLowerCase());
+    if (match) return getSeriesBadge(match, queueMap) ?? { label: 'In Library', variant: 'inLibrary' as const };
+    return undefined;
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}
@@ -219,7 +228,12 @@ export function TVHomeScreen() {
               {tmdbSearchResults.map((s, idx) => (
                 <PosterCard key={`tmdb-${s.id}-${idx}`} title={s.name} subtitle={`${s.first_air_date?.slice(0, 4) ?? ''} · ★ ${s.vote_average?.toFixed(1) ?? ''}`}
                   posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md"
-                  onPress={() => navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' })} />
+                  badge={getTmdbItemBadge(s)}
+                  onPress={() => {
+                    const match = libraryByTitle.get(s.name?.toLowerCase());
+                    if (match) navigation.navigate('SeriesDetail', { series: match });
+                    else navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' });
+                  }} />
               ))}
             </Carousel>
           )}
@@ -252,14 +266,26 @@ export function TVHomeScreen() {
           <Carousel title="Trending This Week"
             status={trendingStatus} errorMessage={trendingError}>
             {trending.map((s) => (
-              <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' })} />
+              <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md"
+                badge={getTmdbItemBadge(s)}
+                onPress={() => {
+                  const match = libraryByTitle.get(s.name?.toLowerCase());
+                  if (match) navigation.navigate('SeriesDetail', { series: match });
+                  else navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' });
+                }} />
             ))}
           </Carousel>
 
           <Carousel title="Recently Aired"
             status={recentStatus} errorMessage={recentError}>
             {recentlyAired.map((s) => (
-              <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' })} />
+              <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md"
+                badge={getTmdbItemBadge(s)}
+                onPress={() => {
+                  const match = libraryByTitle.get(s.name?.toLowerCase());
+                  if (match) navigation.navigate('SeriesDetail', { series: match });
+                  else navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' });
+                }} />
             ))}
           </Carousel>
         </>

@@ -11,12 +11,9 @@ import { MediaInfo } from '../core/components/MediaInfo';
 import { useLibraryCache } from '../stores/libraryCache';
 import { posterUrl, backdropUrl, WatchProviderCountry } from '../services/tmdb/types';
 import { AddItemSheet } from '../services/shared-arr/components/AddItemSheet';
-import { TMDBClient } from '../services/tmdb/client';
 import { OMDBRatings } from '../services/omdb/client';
 import { fetchOMDBRatings } from '../services/omdb/fetchRatings';
-import { TMDB_READ_ACCESS_TOKEN } from '../core/config';
-
-const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
+import { tmdb } from '../services/tmdb/instance';
 
 export function DiscoveryDetailScreen() {
   const route = useRoute<any>();

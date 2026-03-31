@@ -19,11 +19,8 @@ import { RatingsBar } from '../../../core/components/RatingsBar';
 import { MediaInfo } from '../../../core/components/MediaInfo';
 import { OMDBRatings } from '../../omdb/client';
 import { fetchOMDBRatings } from '../../omdb/fetchRatings';
-import { TMDB_READ_ACCESS_TOKEN } from '../../../core/config';
-import { TMDBClient } from '../../tmdb/client';
 import { WatchProviderCountry } from '../../tmdb/types';
-
-const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
+import { tmdb } from '../../tmdb/instance';
 
 export function SeriesDetailScreen() {
   const { alert } = useThemedAlert();

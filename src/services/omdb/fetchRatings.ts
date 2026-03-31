@@ -1,8 +1,7 @@
 import { OMDBClient, OMDBRatings } from './client';
-import { TMDBClient } from '../tmdb/client';
-import { OMDB_API_KEY, TMDB_READ_ACCESS_TOKEN } from '../../core/config';
+import { OMDB_API_KEY } from '../../core/config';
+import { tmdb } from '../tmdb/instance';
 
-const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
 const omdb = OMDB_API_KEY !== '__OMDB_API_KEY__' ? new OMDBClient(OMDB_API_KEY) : null;
 
 /**

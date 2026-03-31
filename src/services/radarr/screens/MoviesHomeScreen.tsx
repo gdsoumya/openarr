@@ -12,12 +12,9 @@ import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getRadarrAdapter } from '../../../services/adapterFactory';
 import { useLibraryCache } from '../../../stores/libraryCache';
-import { TMDBClient } from '../../tmdb/client';
-import { TMDB_READ_ACCESS_TOKEN } from '../../../core/config';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { useToastStore } from '../../../core/hooks/useToast';
-
-const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
+import { tmdb } from '../../tmdb/instance';
 
 type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
 
@@ -152,6 +149,17 @@ export function MoviesHomeScreen() {
   const isSearchMode = searchQuery.trim().length > 0;
   const hasSearchResults = radarrSearchResults.length > 0 || tmdbSearchResults.length > 0;
   const libraryTmdbIds = new Set(library.map(m => m.tmdbId));
+  const libraryByTmdbId = useMemo(() => {
+    const map = new Map<number, Movie>();
+    library.forEach(m => map.set(m.tmdbId, m));
+    return map;
+  }, [library]);
+
+  const getTmdbMovieBadge = (tmdbItem: TMDBMovie) => {
+    const match = libraryByTmdbId.get(tmdbItem.id);
+    if (match) return getMovieBadge(match, queueMap) ?? { label: 'In Library', variant: 'inLibrary' as const };
+    return undefined;
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}
