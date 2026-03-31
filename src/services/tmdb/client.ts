@@ -17,8 +17,22 @@ export class TMDBClient {
   async getOnTheAirShows(): Promise<TMDBShow[]> { const { data } = await this.client.get('/tv/on_the_air'); return data.results; }
   async getNowPlayingMovies(): Promise<TMDBMovie[]> { const { data } = await this.client.get('/movie/now_playing'); return data.results; }
   async getUpcomingMovies(): Promise<TMDBMovie[]> { const { data } = await this.client.get('/movie/upcoming'); return data.results; }
-  async searchTV(query: string): Promise<TMDBShow[]> { const { data } = await this.client.get('/search/tv', { params: { query } }); return data.results; }
-  async searchMovies(query: string): Promise<TMDBMovie[]> { const { data } = await this.client.get('/search/movie', { params: { query } }); return data.results; }
+  async searchTV(query: string, page = 1): Promise<{ results: TMDBShow[]; totalResults: number }> {
+    const { data } = await this.client.get('/search/tv', { params: { query, page, include_adult: false } });
+    return { results: data.results, totalResults: data.total_results };
+  }
+
+  async searchMovies(query: string, page = 1): Promise<{ results: TMDBMovie[]; totalResults: number }> {
+    const { data } = await this.client.get('/search/movie', { params: { query, page, include_adult: false } });
+    return { results: data.results, totalResults: data.total_results };
+  }
+
+  async searchMulti(query: string, page = 1): Promise<{ results: Array<(TMDBShow | TMDBMovie) & { media_type: 'tv' | 'movie' }>; totalResults: number }> {
+    const { data } = await this.client.get('/search/multi', { params: { query, page, include_adult: false } });
+    // Filter to only tv and movie results (exclude person etc.)
+    const filtered = data.results.filter((r: any) => r.media_type === 'tv' || r.media_type === 'movie');
+    return { results: filtered, totalResults: data.total_results };
+  }
 
   async getShowDetails(id: number): Promise<TMDBShow & { number_of_seasons: number; status: string }> { const { data } = await this.client.get(`/tv/${id}`); return data; }
   async getMovieDetails(id: number): Promise<TMDBMovie & { runtime: number; budget: number; revenue: number; genres: any[] }> { const { data } = await this.client.get(`/movie/${id}`); return data; }

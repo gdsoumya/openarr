@@ -105,16 +105,16 @@ export function TVHomeScreen() {
     if (!q) { setSonarrSearchResults([]); setTmdbSearchResults([]); return; }
     setSearching(true);
     try {
-      // Use Sonarr lookup if configured (returns results ready to add), fall back to TMDB
+      // Search both Sonarr (if configured) AND TMDB in parallel for best results
+      const promises: Promise<any>[] = [
+        tmdb.searchTV(q).catch(() => ({ results: [], totalResults: 0 })),
+      ];
       if (adapter) {
-        const results = await adapter.lookupSeries(q);
-        setSonarrSearchResults(results);
-        setTmdbSearchResults([]);
-      } else {
-        const results = await tmdb.searchTV(q);
-        setTmdbSearchResults(results);
-        setSonarrSearchResults([]);
+        promises.push(adapter.lookupSeries(q).catch(() => []));
       }
+      const [tmdbResult, sonarrResult] = await Promise.all(promises);
+      setTmdbSearchResults(tmdbResult.results ?? []);
+      setSonarrSearchResults(sonarrResult ?? []);
     } catch (e: any) {
       showToast(`Search failed: ${e.message}`, 'error');
     }
@@ -147,7 +147,7 @@ export function TVHomeScreen() {
       }>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>TV Shows</Text></View>
       <SearchBar
-        placeholder={adapter ? 'Search shows to add (via Sonarr)...' : 'Search TMDB for shows...'}
+        placeholder="Search for shows to add..."
         value={searchQuery}
         onChangeText={setSearchQuery}
         onSubmit={doSearch}
@@ -165,17 +165,17 @@ export function TVHomeScreen() {
           {searching && (
             <View style={styles.searchingRow}>
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={styles.searchingText}>Searching{adapter ? ' Sonarr' : ' TMDB'}...</Text>
+              <Text style={styles.searchingText}>Searching...</Text>
             </View>
           )}
 
-          {/* Sonarr lookup results */}
+          {/* Sonarr lookup results — ready to add directly */}
           {!searching && sonarrSearchResults.length > 0 && (
-            <Carousel title={`Results for "${searchQuery}"`} count={sonarrSearchResults.length} status="loaded">
-              {sonarrSearchResults.map((s) => {
+            <Carousel title="From Sonarr (ready to add)" count={sonarrSearchResults.length} status="loaded">
+              {sonarrSearchResults.map((s, idx) => {
                 const inLibrary = libraryTvdbIds.has(s.tvdbId);
                 return (
-                  <PosterCard key={s.tvdbId} title={s.title}
+                  <PosterCard key={`sonarr-${s.tvdbId}-${idx}`} title={s.title}
                     subtitle={`${s.year ?? ''} · ${s.network ?? ''}`}
                     posterUrl={s.images?.find(i => i.coverType === 'poster')?.remoteUrl}
                     badge={inLibrary ? { label: 'In Library', variant: 'inLibrary' } : undefined}
@@ -192,11 +192,11 @@ export function TVHomeScreen() {
             </Carousel>
           )}
 
-          {/* TMDB search results (when Sonarr not configured) */}
+          {/* TMDB search results — broader discovery */}
           {!searching && tmdbSearchResults.length > 0 && (
-            <Carousel title={`Results for "${searchQuery}"`} count={tmdbSearchResults.length} status="loaded">
-              {tmdbSearchResults.map((s) => (
-                <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date?.slice(0, 4) ?? ''}
+            <Carousel title="From TMDB" count={tmdbSearchResults.length} status="loaded">
+              {tmdbSearchResults.map((s, idx) => (
+                <PosterCard key={`tmdb-${s.id}-${idx}`} title={s.name} subtitle={`${s.first_air_date?.slice(0, 4) ?? ''} · ★ ${s.vote_average?.toFixed(1) ?? ''}`}
                   posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md"
                   onPress={() => navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' })} />
               ))}
@@ -205,7 +205,7 @@ export function TVHomeScreen() {
 
           {!searching && !hasSearchResults && (
             <View style={styles.noResults}>
-              <Text style={styles.noResultsText}>Press return to search. Results from {adapter ? 'Sonarr (TheTVDB)' : 'TMDB'}.</Text>
+              <Text style={styles.noResultsText}>Press return to search.</Text>
             </View>
           )}
         </>

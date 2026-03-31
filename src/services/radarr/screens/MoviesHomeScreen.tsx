@@ -104,15 +104,16 @@ export function MoviesHomeScreen() {
     if (!q) { setRadarrSearchResults([]); setTmdbSearchResults([]); return; }
     setSearching(true);
     try {
+      // Search both Radarr (if configured) AND TMDB in parallel for best results
+      const promises: Promise<any>[] = [
+        tmdb.searchMovies(q).catch(() => ({ results: [], totalResults: 0 })),
+      ];
       if (adapter) {
-        const results = await adapter.lookupMovie(q);
-        setRadarrSearchResults(results);
-        setTmdbSearchResults([]);
-      } else {
-        const results = await tmdb.searchMovies(q);
-        setTmdbSearchResults(results);
-        setRadarrSearchResults([]);
+        promises.push(adapter.lookupMovie(q).catch(() => []));
       }
+      const [tmdbResult, radarrResult] = await Promise.all(promises);
+      setTmdbSearchResults(tmdbResult.results ?? []);
+      setRadarrSearchResults(radarrResult ?? []);
     } catch (e: any) {
       showToast(`Search failed: ${e.message}`, 'error');
     }
@@ -144,7 +145,7 @@ export function MoviesHomeScreen() {
       }>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>Movies</Text></View>
       <SearchBar
-        placeholder={adapter ? 'Search movies to add (via Radarr)...' : 'Search TMDB for movies...'}
+        placeholder="Search for movies to add..."
         value={searchQuery}
         onChangeText={setSearchQuery}
         onSubmit={doSearch}
@@ -162,17 +163,17 @@ export function MoviesHomeScreen() {
           {searching && (
             <View style={styles.searchingRow}>
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={styles.searchingText}>Searching{adapter ? ' Radarr' : ' TMDB'}...</Text>
+              <Text style={styles.searchingText}>Searching...</Text>
             </View>
           )}
 
-          {/* Radarr lookup results */}
+          {/* Radarr lookup results — ready to add directly */}
           {!searching && radarrSearchResults.length > 0 && (
-            <Carousel title={`Results for "${searchQuery}"`} count={radarrSearchResults.length} status="loaded">
-              {radarrSearchResults.map((m) => {
+            <Carousel title="From Radarr (ready to add)" count={radarrSearchResults.length} status="loaded">
+              {radarrSearchResults.map((m, idx) => {
                 const inLibrary = libraryTmdbIds.has(m.tmdbId);
                 return (
-                  <PosterCard key={m.tmdbId} title={m.title}
+                  <PosterCard key={`radarr-${m.tmdbId}-${idx}`} title={m.title}
                     subtitle={`${m.year ?? ''} · ${m.genres?.[0] ?? ''}`}
                     posterUrl={m.images?.find(i => i.coverType === 'poster')?.remoteUrl}
                     badge={inLibrary ? { label: 'In Library', variant: 'inLibrary' } : undefined}
@@ -189,11 +190,11 @@ export function MoviesHomeScreen() {
             </Carousel>
           )}
 
-          {/* TMDB search results (when Radarr not configured) */}
+          {/* TMDB search results — broader discovery */}
           {!searching && tmdbSearchResults.length > 0 && (
-            <Carousel title={`Results for "${searchQuery}"`} count={tmdbSearchResults.length} status="loaded">
-              {tmdbSearchResults.map((m) => (
-                <PosterCard key={m.id} title={m.title} subtitle={m.release_date?.slice(0, 4) ?? ''}
+            <Carousel title="From TMDB" count={tmdbSearchResults.length} status="loaded">
+              {tmdbSearchResults.map((m, idx) => (
+                <PosterCard key={`tmdb-${m.id}-${idx}`} title={m.title} subtitle={`${m.release_date?.slice(0, 4) ?? ''} · ★ ${m.vote_average?.toFixed(1) ?? ''}`}
                   posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md"
                   onPress={() => navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' })} />
               ))}
@@ -202,7 +203,7 @@ export function MoviesHomeScreen() {
 
           {!searching && !hasSearchResults && (
             <View style={styles.noResults}>
-              <Text style={styles.noResultsText}>Press return to search. Results from {adapter ? 'Radarr (TMDB)' : 'TMDB'}.</Text>
+              <Text style={styles.noResultsText}>Press return to search.</Text>
             </View>
           )}
         </>
