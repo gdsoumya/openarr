@@ -304,7 +304,7 @@ export function MoviesHomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  content: { paddingBottom: 20 },
+  content: { paddingBottom: 8 },
   header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { ...typography.h1, color: colors.textPrimary },
   syncBtn: { padding: spacing.sm },
