@@ -20,13 +20,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: './assets/images/adaptive-icon.png',
+      foregroundImage: './assets/images/android-icon-foreground.png',
+      monochromeImage: './assets/images/android-icon-monochrome.png',
       backgroundColor: '#0f1023',
     },
     package: 'com.openarr.app',
     permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'],
   },
   plugins: [
-    ['expo-notifications', { icon: './assets/images/notification-icon.png', color: '#64ffda' }],
+    'expo-notifications',
   ],
 });
