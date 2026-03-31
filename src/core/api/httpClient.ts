@@ -1,9 +1,9 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { ServiceConfig } from '../types/services';
 
-// Prowlarr search fans out to many indexers and can take 30s+
+// Prowlarr search fans out to many indexers and can take a while
 const TIMEOUT_MS: Record<string, number> = {
-  prowlarr: 60000,
+  prowlarr: 120000,
   default: 30000,
 };
 
