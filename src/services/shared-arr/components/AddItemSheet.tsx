@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Switch } from 'react-native';
-import BottomSheet from '@gorhom/bottom-sheet';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BottomSheetWrapper } from '../../../core/components/BottomSheetWrapper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { useServiceConfig } from '../../../core/hooks/useServer';
@@ -20,7 +19,7 @@ interface AddItemSheetProps {
 }
 
 export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddItemSheetProps) {
-  const sheetRef = useRef<BottomSheet>(null);
+  const insets = useSafeAreaInsets();
   const { alert } = useThemedAlert();
   const config = useServiceConfig(type);
   const isLocal = useConnectionStore((s) => s.isLocal);
@@ -62,12 +61,7 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
   }, [seasons]);
 
   useEffect(() => {
-    if (visible) {
-      sheetRef.current?.snapToIndex(0);
-      loadOptions();
-    } else {
-      sheetRef.current?.close();
-    }
+    if (visible) loadOptions();
   }, [visible]);
 
   const loadOptions = async () => {
@@ -257,12 +251,18 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
   };
 
   return (
-    <BottomSheetWrapper ref={sheetRef} snapPoints={['75%']} onClose={onDismiss}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Add to {type === 'sonarr' ? 'Sonarr' : 'Radarr'}</Text>
+    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onDismiss}>
+      <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.title}>Add to {type === 'sonarr' ? 'Sonarr' : 'Radarr'}</Text>
+          <Pressable style={styles.closeBtn} onPress={onDismiss}>
+            <Text style={styles.closeBtnText}>Cancel</Text>
+          </Pressable>
+        </View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalContent}>
 
         <Text style={styles.label}>Quality Profile</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={styles.pickerRow} contentContainerStyle={styles.pickerRowContent}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow} contentContainerStyle={styles.pickerRowContent}>
           {profiles.map((p) => (
             <Pressable key={p.id} style={[styles.pickerItem, selectedProfile === p.id && styles.pickerItemActive]}
               onPress={() => setSelectedProfile(p.id)}>
@@ -272,7 +272,7 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
         </ScrollView>
 
         <Text style={styles.label}>Root Folder</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled style={styles.pickerRow} contentContainerStyle={styles.pickerRowContent}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow} contentContainerStyle={styles.pickerRowContent}>
           {folders.map((f) => (
             <Pressable key={f.id} style={[styles.pickerItem, selectedFolder === f.path && styles.pickerItemActive]}
               onPress={() => setSelectedFolder(f.path)}>
@@ -325,13 +325,19 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
             <Text style={styles.addSearchBtnText}>Add + Search</Text>
           </Pressable>
         </View>
-      </ScrollView>
-    </BottomSheetWrapper>
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.md },
+  modalContainer: { flex: 1, backgroundColor: colors.surfaceBase },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  modalContent: { padding: spacing.xl, paddingBottom: 40 },
+  closeBtn: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+  closeBtnText: { ...typography.bodyBold, color: colors.primary },
+  title: { ...typography.h3, color: colors.textPrimary },
   label: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.sm, marginTop: spacing.lg },
   pickerRow: { marginBottom: spacing.sm },
   pickerRowContent: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingRight: spacing.xl },
