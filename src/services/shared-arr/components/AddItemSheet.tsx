@@ -129,38 +129,44 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
           seriesData = match;
         }
 
-        const allMonitored = seasons.length === 0 || seasons.every(s => seasonMonitored.get(s.seasonNumber));
-        const noneMonitored = seasons.length > 0 && seasons.every(s => !seasonMonitored.get(s.seasonNumber));
+        // Jellyseerr approach: do NOT use addOptions.monitor
+        // Instead, control monitoring entirely via the seasons array
+        // Start all seasons as unmonitored, then enable selected ones
+        const allSeasons = (seriesData.seasons ?? []).map((s: any) => ({
+          seasonNumber: s.seasonNumber ?? s.season_number,
+          monitored: false,
+        }));
 
-        // Always use 'all' — the seasons array with per-season monitored flags
-        // controls which seasons are actually monitored. Using 'none' here
-        // would override the seasons array and unmonitor everything.
-        const monitorPreset = noneMonitored ? 'none' : 'all';
+        // Enable monitoring for user-selected seasons
+        if (seasons.length > 0) {
+          for (const s of allSeasons) {
+            if (seasonMonitored.get(s.seasonNumber)) {
+              s.monitored = true;
+            }
+          }
+        } else {
+          // No season info available — monitor all
+          for (const s of allSeasons) s.monitored = true;
+        }
+
+        // Ensure season 0 (specials) exists and is unmonitored
+        if (!allSeasons.find((s: any) => s.seasonNumber === 0)) {
+          allSeasons.unshift({ seasonNumber: 0, monitored: false });
+        }
 
         const body: any = {
           ...seriesData,
           qualityProfileId: selectedProfile,
           rootFolderPath: selectedFolder,
           seriesType: seriesData.seriesType ?? 'standard',
-          monitored: true, // Series itself should always be monitored
+          monitored: true,
+          seasons: allSeasons,
           tags: [],
           addOptions: {
-            monitor: monitorPreset,
+            ignoreEpisodesWithFiles: true,
             searchForMissingEpisodes: withSearch,
           },
         };
-
-        // For partial season selection, override the seasons array
-        if (seasons.length > 0) {
-          body.seasons = seasons.map(s => ({
-            seasonNumber: s.seasonNumber,
-            monitored: seasonMonitored.get(s.seasonNumber) ?? true,
-          }));
-          // Also include season 0 (specials) as unmonitored
-          if (!body.seasons.find((s: any) => s.seasonNumber === 0)) {
-            body.seasons.unshift({ seasonNumber: 0, monitored: false });
-          }
-        }
 
         await adapter.addSeries(body);
       } else {
