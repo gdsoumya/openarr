@@ -113,67 +113,88 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
       if (type === 'sonarr') {
         const adapter = getSonarrAdapter(config, isLocal);
 
-        // If this is a TMDB item (no tvdbId), resolve via TMDB external IDs → Sonarr lookup by tvdbId
-        let seriesData = item;
+        // --- Step 1: Resolve to Sonarr-format series data ---
+        let seriesData: any = item;
         if (!item.tvdbId) {
           const tmdbId = item.id;
-          // Step 1: Get TVDB ID from TMDB (exact, no fuzzy)
           const externalIds = await tmdb.getShowExternalIds(tmdbId);
-          if (!externalIds.tvdb_id) {
-            throw new Error('This show has no TVDB ID on TMDB. Cannot add to Sonarr.');
-          }
-          // Step 2: Lookup in Sonarr using tvdb:{id} for exact match
+          if (!externalIds.tvdb_id) throw new Error('This show has no TVDB ID on TMDB. Cannot add to Sonarr.');
           const lookupResults = await adapter.lookupSeries(`tvdb:${externalIds.tvdb_id}`);
           const match = lookupResults.find((r: any) => r.tvdbId === externalIds.tvdb_id) ?? lookupResults[0];
           if (!match) throw new Error('Show not found in Sonarr lookup.');
           seriesData = match;
         }
 
-        // Jellyseerr approach: do NOT use addOptions.monitor
-        // Instead, control monitoring entirely via the seasons array
-        // Start all seasons as unmonitored, then enable selected ones
-        const allSeasons = (seriesData.seasons ?? []).map((s: any) => ({
-          seasonNumber: s.seasonNumber ?? s.season_number,
-          monitored: false,
-        }));
+        // --- Step 2: Check if series already exists in Sonarr (Jellyseerr pattern) ---
+        const selectedSeasonNums = seasons.length > 0
+          ? seasons.filter(s => seasonMonitored.get(s.seasonNumber)).map(s => s.seasonNumber)
+          : (seriesData.seasons ?? []).map((s: any) => s.seasonNumber ?? s.season_number).filter((n: number) => n > 0);
 
-        // Enable monitoring for user-selected seasons
-        if (seasons.length > 0) {
-          for (const s of allSeasons) {
-            if (seasonMonitored.get(s.seasonNumber)) {
+        let existingSeries: any = null;
+        try {
+          const allSeries = await adapter.getSeries();
+          existingSeries = allSeries.find((s: any) => s.tvdbId === seriesData.tvdbId);
+        } catch {}
+
+        if (existingSeries?.id) {
+          // --- Series already exists — UPDATE it (Jellyseerr: merge seasons + re-monitor episodes) ---
+          existingSeries.monitored = true;
+          existingSeries.seasons = (existingSeries.seasons ?? []).map((s: any) => {
+            if (selectedSeasonNums.includes(s.seasonNumber)) {
               s.monitored = true;
             }
+            return s;
+          });
+
+          await adapter.editSeries(existingSeries);
+
+          // Re-monitor unmonitored episodes for requested seasons
+          try {
+            const episodes = await adapter.getEpisodes(existingSeries.id);
+            const episodeIdsToMonitor = episodes
+              .filter((ep: any) => selectedSeasonNums.includes(ep.seasonNumber) && !ep.monitored)
+              .map((ep: any) => ep.id);
+            if (episodeIdsToMonitor.length > 0) {
+              await adapter.bulkSetEpisodesMonitored(episodeIdsToMonitor, true);
+            }
+          } catch {}
+
+          if (withSearch) {
+            adapter.searchSeries(existingSeries.id).catch(() => {});
           }
         } else {
-          // No season info available — monitor all
-          for (const s of allSeasons) s.monitored = true;
+          // --- Brand new series — ADD it ---
+          // Build seasons: start all unmonitored, enable selected (Jellyseerr buildSeasonList)
+          const allSeasons = (seriesData.seasons ?? []).map((s: any) => ({
+            seasonNumber: s.seasonNumber ?? s.season_number,
+            monitored: selectedSeasonNums.includes(s.seasonNumber ?? s.season_number),
+          }));
+
+          if (!allSeasons.find((s: any) => s.seasonNumber === 0)) {
+            allSeasons.unshift({ seasonNumber: 0, monitored: false });
+          }
+
+          const body: any = {
+            ...seriesData,
+            qualityProfileId: selectedProfile,
+            rootFolderPath: selectedFolder,
+            seriesType: seriesData.seriesType ?? 'standard',
+            monitored: true,
+            seasons: allSeasons,
+            tags: [],
+            addOptions: {
+              ignoreEpisodesWithFiles: true,
+              searchForMissingEpisodes: withSearch,
+            },
+          };
+
+          await adapter.addSeries(body);
         }
-
-        // Ensure season 0 (specials) exists and is unmonitored
-        if (!allSeasons.find((s: any) => s.seasonNumber === 0)) {
-          allSeasons.unshift({ seasonNumber: 0, monitored: false });
-        }
-
-        const body: any = {
-          ...seriesData,
-          qualityProfileId: selectedProfile,
-          rootFolderPath: selectedFolder,
-          seriesType: seriesData.seriesType ?? 'standard',
-          monitored: true,
-          seasons: allSeasons,
-          tags: [],
-          addOptions: {
-            ignoreEpisodesWithFiles: true,
-            searchForMissingEpisodes: withSearch,
-          },
-        };
-
-        await adapter.addSeries(body);
       } else {
         const adapter = getRadarrAdapter(config, isLocal);
 
-        // If this is a TMDB search item, lookup via Radarr using tmdb:{id} for exact match
-        let movieData = item;
+        // --- Step 1: Resolve to Radarr-format movie data ---
+        let movieData: any = item;
         if (!item.tmdbId || item.poster_path) {
           const tmdbId = item.tmdbId ?? item.id;
           const lookupResults = await adapter.lookupMovie(`tmdb:${tmdbId}`);
@@ -182,16 +203,42 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
           movieData = match;
         }
 
-        const movieBody: any = {
-          ...movieData,
-          qualityProfileId: selectedProfile,
-          rootFolderPath: selectedFolder,
-          monitored: true,
-          minimumAvailability: movieData.minimumAvailability ?? 'released',
-          tags: [],
-          addOptions: { searchForMovie: withSearch },
-        };
-        await adapter.addMovie(movieBody);
+        // --- Step 2: Check if movie already exists (Jellyseerr pattern) ---
+        let existingMovie: any = null;
+        try {
+          const allMovies = await adapter.getMovies();
+          existingMovie = allMovies.find((m: any) => m.tmdbId === movieData.tmdbId);
+        } catch {}
+
+        if (existingMovie?.id) {
+          // Movie exists — check state
+          if (existingMovie.hasFile) {
+            // Already has file — nothing to do
+            throw new Error('This movie is already downloaded.');
+          }
+          if (existingMovie.monitored) {
+            // Already monitored — trigger search if requested
+            if (withSearch) adapter.searchMovie(existingMovie.id).catch(() => {});
+            // Not an error, just inform
+          } else {
+            // Exists but unmonitored — update to monitored
+            existingMovie.monitored = true;
+            await adapter.editMovie(existingMovie);
+            if (withSearch) adapter.searchMovie(existingMovie.id).catch(() => {});
+          }
+        } else {
+          // Brand new movie
+          const movieBody: any = {
+            ...movieData,
+            qualityProfileId: selectedProfile,
+            rootFolderPath: selectedFolder,
+            monitored: true,
+            minimumAvailability: movieData.minimumAvailability ?? 'released',
+            tags: [],
+            addOptions: { searchForMovie: withSearch },
+          };
+          await adapter.addMovie(movieBody);
+        }
       }
       const itemTitle = item.title ?? item.name;
       onDismiss();
