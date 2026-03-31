@@ -92,7 +92,7 @@ export function MovieDetailScreen() {
   useEffect(() => {
     if (!adapter || !movie) return;
     if (activeTab === 'history') {
-      adapter.getHistory().then(r => setHistoryItems(r.records ?? [])).catch(() => {});
+      adapter.getHistory(1, 50, { movieId: movie.id }).then(r => setHistoryItems(r.records ?? [])).catch(() => {});
     } else if (activeTab === 'files') {
       setMovieFile(movie.movieFile ?? null);
     }

@@ -36,8 +36,8 @@ export abstract class ArrServiceAdapter {
     return data;
   }
 
-  async getHistory(page = 1, pageSize = 20): Promise<PaginatedResult<HistoryItem>> {
-    const { data } = await this.client.get('/api/v3/history', { params: { page, pageSize, sortKey: 'date', sortDirection: 'descending' } });
+  async getHistory(page = 1, pageSize = 20, filterParams?: Record<string, any>): Promise<PaginatedResult<HistoryItem>> {
+    const { data } = await this.client.get('/api/v3/history', { params: { page, pageSize, sortKey: 'date', sortDirection: 'descending', ...filterParams } });
     return data;
   }
 
