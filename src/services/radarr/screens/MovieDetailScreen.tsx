@@ -182,37 +182,57 @@ export function MovieDetailScreen() {
         )}
       </ScrollView>
 
+      {/* File status bar */}
+      {movie.hasFile && movie.movieFile && (
+        <View style={styles.fileBar}>
+          <Text style={styles.fileBarIcon}>✓</Text>
+          <Text style={styles.fileBarText}>
+            {movie.movieFile.quality?.quality?.name ?? 'Downloaded'}
+            {movie.movieFile.mediaInfo?.resolution ? ` · ${movie.movieFile.mediaInfo.resolution}` : ''}
+            {movie.movieFile.mediaInfo?.videoCodec ? ` · ${movie.movieFile.mediaInfo.videoCodec}` : ''}
+          </Text>
+        </View>
+      )}
+
       <View style={styles.actionBar}>
-        <Pressable style={[styles.actionBtn, styles.actionBtnPrimary]} onPress={handleSearch}>
-          <Text style={[styles.actionBtnText, styles.actionBtnTextPrimary]}>{movie.hasFile ? 'Search Upgrade' : 'Search'}</Text>
-        </Pressable>
-        <Pressable style={styles.actionBtn} onPress={handleManualSearch}>
-          <Text style={styles.actionBtnText}>Manual Search</Text>
+        <Pressable style={[styles.actionBtn, styles.actionBtnPrimary]} onPress={() => {
+          setActionSheet({
+            visible: true,
+            title: movie.title,
+            subtitle: movie.hasFile ? 'Movie already downloaded' : 'Movie not yet downloaded',
+            options: [
+              { label: 'Auto Search', icon: '🔍', onPress: () => handleSearch() },
+              { label: 'Manual Search', icon: '📋', onPress: () => handleManualSearch() },
+              ...(!movie.hasFile ? [] : [{ label: 'Delete File', icon: '🗑', onPress: () => {
+                Alert.alert('Delete File', 'Delete the movie file?', [
+                  { text: 'Cancel', style: 'cancel' as const },
+                  { text: 'Delete', style: 'destructive' as const, onPress: () => adapter?.deleteMovieFile(movie.movieFile!.id).then(onRefresh) },
+                ]);
+              }, destructive: true }]),
+            ],
+          });
+        }}>
+          <Text style={[styles.actionBtnText, styles.actionBtnTextPrimary]}>🔍 Search</Text>
         </Pressable>
         <Pressable style={styles.actionBtn} onPress={() => {
           if (!adapter || !movie) return;
           setActionSheet({
             visible: true,
-            title: 'Edit Movie',
+            title: 'Manage',
             options: [
-              {
-                label: movie.monitored ? 'Unmonitor' : 'Monitor',
-                icon: '👁',
-                onPress: async () => {
-                  try {
-                    const updated = { ...movie, monitored: !movie.monitored };
-                    await adapter.editMovie(updated);
-                    setMovie(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
-                  } catch (e: any) { Alert.alert('Error', e.message); }
-                },
-              },
+              { label: movie.monitored ? 'Unmonitor' : 'Monitor', icon: '👁', onPress: async () => {
+                try {
+                  const updated = { ...movie, monitored: !movie.monitored };
+                  await adapter.editMovie(updated);
+                  setMovie(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
+                } catch (e: any) { Alert.alert('Error', e.message); }
+              }},
+              { label: 'Open in IMDb', icon: '🎬', onPress: () => { if (movie.imdbId) Linking.openURL(`https://www.imdb.com/title/${movie.imdbId}`); }},
+              { label: 'Delete Movie', icon: '🗑', onPress: () => handleDelete(), destructive: true },
             ],
           });
         }}>
-          <Text style={styles.actionBtnText}>Edit</Text>
-        </Pressable>
-        <Pressable style={[styles.actionBtn, styles.actionBtnDanger]} onPress={handleDelete}>
-          <Text style={[styles.actionBtnText, styles.actionBtnTextDanger]}>Delete</Text>
+          <Text style={styles.actionBtnText}>⋮ More</Text>
         </Pressable>
       </View>
     </View>
@@ -264,11 +284,12 @@ const styles = StyleSheet.create({
   overview: { ...typography.body, color: colors.textSecondary, lineHeight: 22 },
   imdbButton: { backgroundColor: 'rgba(255, 193, 7, 0.1)', borderWidth: 1, borderColor: 'rgba(255, 193, 7, 0.3)', borderRadius: radii.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.lg },
   imdbText: { ...typography.bodyBold, color: colors.radarr },
-  actionBar: { flexDirection: 'row', gap: spacing.sm, padding: spacing.lg, borderTopWidth: 1, borderTopColor: colors.divider, backgroundColor: colors.surfaceElevated },
-  actionBtn: { flex: 1, paddingVertical: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider, alignItems: 'center' },
-  actionBtnPrimary: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
-  actionBtnDanger: { backgroundColor: 'rgba(233,69,96,0.08)', borderColor: 'rgba(233,69,96,0.3)' },
-  actionBtnText: { ...typography.caption, fontWeight: '600', color: colors.textMuted },
+  fileBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm, backgroundColor: 'rgba(100, 255, 218, 0.06)', borderTopWidth: 1, borderTopColor: 'rgba(100, 255, 218, 0.1)' },
+  fileBarIcon: { fontSize: 14, color: colors.success },
+  fileBarText: { ...typography.micro, color: colors.success },
+  actionBar: { flexDirection: 'row', gap: spacing.sm, padding: spacing.md, paddingHorizontal: spacing.lg, borderTopWidth: 1, borderTopColor: colors.divider, backgroundColor: colors.surfaceElevated },
+  actionBtn: { flex: 1, paddingVertical: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider, alignItems: 'center', justifyContent: 'center' },
+  actionBtnPrimary: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder, flex: 2 },
+  actionBtnText: { ...typography.bodyBold, color: colors.textMuted },
   actionBtnTextPrimary: { color: colors.primary },
-  actionBtnTextDanger: { color: '#e94560' },
 });

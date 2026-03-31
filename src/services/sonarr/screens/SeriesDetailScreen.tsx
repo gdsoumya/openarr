@@ -284,33 +284,27 @@ export function SeriesDetailScreen() {
       </ScrollView>
 
       <View style={styles.actionBar}>
+        <Pressable style={[styles.actionBtn, styles.actionBtnPrimary]} onPress={handleSearchAll}>
+          <Text style={[styles.actionBtnText, styles.actionBtnTextPrimary]}>🔍 Search All</Text>
+        </Pressable>
         <Pressable style={styles.actionBtn} onPress={() => {
           if (!adapter || !series) return;
           setActionSheet({
             visible: true,
-            title: 'Edit Series',
+            title: 'Manage',
             options: [
-              {
-                label: series.monitored ? 'Unmonitor' : 'Monitor',
-                icon: '👁',
-                onPress: async () => {
-                  try {
-                    const updated = { ...series, monitored: !series.monitored };
-                    await adapter.editSeries(updated);
-                    setSeries(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
-                  } catch (e: any) { Alert.alert('Error', e.message); }
-                },
-              },
+              { label: series.monitored ? 'Unmonitor' : 'Monitor', icon: '👁', onPress: async () => {
+                try {
+                  const updated = { ...series, monitored: !series.monitored };
+                  await adapter.editSeries(updated);
+                  setSeries(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
+                } catch (e: any) { Alert.alert('Error', e.message); }
+              }},
+              { label: 'Delete Series', icon: '🗑', onPress: () => handleDeleteSeries(), destructive: true },
             ],
           });
         }}>
-          <Text style={styles.actionBtnText}>Edit</Text>
-        </Pressable>
-        <Pressable style={[styles.actionBtn, styles.actionBtnPrimary]} onPress={handleSearchAll}>
-          <Text style={[styles.actionBtnText, styles.actionBtnTextPrimary]}>Search All</Text>
-        </Pressable>
-        <Pressable style={[styles.actionBtn, styles.actionBtnDanger]} onPress={handleDeleteSeries}>
-          <Text style={[styles.actionBtnText, styles.actionBtnTextDanger]}>Delete</Text>
+          <Text style={styles.actionBtnText}>⋮ More</Text>
         </Pressable>
       </View>
     </View>
@@ -358,11 +352,10 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: colors.primary },
   tabText: { ...typography.caption, fontWeight: '500', color: colors.textMuted },
   tabTextActive: { color: colors.primary },
-  actionBar: { flexDirection: 'row', gap: spacing.sm, padding: spacing.lg, borderTopWidth: 1, borderTopColor: colors.divider, backgroundColor: colors.surfaceElevated },
-  actionBtn: { flex: 1, paddingVertical: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider, alignItems: 'center' },
-  actionBtnPrimary: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
-  actionBtnDanger: { backgroundColor: 'rgba(233,69,96,0.08)', borderColor: 'rgba(233,69,96,0.3)' },
-  actionBtnText: { ...typography.caption, fontWeight: '600', color: colors.textMuted },
+  actionBar: { flexDirection: 'row', gap: spacing.sm, padding: spacing.md, paddingHorizontal: spacing.lg, borderTopWidth: 1, borderTopColor: colors.divider, backgroundColor: colors.surfaceElevated },
+  actionBtn: { flex: 1, paddingVertical: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider, alignItems: 'center', justifyContent: 'center' },
+  actionBtnPrimary: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder, flex: 2 },
+  actionBtnText: { ...typography.bodyBold, color: colors.textMuted },
   actionBtnTextPrimary: { color: colors.primary },
   actionBtnTextDanger: { color: '#e94560' },
 });
