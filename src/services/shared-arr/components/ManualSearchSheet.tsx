@@ -22,11 +22,12 @@ function formatSize(bytes: number): string {
 export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: ManualSearchSheetProps) {
   const { alert } = useThemedAlert();
   const insets = useSafeAreaInsets();
-  const [sortBy, setSortBy] = useState<SortBy>('seeders');
+  const [sortBy, setSortBy] = useState<SortBy | null>(null);
   const isLoading = visible && releases.length === 0;
 
   const sortedReleases = useMemo(() => {
     if (releases.length === 0) return [];
+    if (!sortBy) return releases; // No sort selected — return original order from server
     const sorted = [...releases];
     switch (sortBy) {
       case 'seeders': sorted.sort((a, b) => (b.seeders ?? 0) - (a.seeders ?? 0)); break;
@@ -88,7 +89,7 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
               <Pressable
                 key={chip.id}
                 style={[styles.sortChip, sortBy === chip.id && styles.sortChipActive]}
-                onPress={() => setSortBy(chip.id)}
+                onPress={() => setSortBy(prev => prev === chip.id ? null : chip.id)}
               >
                 <Text style={[styles.sortChipText, sortBy === chip.id && styles.sortChipTextActive]}>
                   {chip.label}
