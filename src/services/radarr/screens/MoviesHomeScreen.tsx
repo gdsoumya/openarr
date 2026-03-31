@@ -223,7 +223,12 @@ export function MoviesHomeScreen() {
               {tmdbSearchResults.map((m, idx) => (
                 <PosterCard key={`tmdb-${m.id}-${idx}`} title={m.title} subtitle={`${m.release_date?.slice(0, 4) ?? ''} · ★ ${m.vote_average?.toFixed(1) ?? ''}`}
                   posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md"
-                  onPress={() => navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' })} />
+                  badge={getTmdbMovieBadge(m)}
+                  onPress={() => {
+                    const match = libraryByTmdbId.get(m.id);
+                    if (match) navigation.navigate('MovieDetail', { movie: match });
+                    else navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' });
+                  }} />
               ))}
             </Carousel>
           )}
@@ -256,14 +261,26 @@ export function MoviesHomeScreen() {
           <Carousel title="Trending This Week"
             status={trendingStatus} errorMessage={trendingError}>
             {trending.map((m) => (
-              <PosterCard key={m.id} title={m.title} subtitle={m.release_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' })} />
+              <PosterCard key={m.id} title={m.title} subtitle={m.release_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md"
+                badge={getTmdbMovieBadge(m)}
+                onPress={() => {
+                  const match = libraryByTmdbId.get(m.id);
+                  if (match) navigation.navigate('MovieDetail', { movie: match });
+                  else navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' });
+                }} />
             ))}
           </Carousel>
 
           <Carousel title="Recently Released"
             status={recentStatus} errorMessage={recentError}>
             {recentlyReleased.map((m) => (
-              <PosterCard key={m.id} title={m.title} subtitle={m.release_date ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' })} />
+              <PosterCard key={m.id} title={m.title} subtitle={m.release_date ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md"
+                badge={getTmdbMovieBadge(m)}
+                onPress={() => {
+                  const match = libraryByTmdbId.get(m.id);
+                  if (match) navigation.navigate('MovieDetail', { movie: match });
+                  else navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' });
+                }} />
             ))}
           </Carousel>
         </>
