@@ -143,6 +143,13 @@ export function TVHomeScreen() {
     if (!searchQuery.trim()) { setSonarrSearchResults([]); setTmdbSearchResults([]); }
   }, [searchQuery]);
 
+  // Must be before any early returns — Rules of Hooks
+  const libraryByTitle = useMemo(() => {
+    const map = new Map<string, Series>();
+    library.forEach(s => map.set(s.title.toLowerCase(), s));
+    return map;
+  }, [library]);
+
   if (initialLoading) return <LoadingSpinner message="Loading TV shows..." />;
 
   const displayLibrary = searchQuery
@@ -151,14 +158,7 @@ export function TVHomeScreen() {
 
   const isSearchMode = searchQuery.trim().length > 0;
   const hasSearchResults = sonarrSearchResults.length > 0 || tmdbSearchResults.length > 0;
-  // Track which TVDB IDs are in library to show "In Library" badge
   const libraryTvdbIds = new Set(library.map(s => s.tvdbId));
-  // Map title (lowercase) → library series for TMDB cross-reference
-  const libraryByTitle = useMemo(() => {
-    const map = new Map<string, Series>();
-    library.forEach(s => map.set(s.title.toLowerCase(), s));
-    return map;
-  }, [library]);
 
   const getTmdbItemBadge = (tmdbItem: TMDBShow) => {
     const match = libraryByTitle.get(tmdbItem.name?.toLowerCase());

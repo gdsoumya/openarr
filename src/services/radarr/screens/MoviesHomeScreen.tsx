@@ -140,6 +140,12 @@ export function MoviesHomeScreen() {
     if (!searchQuery.trim()) { setRadarrSearchResults([]); setTmdbSearchResults([]); }
   }, [searchQuery]);
 
+  const libraryByTmdbId = useMemo(() => {
+    const map = new Map<number, Movie>();
+    library.forEach(m => map.set(m.tmdbId, m));
+    return map;
+  }, [library]);
+
   if (initialLoading) return <LoadingSpinner message="Loading movies..." />;
 
   const displayLibrary = searchQuery
@@ -149,11 +155,6 @@ export function MoviesHomeScreen() {
   const isSearchMode = searchQuery.trim().length > 0;
   const hasSearchResults = radarrSearchResults.length > 0 || tmdbSearchResults.length > 0;
   const libraryTmdbIds = new Set(library.map(m => m.tmdbId));
-  const libraryByTmdbId = useMemo(() => {
-    const map = new Map<number, Movie>();
-    library.forEach(m => map.set(m.tmdbId, m));
-    return map;
-  }, [library]);
 
   const getTmdbMovieBadge = (tmdbItem: TMDBMovie) => {
     const match = libraryByTmdbId.get(tmdbItem.id);
