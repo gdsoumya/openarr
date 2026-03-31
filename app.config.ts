@@ -26,6 +26,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     package: 'com.openarr.app',
     permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'],
+    usesCleartextTraffic: true,
   },
   splash: {
     image: './assets/images/splash-icon.png',

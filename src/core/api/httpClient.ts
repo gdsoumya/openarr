@@ -1,15 +1,20 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { ServiceConfig } from '../types/services';
 
-const TIMEOUT_MS = 15000;
+// Prowlarr search fans out to many indexers and can take 30s+
+const TIMEOUT_MS: Record<string, number> = {
+  prowlarr: 60000,
+  default: 30000,
+};
 
 export function createServiceClient(config: ServiceConfig, isLocal: boolean): AxiosInstance {
   const baseURL = isLocal ? config.localUrl : config.remoteUrl;
   const fullBaseURL = config.basePath ? `${baseURL}${config.basePath}` : baseURL;
+  const timeout = TIMEOUT_MS[config.serviceId] ?? TIMEOUT_MS.default;
 
   const client = axios.create({
     baseURL: fullBaseURL,
-    timeout: TIMEOUT_MS,
+    timeout,
   });
 
   // API key header (for *arr services)
