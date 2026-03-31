@@ -14,7 +14,8 @@ import { Series, Episode, Season } from '../types';
 import { Release } from '../../shared-arr/types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
-import { getSonarrAdapter } from '../../../services/adapterFactory';
+import { getSonarrAdapter, getBazarrAdapter } from '../../../services/adapterFactory';
+import { useServerStore } from '../../../stores/serverStore';
 import { RatingsBar } from '../../../core/components/RatingsBar';
 import { MediaInfo } from '../../../core/components/MediaInfo';
 import { OMDBRatings } from '../../omdb/client';
@@ -37,6 +38,9 @@ export function SeriesDetailScreen() {
   const [omdbRatings, setOmdbRatings] = useState<OMDBRatings | null>(null);
   const [ratingsLoading, setRatingsLoading] = useState(false);
   const [watchProviders, setWatchProviders] = useState<WatchProviderCountry | undefined>();
+  const [calendarItems, setCalendarItems] = useState<any[]>([]);
+  const [historyItems, setHistoryItems] = useState<any[]>([]);
+  const [episodeFiles, setEpisodeFiles] = useState<any[]>([]);
   const [actionSheet, setActionSheet] = useState<{
     visible: boolean;
     title: string;
@@ -102,6 +106,20 @@ export function SeriesDetailScreen() {
     fetchData();
   }, [adapter, series]);
 
+  useEffect(() => {
+    if (!adapter || !series) return;
+    if (activeTab === 'calendar') {
+      const now = new Date();
+      const start = now.toISOString();
+      const end = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString();
+      adapter.getCalendar(start, end).then(setCalendarItems).catch(() => {});
+    } else if (activeTab === 'history') {
+      adapter.getHistory().then(r => setHistoryItems(r.records ?? [])).catch(() => {});
+    } else if (activeTab === 'files') {
+      adapter.getEpisodeFiles(series.id).then(setEpisodeFiles).catch(() => {});
+    }
+  }, [activeTab, adapter, series]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     if (adapter && series) {
@@ -139,6 +157,20 @@ export function SeriesDetailScreen() {
               setShowManualSearch(false);
             }
           } catch (e: any) { alert('Search Failed', e.message); setShowManualSearch(false); }
+        },
+      });
+      options.push({
+        label: 'Search Subtitles',
+        icon: '💬',
+        onPress: async () => {
+          const bazarrConfig = useServerStore.getState().getServiceConfig('bazarr');
+          if (!bazarrConfig) { alert('Bazarr Not Configured', 'Set up Bazarr in Settings to search subtitles.'); return; }
+          const bazarr = getBazarrAdapter(bazarrConfig, isLocal);
+          try {
+            const results = await bazarr.searchEpisodeSubtitles(episode.id);
+            if (results.length === 0) { alert('No Subtitles', 'No subtitles found for this episode.'); return; }
+            alert('Subtitles Found', `${results.length} subtitles found.\nBest: ${results[0].provider} (${results[0].language}, score: ${results[0].score})`);
+          } catch (e: any) { alert('Error', e.message); }
         },
       });
       options.push({
@@ -383,6 +415,50 @@ export function SeriesDetailScreen() {
             episodeQueueMap={episodeQueueMap}
           />
         ))}
+
+        {activeTab === 'calendar' && (
+          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+            {calendarItems.length === 0 && <View style={styles.emptyTab}><Text style={styles.emptyTabText}>No upcoming episodes</Text></View>}
+            {calendarItems.map((item, idx) => (
+              <View key={idx} style={styles.calendarItem}>
+                <Text style={styles.calendarTitle}>{item.title}</Text>
+                <Text style={styles.calendarDate}>{item.airDateUtc ? new Date(item.airDateUtc).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : 'TBA'}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+
+        {activeTab === 'history' && (
+          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+            {historyItems.length === 0 && <View style={styles.emptyTab}><Text style={styles.emptyTabText}>No history</Text></View>}
+            {historyItems.map((item, idx) => (
+              <View key={idx} style={styles.historyItem}>
+                <Text style={styles.historyTitle} numberOfLines={1}>{item.sourceTitle}</Text>
+                <View style={styles.historyMeta}>
+                  <Text style={styles.historyEvent}>{item.eventType}</Text>
+                  <Text style={styles.historyQuality}>{item.quality?.quality?.name ?? ''}</Text>
+                  <Text style={styles.historyDate}>{new Date(item.date).toLocaleDateString()}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+
+        {activeTab === 'files' && (
+          <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+            {episodeFiles.length === 0 && <View style={styles.emptyTab}><Text style={styles.emptyTabText}>No files</Text></View>}
+            {episodeFiles.map((file, idx) => (
+              <View key={idx} style={styles.fileItem}>
+                <Text style={styles.fileName} numberOfLines={2}>{file.path?.split('/').pop() ?? 'Unknown'}</Text>
+                <View style={styles.fileMeta}>
+                  <Text style={styles.fileQuality}>{file.quality?.quality?.name ?? ''}</Text>
+                  <Text style={styles.fileSize}>{file.size ? `${(file.size / 1073741824).toFixed(2)} GB` : ''}</Text>
+                  <Text style={styles.fileLang}>{file.language?.name ?? ''}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        )}
       </ScrollView>
 
       <View style={styles.actionBar}>
@@ -463,4 +539,21 @@ const styles = StyleSheet.create({
   actionBtnText: { ...typography.bodyBold, color: colors.textMuted },
   actionBtnTextPrimary: { color: colors.primary },
   actionBtnTextDanger: { color: '#e94560' },
+  emptyTab: { padding: spacing.xxxl, alignItems: 'center' },
+  emptyTabText: { ...typography.body, color: colors.textMuted },
+  calendarItem: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  calendarTitle: { ...typography.bodyBold, color: colors.textPrimary, flex: 1, marginRight: spacing.md },
+  calendarDate: { ...typography.caption, color: colors.primary },
+  historyItem: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
+  historyTitle: { ...typography.caption, fontWeight: '600', color: colors.textPrimary },
+  historyMeta: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
+  historyEvent: { ...typography.micro, color: colors.textMuted },
+  historyQuality: { ...typography.micro, color: colors.primary },
+  historyDate: { ...typography.micro, color: colors.textMuted },
+  fileItem: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
+  fileName: { ...typography.caption, fontWeight: '600', color: colors.textPrimary },
+  fileMeta: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
+  fileQuality: { ...typography.micro, color: colors.primary },
+  fileSize: { ...typography.micro, color: colors.textMuted },
+  fileLang: { ...typography.micro, color: colors.bazarr },
 });

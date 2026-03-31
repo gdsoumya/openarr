@@ -122,6 +122,7 @@ export function SubsHomeScreen() {
           ))}
         </ScrollView>
 
+        <View style={styles.tabContent}>
         {!config && (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>Bazarr not configured. Add it in Settings to manage subtitles.</Text>
@@ -215,6 +216,7 @@ export function SubsHomeScreen() {
             ))}
           </ScrollView>
         )}
+        </View>
       </View>
 
       <BottomSheetWrapper ref={subSheetRef} snapPoints={['60%']} onClose={() => { setSubResults([]); setSearchingEpId(null); setSearchingMovieId(null); }}>
@@ -246,6 +248,7 @@ export function SubsHomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
+  tabContent: { flex: 1 },
   header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.xl, borderBottomWidth: 1, borderBottomColor: colors.divider, marginBottom: spacing.md },

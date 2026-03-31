@@ -39,6 +39,8 @@ export function MovieDetailScreen() {
   const [ratingsLoading, setRatingsLoading] = useState(false);
   const [watchProviders, setWatchProviders] = useState<WatchProviderCountry | undefined>();
   const [downloadProgress, setDownloadProgress] = useState<number | undefined>();
+  const [historyItems, setHistoryItems] = useState<any[]>([]);
+  const [movieFile, setMovieFile] = useState<any | null>(null);
 
   const { alert } = useThemedAlert();
   const radarrConfig = useServiceConfig('radarr');
