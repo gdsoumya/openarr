@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Linking } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, ScrollView, StyleSheet, Pressable, Linking, Alert } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
 import { Movie } from '../types';
@@ -10,27 +10,91 @@ import { getRadarrAdapter } from '../../../services/adapterFactory';
 
 export function MovieDetailScreen() {
   const route = useRoute<any>();
+  const navigation = useNavigation<any>();
   const [movie, setMovie] = useState<Movie | null>(route.params?.movie ?? null);
   const [activeTab, setActiveTab] = useState('info');
 
   const radarrConfig = useServiceConfig('radarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
 
+  const adapter = useMemo(
+    () => (radarrConfig ? getRadarrAdapter(radarrConfig, isLocal) : null),
+    [radarrConfig, isLocal],
+  );
+
   useEffect(() => {
     async function fetchData() {
-      // If we have the movie from params but want fresh data, re-fetch by id
       const movieId = route.params?.movieId ?? movie?.id;
-      if (!radarrConfig || !movieId) return;
+      if (!adapter || !movieId) return;
       try {
-        const radarr = getRadarrAdapter(radarrConfig, isLocal);
-        const fresh = await radarr.getMovieById(movieId);
+        const fresh = await adapter.getMovieById(movieId);
         setMovie(fresh);
       } catch (e) {
         console.error('MovieDetail fetch error:', e);
       }
     }
     fetchData();
-  }, [radarrConfig, isLocal]);
+  }, [adapter]);
+
+  // --- Movie actions ---
+  function handleSearch() {
+    if (!movie) return;
+    adapter?.searchMovie(movie.id).catch((e) => console.error('searchMovie error:', e));
+  }
+
+  function handleManualSearch() {
+    console.log('Manual search movie', movie?.id);
+  }
+
+  function handleDelete() {
+    if (!movie) return;
+    Alert.alert('Delete Movie', `Delete "${movie.title}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete (keep files)',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await adapter?.deleteMovie(movie.id, false, false);
+            navigation.goBack();
+          } catch (e) {
+            console.error('deleteMovie error:', e);
+          }
+        },
+      },
+      {
+        text: 'Delete + Files',
+        style: 'destructive',
+        onPress: () => {
+          Alert.alert('Add to Exclusion List?', 'Also add this movie to the import exclusion list?', [
+            {
+              text: 'No',
+              onPress: async () => {
+                try {
+                  await adapter?.deleteMovie(movie.id, true, false);
+                  navigation.goBack();
+                } catch (e) {
+                  console.error('deleteMovie error:', e);
+                }
+              },
+            },
+            {
+              text: 'Yes, Exclude',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await adapter?.deleteMovie(movie.id, true, true);
+                  navigation.goBack();
+                } catch (e) {
+                  console.error('deleteMovie error:', e);
+                }
+              },
+            },
+          ]);
+        },
+      },
+    ]);
+  }
 
   if (!movie) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;
 
@@ -38,47 +102,62 @@ export function MovieDetailScreen() {
   const pills = [movie.minimumAvailability, movie.monitored ? 'Monitored' : 'Unmonitored', `${movie.runtime}min`, movie.path];
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.hero}>
-        <View style={styles.heroBg} />
-        <View style={styles.heroContent}>
-          <View style={[styles.poster, { backgroundColor: colors.radarr }]}>
-            <Text style={styles.posterText}>{movie.title.slice(0, 2)}</Text>
-          </View>
-          <View style={styles.titleBlock}>
-            <Text style={styles.title}>{movie.title}</Text>
-            <Text style={styles.subtitle}>{movie.year} · {movie.genres?.slice(0, 2).join(', ')} · {movie.runtime}min</Text>
+    <View style={styles.container}>
+      <ScrollView style={styles.scroll}>
+        <View style={styles.hero}>
+          <View style={styles.heroBg} />
+          <View style={styles.heroContent}>
+            <View style={[styles.poster, { backgroundColor: colors.radarr }]}>
+              <Text style={styles.posterText}>{movie.title.slice(0, 2)}</Text>
+            </View>
+            <View style={styles.titleBlock}>
+              <Text style={styles.title}>{movie.title}</Text>
+              <Text style={styles.subtitle}>{movie.year} · {movie.genres?.slice(0, 2).join(', ')} · {movie.runtime}min</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      <MetadataPills pills={pills} />
+        <MetadataPills pills={pills} />
 
-      <View style={styles.tabs}>
-        {tabs.map(tab => (
-          <Pressable key={tab} style={[styles.tab, activeTab === tab.toLowerCase() && styles.tabActive]}
-            onPress={() => setActiveTab(tab.toLowerCase())}>
-            <Text style={[styles.tabText, activeTab === tab.toLowerCase() && styles.tabTextActive]}>{tab}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {activeTab === 'info' && (
-        <View style={styles.section}>
-          <Text style={styles.overview}>{movie.overview}</Text>
-          {movie.imdbId && (
-            <Pressable style={styles.imdbButton} onPress={() => Linking.openURL(`https://www.imdb.com/title/${movie.imdbId}`)}>
-              <Text style={styles.imdbText}>Open in IMDb</Text>
+        <View style={styles.tabs}>
+          {tabs.map(tab => (
+            <Pressable key={tab} style={[styles.tab, activeTab === tab.toLowerCase() && styles.tabActive]}
+              onPress={() => setActiveTab(tab.toLowerCase())}>
+              <Text style={[styles.tabText, activeTab === tab.toLowerCase() && styles.tabTextActive]}>{tab}</Text>
             </Pressable>
-          )}
+          ))}
         </View>
-      )}
-    </ScrollView>
+
+        {activeTab === 'info' && (
+          <View style={styles.section}>
+            <Text style={styles.overview}>{movie.overview}</Text>
+            {movie.imdbId && (
+              <Pressable style={styles.imdbButton} onPress={() => Linking.openURL(`https://www.imdb.com/title/${movie.imdbId}`)}>
+                <Text style={styles.imdbText}>Open in IMDb</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+      </ScrollView>
+
+      <View style={styles.actionBar}>
+        <Pressable style={[styles.actionBtn, styles.actionBtnPrimary]} onPress={handleSearch}>
+          <Text style={[styles.actionBtnText, styles.actionBtnTextPrimary]}>Search</Text>
+        </Pressable>
+        <Pressable style={styles.actionBtn} onPress={handleManualSearch}>
+          <Text style={styles.actionBtnText}>Manual Search</Text>
+        </Pressable>
+        <Pressable style={[styles.actionBtn, styles.actionBtnDanger]} onPress={handleDelete}>
+          <Text style={[styles.actionBtnText, styles.actionBtnTextDanger]}>Delete</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
+  scroll: { flex: 1 },
   loading: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 100 },
   hero: { height: 200, position: 'relative' },
   heroBg: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.surfaceElevated },
@@ -97,4 +176,11 @@ const styles = StyleSheet.create({
   overview: { ...typography.body, color: colors.textSecondary, lineHeight: 22 },
   imdbButton: { backgroundColor: 'rgba(255, 193, 7, 0.1)', borderWidth: 1, borderColor: 'rgba(255, 193, 7, 0.3)', borderRadius: radii.md, padding: spacing.md, alignItems: 'center', marginTop: spacing.lg },
   imdbText: { ...typography.bodyBold, color: colors.radarr },
+  actionBar: { flexDirection: 'row', gap: spacing.sm, padding: spacing.lg, borderTopWidth: 1, borderTopColor: colors.divider, backgroundColor: colors.surfaceElevated },
+  actionBtn: { flex: 1, paddingVertical: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider, alignItems: 'center' },
+  actionBtnPrimary: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
+  actionBtnDanger: { backgroundColor: 'rgba(233,69,96,0.08)', borderColor: 'rgba(233,69,96,0.3)' },
+  actionBtnText: { ...typography.caption, fontWeight: '600', color: colors.textMuted },
+  actionBtnTextPrimary: { color: colors.primary },
+  actionBtnTextDanger: { color: '#e94560' },
 });
