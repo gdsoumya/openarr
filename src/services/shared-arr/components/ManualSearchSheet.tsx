@@ -23,12 +23,16 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
   const { alert } = useThemedAlert();
   const insets = useSafeAreaInsets();
   const [sortBy, setSortBy] = useState<SortBy | null>(null);
+  const [hideRejected, setHideRejected] = useState(false);
   const isLoading = visible && releases.length === 0;
+
+  const rejectedCount = useMemo(() => releases.filter(r => r.rejected).length, [releases]);
 
   const sortedReleases = useMemo(() => {
     if (releases.length === 0) return [];
-    if (!sortBy) return releases; // No sort selected — return original order from server
-    const sorted = [...releases];
+    let filtered = hideRejected ? releases.filter(r => !r.rejected) : releases;
+    if (!sortBy) return filtered;
+    const sorted = [...filtered];
     switch (sortBy) {
       case 'seeders': sorted.sort((a, b) => (b.seeders ?? 0) - (a.seeders ?? 0)); break;
       case 'age': sorted.sort((a, b) => a.age - b.age); break;
@@ -73,7 +77,7 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
           <View>
             <Text style={styles.title}>Manual Search</Text>
             <Text style={styles.subtitle}>
-              {isLoading ? 'Searching indexers...' : `${releases.length} releases found`}
+              {isLoading ? 'Searching indexers...' : `${sortedReleases.length} releases${rejectedCount > 0 ? ` · ${rejectedCount} rejected` : ''}`}
             </Text>
           </View>
           <Pressable style={styles.closeBtn} onPress={onDismiss}>
@@ -96,6 +100,16 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
                 </Text>
               </Pressable>
             ))}
+            {rejectedCount > 0 && (
+              <Pressable
+                style={[styles.sortChip, hideRejected && styles.sortChipActive]}
+                onPress={() => setHideRejected(prev => !prev)}
+              >
+                <Text style={[styles.sortChipText, hideRejected && styles.sortChipTextActive]}>
+                  {hideRejected ? '✓ Rejected Hidden' : 'Hide Rejected'}
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
 
