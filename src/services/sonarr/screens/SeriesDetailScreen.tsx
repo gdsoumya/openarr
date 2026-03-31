@@ -74,17 +74,22 @@ export function SeriesDetailScreen() {
     const options: ActionSheetOption[] = [];
 
     if (episode.hasFile) {
-      // Downloaded — offer upgrade search and delete
+      // Downloaded — offer search for better quality and delete
       options.push({
-        label: 'Search Upgrade',
+        label: 'Search Better Quality',
         icon: '🔍',
         onPress: async () => {
           if (!adapter) return;
+          setShowManualSearch(true);
+          setManualSearchReleases([]);
           try {
             const releases = await adapter.manualSearchEpisode(episode.id);
             setManualSearchReleases(releases);
-            setShowManualSearch(true);
-          } catch (e: any) { Alert.alert('Error', e.message); }
+            if (releases.length === 0) {
+              Alert.alert('No Results', 'No releases found. Check that indexers are configured in Sonarr (Settings → Indexers).');
+              setShowManualSearch(false);
+            }
+          } catch (e: any) { Alert.alert('Search Failed', e.message); setShowManualSearch(false); }
         },
       });
       options.push({
@@ -103,18 +108,29 @@ export function SeriesDetailScreen() {
       options.push({
         label: 'Auto Search',
         icon: '🔍',
-        onPress: () => adapter?.searchEpisode(episode.id).then(() => Alert.alert('Searching', 'Search triggered')).catch(e => Alert.alert('Error', e.message)),
+        onPress: async () => {
+          if (!adapter) return;
+          try {
+            await adapter.searchEpisode(episode.id);
+            Alert.alert('Search Started', 'Sonarr is searching indexers for this episode. Check Activity for progress.');
+          } catch (e: any) { Alert.alert('Search Failed', e.message); }
+        },
       });
       options.push({
         label: 'Manual Search',
         icon: '📋',
         onPress: async () => {
           if (!adapter) return;
+          setShowManualSearch(true);
+          setManualSearchReleases([]);
           try {
             const releases = await adapter.manualSearchEpisode(episode.id);
             setManualSearchReleases(releases);
-            setShowManualSearch(true);
-          } catch (e: any) { Alert.alert('Error', e.message); }
+            if (releases.length === 0) {
+              Alert.alert('No Results', 'No releases found. Check that indexers are configured in Sonarr (Settings → Indexers) or that Prowlarr is synced.');
+              setShowManualSearch(false);
+            }
+          } catch (e: any) { Alert.alert('Search Failed', e.message); setShowManualSearch(false); }
         },
       });
     }
@@ -190,9 +206,14 @@ export function SeriesDetailScreen() {
   }
 
   // --- Series actions ---
-  function handleSearchAll() {
-    if (!series) return;
-    adapter?.searchSeries(series.id).catch((e) => console.error('searchSeries error:', e));
+  async function handleSearchAll() {
+    if (!adapter || !series) return;
+    try {
+      await adapter.searchSeries(series.id);
+      Alert.alert('Search Started', `Sonarr is now searching indexers for all episodes of "${series.title}". Check the Activity tab in Sonarr for progress.`);
+    } catch (e: any) {
+      Alert.alert('Search Failed', e.message);
+    }
   }
 
   function handleDeleteSeries() {

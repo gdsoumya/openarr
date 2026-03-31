@@ -61,18 +61,35 @@ export function MovieDetailScreen() {
   }, [adapter, movie]);
 
   // --- Movie actions ---
-  function handleSearch() {
-    if (!movie) return;
-    adapter?.searchMovie(movie.id).catch((e) => console.error('searchMovie error:', e));
+  const [searchingManual, setSearchingManual] = useState(false);
+
+  async function handleSearch() {
+    if (!adapter || !movie) return;
+    try {
+      await adapter.searchMovie(movie.id);
+      Alert.alert('Search Started', `Radarr is now searching indexers for "${movie.title}". Check the Activity tab in Radarr for progress.`);
+    } catch (e: any) {
+      Alert.alert('Search Failed', e.message);
+    }
   }
 
   async function handleManualSearch() {
     if (!adapter || !movie) return;
+    setSearchingManual(true);
+    setShowManualSearch(true);
+    setManualSearchReleases([]);
     try {
       const releases = await adapter.manualSearchMovie(movie.id);
       setManualSearchReleases(releases);
-      setShowManualSearch(true);
-    } catch (e: any) { Alert.alert('Error', e.message); }
+      if (releases.length === 0) {
+        Alert.alert('No Results', 'No releases found. Make sure indexers are configured in Radarr (Settings → Indexers) or that Prowlarr is synced.');
+        setShowManualSearch(false);
+      }
+    } catch (e: any) {
+      Alert.alert('Search Failed', e.message);
+      setShowManualSearch(false);
+    }
+    setSearchingManual(false);
   }
 
   function handleDelete() {
