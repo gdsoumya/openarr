@@ -30,6 +30,11 @@ export class RadarrAdapter extends ArrServiceAdapter {
   async getCredits(movieId: number): Promise<Credit[]> { const { data } = await this.client.get('/api/v3/credit', { params: { movieId } }); return data; }
   async getCollections(): Promise<Collection[]> { const { data } = await this.client.get('/api/v3/collection'); return data; }
 
+  async getMovieHistory(movieId: number): Promise<any[]> {
+    const { data } = await this.client.get('/api/v3/history/movie', { params: { movieId } });
+    return data;
+  }
+
   async getWantedMissing(page = 1, pageSize = 20): Promise<PaginatedResult<Movie>> {
     const { data } = await this.client.get('/api/v3/wanted/missing', { params: { page, pageSize, sortKey: 'digitalRelease', sortDirection: 'descending' } });
     return data;

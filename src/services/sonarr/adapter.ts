@@ -38,6 +38,11 @@ export class SonarrAdapter extends ArrServiceAdapter {
     return data;
   }
 
+  async getSeriesHistory(seriesId: number): Promise<any[]> {
+    const { data } = await this.client.get('/api/v3/history/series', { params: { seriesId, sortKey: 'date', sortDirection: 'descending' } });
+    return data;
+  }
+
   async searchEpisode(episodeId: number): Promise<void> { await this.executeCommand('EpisodeSearch', { episodeIds: [episodeId] }); }
   async searchSeason(seriesId: number, seasonNumber: number): Promise<void> { await this.executeCommand('SeasonSearch', { seriesId, seasonNumber }); }
   async searchSeries(seriesId: number): Promise<void> { await this.executeCommand('SeriesSearch', { seriesId }); }

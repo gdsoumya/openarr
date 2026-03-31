@@ -114,7 +114,7 @@ export function SeriesDetailScreen() {
       const end = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString();
       adapter.getCalendar(start, end).then(setCalendarItems).catch(() => {});
     } else if (activeTab === 'history') {
-      adapter.getHistory(1, 50, { seriesId: series.id }).then(r => setHistoryItems(r.records ?? [])).catch(() => {});
+      adapter.getSeriesHistory(series.id).then(items => setHistoryItems(items ?? [])).catch(() => {});
     } else if (activeTab === 'files') {
       adapter.getEpisodeFiles(series.id).then(setEpisodeFiles).catch(() => {});
     }
