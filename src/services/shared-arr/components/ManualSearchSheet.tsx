@@ -1,6 +1,6 @@
-import React, { useRef, useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
-import BottomSheet, { BottomSheetBackdrop, BottomSheetFlatList } from '@gorhom/bottom-sheet';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, FlatList, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { Release } from '../types';
 
@@ -19,67 +19,41 @@ function formatSize(bytes: number): string {
 }
 
 export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: ManualSearchSheetProps) {
-  const sheetRef = useRef<BottomSheet>(null);
+  const insets = useSafeAreaInsets();
   const [sortBy, setSortBy] = useState<SortBy>('seeders');
   const isLoading = visible && releases.length === 0;
-
-  React.useEffect(() => {
-    if (visible) sheetRef.current?.snapToIndex(1); // Open to full height
-    else sheetRef.current?.close();
-  }, [visible]);
 
   const sortedReleases = useMemo(() => {
     if (releases.length === 0) return [];
     const sorted = [...releases];
     switch (sortBy) {
-      case 'seeders':
-        sorted.sort((a, b) => (b.seeders ?? 0) - (a.seeders ?? 0));
-        break;
-      case 'age':
-        sorted.sort((a, b) => a.age - b.age);
-        break;
-      case 'size':
-        sorted.sort((a, b) => b.size - a.size);
-        break;
-      case 'quality':
-        sorted.sort((a, b) => (b.quality?.quality?.name ?? '').localeCompare(a.quality?.quality?.name ?? ''));
-        break;
+      case 'seeders': sorted.sort((a, b) => (b.seeders ?? 0) - (a.seeders ?? 0)); break;
+      case 'age': sorted.sort((a, b) => a.age - b.age); break;
+      case 'size': sorted.sort((a, b) => b.size - a.size); break;
+      case 'quality': sorted.sort((a, b) => (b.quality?.quality?.name ?? '').localeCompare(a.quality?.quality?.name ?? '')); break;
     }
-    // Non-rejected first
     sorted.sort((a, b) => (a.rejected ? 1 : 0) - (b.rejected ? 1 : 0));
     return sorted;
   }, [releases, sortBy]);
 
-  const renderBackdrop = useCallback(
-    (props: any) => <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" />,
-    [],
-  );
+  const confirmGrab = (item: Release) => {
+    const info = [
+      item.quality?.quality?.name,
+      formatSize(item.size),
+      item.indexer,
+      item.seeders !== undefined ? `${item.seeders} seeders` : null,
+      `${item.age}d old`,
+    ].filter(Boolean).join(' · ');
 
-  const renderItem = useCallback(({ item }: { item: Release }) => (
-    <Pressable style={[styles.item, item.rejected && styles.itemRejected]} onPress={() => onGrab(item)}>
-      <View style={styles.itemHeader}>
-        {!item.rejected && <Text style={styles.check}>✓</Text>}
-        {item.rejected && <Text style={styles.rejected}>✕</Text>}
-        <Text style={[styles.itemTitle, item.rejected && styles.itemTitleRejected]} numberOfLines={2}>{item.title}</Text>
-      </View>
-      <View style={styles.itemStats}>
-        <Text style={[styles.stat, styles.statQuality]}>{item.quality?.quality?.name ?? '?'}</Text>
-        <Text style={styles.stat}>{formatSize(item.size)}</Text>
-        <Text style={styles.stat}>{item.indexer}</Text>
-        {item.seeders !== undefined && (
-          <Text style={[styles.stat, { color: item.seeders > 0 ? colors.success : colors.error }]}>
-            S:{item.seeders}
-          </Text>
-        )}
-        {item.leechers !== undefined && <Text style={styles.stat}>L:{item.leechers}</Text>}
-        <Text style={styles.stat}>{item.age}d</Text>
-        <Text style={[styles.stat, { color: colors.info }]}>{item.protocol}</Text>
-      </View>
-      {item.rejected && item.rejections && item.rejections.length > 0 && (
-        <Text style={styles.rejectionText} numberOfLines={1}>{item.rejections[0]}</Text>
-      )}
-    </Pressable>
-  ), [onGrab]);
+    Alert.alert(
+      'Download Release',
+      `${item.title}\n\n${info}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Download', onPress: () => onGrab(item) },
+      ],
+    );
+  };
 
   const sortChips: Array<{ id: SortBy; label: string }> = [
     { id: 'seeders', label: 'Seeders' },
@@ -88,84 +62,102 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
     { id: 'quality', label: 'Quality' },
   ];
 
-  const ListHeader = (
-    <View style={styles.headerContainer}>
-      <Text style={styles.title}>Manual Search</Text>
-      <Text style={styles.subtitle}>
-        {isLoading ? 'Searching indexers...' : `${releases.length} releases found`}
-      </Text>
-      {!isLoading && releases.length > 0 && (
-        <View style={styles.sortRow}>
-          <Text style={styles.sortLabel}>Sort:</Text>
-          {sortChips.map((chip) => (
-            <Pressable
-              key={chip.id}
-              style={[styles.sortChip, sortBy === chip.id && styles.sortChipActive]}
-              onPress={() => setSortBy(chip.id)}
-            >
-              <Text style={[styles.sortChipText, sortBy === chip.id && styles.sortChipTextActive]}>
-                {chip.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-
   return (
-    <BottomSheet
-      ref={sheetRef}
-      index={-1}
-      snapPoints={['50%', '95%']}
-      enablePanDownToClose
-      enableDynamicSizing={false}
-      onClose={onDismiss}
-      backdropComponent={renderBackdrop}
-      backgroundStyle={styles.background}
-      handleIndicatorStyle={styles.handle}
-      // Open to full height when results arrive
-      onChange={(index) => {
-        if (index === 0 && sortedReleases.length > 0) {
-          sheetRef.current?.snapToIndex(1);
-        }
-      }}
-    >
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          {ListHeader}
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Querying indexers, this may take a moment...</Text>
+    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onDismiss}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>Manual Search</Text>
+            <Text style={styles.subtitle}>
+              {isLoading ? 'Searching indexers...' : `${releases.length} releases found`}
+            </Text>
+          </View>
+          <Pressable style={styles.closeBtn} onPress={onDismiss}>
+            <Text style={styles.closeBtnText}>Close</Text>
+          </Pressable>
         </View>
-      ) : (
-        <BottomSheetFlatList
-          data={sortedReleases}
-          keyExtractor={(item) => item.guid}
-          renderItem={renderItem}
-          ListHeaderComponent={ListHeader}
-          contentContainerStyle={styles.listContent}
-          nestedScrollEnabled
-        />
-      )}
-    </BottomSheet>
+
+        {/* Sort chips */}
+        {!isLoading && releases.length > 0 && (
+          <View style={styles.sortRow}>
+            <Text style={styles.sortLabel}>Sort:</Text>
+            {sortChips.map((chip) => (
+              <Pressable
+                key={chip.id}
+                style={[styles.sortChip, sortBy === chip.id && styles.sortChipActive]}
+                onPress={() => setSortBy(chip.id)}
+              >
+                <Text style={[styles.sortChipText, sortBy === chip.id && styles.sortChipTextActive]}>
+                  {chip.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {/* Loading */}
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Querying indexers, this may take a moment...</Text>
+          </View>
+        )}
+
+        {/* Results */}
+        {!isLoading && (
+          <FlatList
+            data={sortedReleases}
+            keyExtractor={(item) => item.guid}
+            contentContainerStyle={styles.listContent}
+            renderItem={({ item }) => (
+              <Pressable style={[styles.item, item.rejected && styles.itemRejected]} onPress={() => confirmGrab(item)}>
+                <View style={styles.itemHeader}>
+                  {!item.rejected && <Text style={styles.check}>✓</Text>}
+                  {item.rejected && <Text style={styles.rejected}>✕</Text>}
+                  <Text style={[styles.itemTitle, item.rejected && styles.itemTitleRejected]} numberOfLines={2}>{item.title}</Text>
+                </View>
+                <View style={styles.itemStats}>
+                  <Text style={[styles.stat, styles.statQuality]}>{item.quality?.quality?.name ?? '?'}</Text>
+                  <Text style={styles.stat}>{formatSize(item.size)}</Text>
+                  <Text style={styles.stat}>{item.indexer}</Text>
+                  {item.seeders !== undefined && (
+                    <Text style={[styles.stat, { color: item.seeders > 0 ? colors.success : colors.error }]}>
+                      S:{item.seeders}
+                    </Text>
+                  )}
+                  {item.leechers !== undefined && <Text style={styles.stat}>L:{item.leechers}</Text>}
+                  <Text style={styles.stat}>{item.age}d</Text>
+                  <Text style={[styles.stat, { color: colors.info }]}>{item.protocol}</Text>
+                </View>
+                {item.rejected && item.rejections && item.rejections.length > 0 && (
+                  <Text style={styles.rejectionText} numberOfLines={1}>{item.rejections[0]}</Text>
+                )}
+              </Pressable>
+            )}
+          />
+        )}
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  background: { backgroundColor: colors.surfaceElevated, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl },
-  handle: { backgroundColor: 'rgba(255,255,255,0.2)', width: 36 },
-  headerContainer: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: spacing.md },
-  listContent: { paddingHorizontal: spacing.xl, paddingBottom: 40 },
-  title: { ...typography.h3, color: colors.textPrimary, marginBottom: 2 },
-  subtitle: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.md },
-  sortRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
-  sortLabel: { ...typography.micro, color: colors.textMuted, marginRight: 2 },
+  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  title: { ...typography.h3, color: colors.textPrimary },
+  subtitle: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  closeBtn: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+  closeBtnText: { ...typography.bodyBold, color: colors.primary },
+  sortRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  sortLabel: { ...typography.micro, color: colors.textMuted },
   sortChip: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider },
   sortChipActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
   sortChipText: { ...typography.micro, color: colors.textMuted },
   sortChipTextActive: { color: colors.primary, fontWeight: '600' },
-  loadingContainer: { flex: 1, alignItems: 'center', paddingVertical: 40 },
-  loadingText: { ...typography.caption, color: colors.textMuted, marginTop: spacing.lg, textAlign: 'center' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { ...typography.caption, color: colors.textMuted, marginTop: spacing.lg },
+  listContent: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md, paddingBottom: 40 },
   item: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: 'transparent' },
   itemRejected: { opacity: 0.5, borderColor: 'rgba(233,69,96,0.15)' },
   itemHeader: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm, alignItems: 'flex-start' },
