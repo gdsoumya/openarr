@@ -63,4 +63,14 @@ export abstract class ArrServiceAdapter {
     const { data } = await this.client.get('/api/v3/diskspace');
     return data;
   }
+
+  async rssSync(): Promise<void> {
+    await this.executeCommand('RssSync');
+  }
+
+  async testAllIndexers(): Promise<void> {
+    // Sonarr/Radarr don't have a test-all-indexers command,
+    // but RssSync effectively refreshes indexer connections
+    await this.executeCommand('RssSync');
+  }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ScrollView, View, Text, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../../core/theme/tokens';
@@ -175,7 +176,18 @@ export function TVHomeScreen() {
           tintColor={colors.primary}
         />
       }>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>TV Shows</Text></View>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+        <Text style={styles.title}>TV Shows</Text>
+        {adapter && (
+          <Pressable style={styles.syncBtn} onPress={async () => {
+            showToast('Syncing RSS feeds...', 'info');
+            try { await adapter.rssSync(); showToast('RSS sync triggered', 'success'); }
+            catch (e: any) { showToast(`Sync failed: ${e.message}`, 'error'); }
+          }}>
+            <Ionicons name="sync" size={20} color={colors.textMuted} />
+          </Pressable>
+        )}
+      </View>
       <SearchBar
         placeholder="Search for shows to add..."
         value={searchQuery}
@@ -297,8 +309,9 @@ export function TVHomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   content: { paddingBottom: 100 },
-  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
+  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { ...typography.h1, color: colors.textPrimary },
+  syncBtn: { padding: spacing.sm },
   notConfigured: { marginHorizontal: spacing.xl, marginBottom: spacing.lg, padding: spacing.lg, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, borderWidth: 1, borderColor: colors.divider },
   notConfiguredText: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
   searchingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },

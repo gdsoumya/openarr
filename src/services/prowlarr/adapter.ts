@@ -37,4 +37,13 @@ export class ProwlarrAdapter {
   async getIndexerStats(): Promise<IndexerStats[]> { const { data } = await this.client.get('/api/v1/indexerstats'); return data.indexers; }
   async getHistory(page = 1, pageSize = 20): Promise<PaginatedResult<SearchHistoryItem>> { const { data } = await this.client.get('/api/v1/history', { params: { page, pageSize } }); return data; }
   async getCategories(): Promise<Array<{ id: number; name: string; subCategories: any[] }>> { const { data } = await this.client.get('/api/v1/indexer/categories'); return data; }
+
+  async testAllIndexers(): Promise<void> {
+    await this.client.post('/api/v1/indexer/testall');
+  }
+
+  async syncIndexers(): Promise<void> {
+    // Trigger app sync (pushes indexer config to Sonarr/Radarr)
+    await this.client.post('/api/v1/command', { name: 'AppIndexerSync' });
+  }
 }

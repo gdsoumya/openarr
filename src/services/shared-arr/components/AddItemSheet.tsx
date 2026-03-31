@@ -27,6 +27,15 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
   const [selectedFolder, setSelectedFolder] = useState<string>('');
   const [monitored] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [monitorPreset, setMonitorPreset] = useState('all');
+
+  const monitorPresets = [
+    { id: 'all', label: 'All Seasons' },
+    { id: 'future', label: 'Future Only' },
+    { id: 'latestSeason', label: 'Latest Season' },
+    { id: 'firstSeason', label: 'First Season' },
+    { id: 'none', label: 'None' },
+  ];
 
   useEffect(() => {
     if (visible) {
@@ -74,7 +83,7 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
           seriesType: 'standard',
           monitored,
           tags: [],
-          addOptions: { monitor: 'all', searchForMissingEpisodes: withSearch },
+          addOptions: { monitor: monitorPreset, searchForMissingEpisodes: withSearch },
         });
       } else {
         const adapter = getRadarrAdapter(config, isLocal);
@@ -126,6 +135,23 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
           </Pressable>
         ))}
       </ScrollView>
+
+      {type === 'sonarr' && (
+        <>
+          <Text style={styles.label}>Monitor</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
+            {monitorPresets.map((p) => (
+              <Pressable
+                key={p.id}
+                style={[styles.pickerItem, monitorPreset === p.id && styles.pickerItemActive]}
+                onPress={() => setMonitorPreset(p.id)}
+              >
+                <Text style={[styles.pickerText, monitorPreset === p.id && styles.pickerTextActive]}>{p.label}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </>
+      )}
 
       <View style={styles.buttonRow}>
         <Pressable

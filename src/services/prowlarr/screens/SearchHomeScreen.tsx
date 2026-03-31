@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +11,7 @@ import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getProwlarrAdapter, getTransmissionAdapter } from '../../../services/adapterFactory';
 import { useServerStore } from '../../../stores/serverStore';
+import { useToastStore } from '../../../core/hooks/useToast';
 
 export function SearchHomeScreen() {
   const { alert } = useThemedAlert();
@@ -18,6 +20,7 @@ export function SearchHomeScreen() {
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getProwlarrAdapter(config, isLocal) : null, [config, isLocal]);
   const txConfig = useServerStore((s) => s.getServiceConfig('transmission'));
+  const showToast = useToastStore((s) => s.show);
 
   const [query, setQuery] = useState('');
   const [searchType, setSearchType] = useState<SearchType>('search');
@@ -83,7 +86,20 @@ export function SearchHomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>Search</Text></View>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+        <Text style={styles.title}>Search</Text>
+        {adapter && (
+          <Pressable style={styles.syncBtn} onPress={async () => {
+            showToast('Testing indexers & syncing...', 'info');
+            try {
+              await Promise.all([adapter.testAllIndexers().catch(() => {}), adapter.syncIndexers().catch(() => {})]);
+              showToast('Indexer sync complete', 'success');
+            } catch (e: any) { showToast('Sync failed', 'error'); }
+          }}>
+            <Ionicons name="sync" size={20} color={colors.textMuted} />
+          </Pressable>
+        )}
+      </View>
 
       <View style={styles.tabs}>
         {tabs.map(tab => (
@@ -204,8 +220,9 @@ export function SearchHomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
+  syncBtn: { padding: spacing.sm },
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.xl, borderBottomWidth: 1, borderBottomColor: colors.divider, marginBottom: spacing.md },
   tab: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg, borderBottomWidth: 2, borderBottomColor: 'transparent' },
   tabActive: { borderBottomColor: colors.primary },
