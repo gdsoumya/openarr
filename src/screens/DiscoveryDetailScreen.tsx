@@ -70,7 +70,8 @@ export function DiscoveryDetailScreen() {
 
     // Fetch OMDB ratings
     const title = item.title ?? item.name;
-    const year = item.year ?? parseInt(item.first_air_date?.slice(0, 4) ?? item.release_date?.slice(0, 4)) || undefined;
+    const yearStr = item.first_air_date?.slice(0, 4) ?? item.release_date?.slice(0, 4);
+    const year = item.year ?? (yearStr ? parseInt(yearStr) : undefined);
     fetchOMDBRatings({ imdbId: item.imdbId ?? details?.imdb_id, tmdbId: resolvedTmdbId, title, year, type })
       .then(r => { if (!cancelled.value) setOmdbRatings(r); }).catch(() => {});
 
