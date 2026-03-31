@@ -16,3 +16,5 @@ export { LoadingSpinner } from './LoadingSpinner';
 export { Toast } from './Toast';
 export { ServiceIcon } from './ServiceIcon';
 export { CachedImage } from './CachedImage';
+export { ActionSheet } from './ActionSheet';
+export type { ActionSheetOption } from './ActionSheet';

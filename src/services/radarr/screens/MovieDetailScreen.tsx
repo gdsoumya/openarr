@@ -5,6 +5,7 @@ import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
 import { ManualSearchSheet } from '../../shared-arr/components/ManualSearchSheet';
 import { CachedImage } from '../../../core/components/CachedImage';
+import { ActionSheet, ActionSheetOption } from '../../../core/components/ActionSheet';
 import { Movie } from '../types';
 import { Release } from '../../shared-arr/types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
@@ -19,6 +20,12 @@ export function MovieDetailScreen() {
   const [manualSearchReleases, setManualSearchReleases] = useState<Release[]>([]);
   const [showManualSearch, setShowManualSearch] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [actionSheet, setActionSheet] = useState<{
+    visible: boolean;
+    title: string;
+    subtitle?: string;
+    options: ActionSheetOption[];
+  }>({ visible: false, title: '', options: [] });
 
   const radarrConfig = useServiceConfig('radarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
@@ -184,16 +191,23 @@ export function MovieDetailScreen() {
         </Pressable>
         <Pressable style={styles.actionBtn} onPress={() => {
           if (!adapter || !movie) return;
-          Alert.alert('Edit Movie', 'Toggle monitoring?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: movie.monitored ? 'Unmonitor' : 'Monitor', onPress: async () => {
-              try {
-                const updated = { ...movie, monitored: !movie.monitored };
-                await adapter.editMovie(updated);
-                setMovie(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
-              } catch (e: any) { Alert.alert('Error', e.message); }
-            }},
-          ]);
+          setActionSheet({
+            visible: true,
+            title: 'Edit Movie',
+            options: [
+              {
+                label: movie.monitored ? 'Unmonitor' : 'Monitor',
+                icon: '👁',
+                onPress: async () => {
+                  try {
+                    const updated = { ...movie, monitored: !movie.monitored };
+                    await adapter.editMovie(updated);
+                    setMovie(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
+                  } catch (e: any) { Alert.alert('Error', e.message); }
+                },
+              },
+            ],
+          });
         }}>
           <Text style={styles.actionBtnText}>Edit</Text>
         </Pressable>
@@ -214,6 +228,13 @@ export function MovieDetailScreen() {
         } catch (e: any) { Alert.alert('Error', e.message); }
       }}
       onDismiss={() => setShowManualSearch(false)}
+    />
+    <ActionSheet
+      visible={actionSheet.visible}
+      title={actionSheet.title}
+      subtitle={actionSheet.subtitle}
+      options={actionSheet.options}
+      onClose={() => setActionSheet(prev => ({ ...prev, visible: false }))}
     />
     </>
   );

@@ -7,6 +7,7 @@ import { SeasonSection } from '../components/SeasonSection';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { ManualSearchSheet } from '../../shared-arr/components/ManualSearchSheet';
 import { CachedImage } from '../../../core/components/CachedImage';
+import { ActionSheet, ActionSheetOption } from '../../../core/components/ActionSheet';
 import { Series, Episode, Season } from '../types';
 import { Release } from '../../shared-arr/types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
@@ -23,6 +24,12 @@ export function SeriesDetailScreen() {
   const [manualSearchReleases, setManualSearchReleases] = useState<Release[]>([]);
   const [showManualSearch, setShowManualSearch] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [actionSheet, setActionSheet] = useState<{
+    visible: boolean;
+    title: string;
+    subtitle?: string;
+    options: ActionSheetOption[];
+  }>({ visible: false, title: '', options: [] });
 
   const sonarrConfig = useServiceConfig('sonarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
@@ -64,12 +71,13 @@ export function SeriesDetailScreen() {
   // --- Episode actions ---
   function handleEpisodePress(episode: Episode) {
     const isAired = episode.airDateUtc ? new Date(episode.airDateUtc) < new Date() : false;
-    const options: Array<{ text: string; onPress?: () => void; style?: 'cancel' | 'destructive' | 'default' }> = [];
+    const options: ActionSheetOption[] = [];
 
     if (episode.hasFile) {
       // Downloaded — offer upgrade search and delete
       options.push({
-        text: '🔍 Search Upgrade',
+        label: 'Search Upgrade',
+        icon: '🔍',
         onPress: async () => {
           if (!adapter) return;
           try {
@@ -80,8 +88,9 @@ export function SeriesDetailScreen() {
         },
       });
       options.push({
-        text: '🗑 Delete File',
-        style: 'destructive',
+        label: 'Delete File',
+        icon: '🗑',
+        destructive: true,
         onPress: () => {
           Alert.alert('Delete File', `Delete file for S${String(episode.seasonNumber).padStart(2,'0')}E${String(episode.episodeNumber).padStart(2,'0')}?`, [
             { text: 'Cancel', style: 'cancel' },
@@ -92,11 +101,13 @@ export function SeriesDetailScreen() {
     } else if (isAired) {
       // Missing — offer search
       options.push({
-        text: '🔍 Auto Search',
+        label: 'Auto Search',
+        icon: '🔍',
         onPress: () => adapter?.searchEpisode(episode.id).then(() => Alert.alert('Searching', 'Search triggered')).catch(e => Alert.alert('Error', e.message)),
       });
       options.push({
-        text: '📋 Manual Search',
+        label: 'Manual Search',
+        icon: '📋',
         onPress: async () => {
           if (!adapter) return;
           try {
@@ -110,67 +121,72 @@ export function SeriesDetailScreen() {
 
     // Always offer monitor toggle
     options.push({
-      text: episode.monitored ? '👁 Unmonitor' : '👁 Monitor',
+      label: episode.monitored ? 'Unmonitor' : 'Monitor',
+      icon: '👁',
       onPress: () => adapter?.setEpisodeMonitored(episode.id, !episode.monitored).then(onRefresh).catch(e => Alert.alert('Error', e.message)),
     });
-
-    options.push({ text: 'Cancel', style: 'cancel' });
 
     const subtitle = episode.hasFile
       ? `✓ Downloaded${episode.episodeFile ? ` · ${episode.episodeFile.quality?.quality?.name ?? ''}` : ''}`
       : isAired ? '✕ Missing' : `Airs ${episode.airDateUtc ? new Date(episode.airDateUtc).toLocaleDateString() : 'TBA'}`;
 
-    Alert.alert(
-      `S${String(episode.seasonNumber).padStart(2,'0')}E${String(episode.episodeNumber).padStart(2,'0')} · ${episode.title}`,
+    setActionSheet({
+      visible: true,
+      title: `S${String(episode.seasonNumber).padStart(2,'0')}E${String(episode.episodeNumber).padStart(2,'0')} · ${episode.title}`,
       subtitle,
       options,
-    );
+    });
   }
 
   // --- Season actions ---
   function handleSeasonMenu(season: Season) {
     if (!series) return;
-    Alert.alert(`Season ${season.seasonNumber}`, undefined, [
-      {
-        text: 'Search Season',
-        onPress: () => {
-          adapter
-            ?.searchSeason(series.id, season.seasonNumber)
-            .catch((e) => console.error('searchSeason error:', e));
+    setActionSheet({
+      visible: true,
+      title: `Season ${season.seasonNumber}`,
+      options: [
+        {
+          label: 'Search Season',
+          icon: '🔍',
+          onPress: () => {
+            adapter
+              ?.searchSeason(series.id, season.seasonNumber)
+              .catch((e) => console.error('searchSeason error:', e));
+          },
         },
-      },
-      {
-        text: 'Season Cleanup',
-        style: 'destructive',
-        onPress: () => {
-          Alert.alert(
-            'Season Cleanup',
-            'This will delete all episode files and unmonitor episodes in this season.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Clean Up',
-                style: 'destructive',
-                onPress: async () => {
-                  try {
-                    const seasonEps = episodes.filter((e) => e.seasonNumber === season.seasonNumber);
-                    const fileIds = seasonEps
-                      .filter((e) => e.hasFile && e.episodeFileId != null)
-                      .map((e) => e.episodeFileId!);
-                    const episodeIds = seasonEps.map((e) => e.id);
-                    if (fileIds.length > 0) await adapter?.bulkDeleteEpisodeFiles(fileIds);
-                    if (episodeIds.length > 0) await adapter?.bulkSetEpisodesMonitored(episodeIds, false);
-                  } catch (e) {
-                    console.error('Season cleanup error:', e);
-                  }
+        {
+          label: 'Season Cleanup',
+          icon: '🗑',
+          destructive: true,
+          onPress: () => {
+            Alert.alert(
+              'Season Cleanup',
+              'This will delete all episode files and unmonitor episodes in this season.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Clean Up',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      const seasonEps = episodes.filter((e) => e.seasonNumber === season.seasonNumber);
+                      const fileIds = seasonEps
+                        .filter((e) => e.hasFile && e.episodeFileId != null)
+                        .map((e) => e.episodeFileId!);
+                      const episodeIds = seasonEps.map((e) => e.id);
+                      if (fileIds.length > 0) await adapter?.bulkDeleteEpisodeFiles(fileIds);
+                      if (episodeIds.length > 0) await adapter?.bulkSetEpisodesMonitored(episodeIds, false);
+                    } catch (e) {
+                      console.error('Season cleanup error:', e);
+                    }
+                  },
                 },
-              },
-            ],
-          );
+              ],
+            );
+          },
         },
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+      ],
+    });
   }
 
   // --- Series actions ---
@@ -270,16 +286,23 @@ export function SeriesDetailScreen() {
       <View style={styles.actionBar}>
         <Pressable style={styles.actionBtn} onPress={() => {
           if (!adapter || !series) return;
-          Alert.alert('Edit Series', 'Toggle monitoring?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: series.monitored ? 'Unmonitor' : 'Monitor', onPress: async () => {
-              try {
-                const updated = { ...series, monitored: !series.monitored };
-                await adapter.editSeries(updated);
-                setSeries(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
-              } catch (e: any) { Alert.alert('Error', e.message); }
-            }},
-          ]);
+          setActionSheet({
+            visible: true,
+            title: 'Edit Series',
+            options: [
+              {
+                label: series.monitored ? 'Unmonitor' : 'Monitor',
+                icon: '👁',
+                onPress: async () => {
+                  try {
+                    const updated = { ...series, monitored: !series.monitored };
+                    await adapter.editSeries(updated);
+                    setSeries(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
+                  } catch (e: any) { Alert.alert('Error', e.message); }
+                },
+              },
+            ],
+          });
         }}>
           <Text style={styles.actionBtnText}>Edit</Text>
         </Pressable>
@@ -303,6 +326,13 @@ export function SeriesDetailScreen() {
         } catch (e: any) { Alert.alert('Error', e.message); }
       }}
       onDismiss={() => setShowManualSearch(false)}
+    />
+    <ActionSheet
+      visible={actionSheet.visible}
+      title={actionSheet.title}
+      subtitle={actionSheet.subtitle}
+      options={actionSheet.options}
+      onClose={() => setActionSheet(prev => ({ ...prev, visible: false }))}
     />
     </>
   );
