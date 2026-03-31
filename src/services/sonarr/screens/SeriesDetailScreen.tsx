@@ -15,6 +15,9 @@ import { Release } from '../../shared-arr/types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getSonarrAdapter } from '../../../services/adapterFactory';
+import { RatingsBar } from '../../../core/components/RatingsBar';
+import { OMDBClient, OMDBRatings } from '../../omdb/client';
+import { OMDB_API_KEY } from '../../../core/config';
 
 export function SeriesDetailScreen() {
   const { alert } = useThemedAlert();
@@ -27,6 +30,8 @@ export function SeriesDetailScreen() {
   const [manualSearchReleases, setManualSearchReleases] = useState<Release[]>([]);
   const [showManualSearch, setShowManualSearch] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [omdbRatings, setOmdbRatings] = useState<OMDBRatings | null>(null);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
   const [actionSheet, setActionSheet] = useState<{
     visible: boolean;
     title: string;
@@ -41,6 +46,15 @@ export function SeriesDetailScreen() {
     () => (sonarrConfig ? getSonarrAdapter(sonarrConfig, isLocal) : null),
     [sonarrConfig, isLocal],
   );
+
+  // Fetch OMDB ratings
+  useEffect(() => {
+    const imdbId = series?.imdbId;
+    if (!imdbId || OMDB_API_KEY === '__OMDB_API_KEY__') return;
+    setRatingsLoading(true);
+    const omdb = new OMDBClient(OMDB_API_KEY);
+    omdb.getByImdbId(imdbId).then(setOmdbRatings).finally(() => setRatingsLoading(false));
+  }, [series?.imdbId]);
 
   useEffect(() => {
     async function fetchData() {
@@ -285,6 +299,7 @@ export function SeriesDetailScreen() {
         </View>
 
         <MetadataPills pills={pills} />
+        <RatingsBar ratings={omdbRatings} loading={ratingsLoading} />
 
         <View style={styles.tabs}>
           {tabs.map(tab => (

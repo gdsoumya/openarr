@@ -13,6 +13,9 @@ import { Release } from '../../shared-arr/types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getRadarrAdapter } from '../../../services/adapterFactory';
+import { RatingsBar } from '../../../core/components/RatingsBar';
+import { OMDBClient, OMDBRatings } from '../../omdb/client';
+import { OMDB_API_KEY } from '../../../core/config';
 
 export function MovieDetailScreen() {
   const route = useRoute<any>();
@@ -28,6 +31,8 @@ export function MovieDetailScreen() {
     subtitle?: string;
     options: ActionSheetOption[];
   }>({ visible: false, title: '', options: [] });
+  const [omdbRatings, setOmdbRatings] = useState<OMDBRatings | null>(null);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
 
   const { alert } = useThemedAlert();
   const radarrConfig = useServiceConfig('radarr');
@@ -37,6 +42,15 @@ export function MovieDetailScreen() {
     () => (radarrConfig ? getRadarrAdapter(radarrConfig, isLocal) : null),
     [radarrConfig, isLocal],
   );
+
+  // Fetch OMDB ratings when we have an IMDB ID
+  useEffect(() => {
+    const imdbId = movie?.imdbId;
+    if (!imdbId || OMDB_API_KEY === '__OMDB_API_KEY__') return;
+    setRatingsLoading(true);
+    const omdb = new OMDBClient(OMDB_API_KEY);
+    omdb.getByImdbId(imdbId).then(setOmdbRatings).finally(() => setRatingsLoading(false));
+  }, [movie?.imdbId]);
 
   useEffect(() => {
     async function fetchData() {
@@ -180,6 +194,7 @@ export function MovieDetailScreen() {
         </View>
 
         <MetadataPills pills={pills} />
+        <RatingsBar ratings={omdbRatings} tmdbRating={movie.ratings?.tmdb?.value} loading={ratingsLoading} />
 
         <View style={styles.tabs}>
           {tabs.map(tab => (
