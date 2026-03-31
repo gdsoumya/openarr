@@ -9,6 +9,7 @@ import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getSonarrAdapter, getRadarrAdapter } from '../../../services/adapterFactory';
 import { QualityProfile, RootFolder } from '../types';
+import { tmdb } from '../../tmdb/instance';
 
 interface AddItemSheetProps {
   visible: boolean;
@@ -112,13 +113,19 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
       if (type === 'sonarr') {
         const adapter = getSonarrAdapter(config, isLocal);
 
-        // If this is a TMDB item (no tvdbId), lookup via Sonarr to get proper data
+        // If this is a TMDB item (no tvdbId), resolve via TMDB external IDs → Sonarr lookup by tvdbId
         let seriesData = item;
         if (!item.tvdbId) {
-          const title = item.title ?? item.name;
-          const lookupResults = await adapter.lookupSeries(title);
-          const match = lookupResults[0]; // Best match
-          if (!match) throw new Error(`Could not find "${title}" in Sonarr lookup. Try searching from the TV tab instead.`);
+          const tmdbId = item.id;
+          // Step 1: Get TVDB ID from TMDB (exact, no fuzzy)
+          const externalIds = await tmdb.getShowExternalIds(tmdbId);
+          if (!externalIds.tvdb_id) {
+            throw new Error('This show has no TVDB ID on TMDB. Cannot add to Sonarr.');
+          }
+          // Step 2: Lookup in Sonarr using tvdb:{id} for exact match
+          const lookupResults = await adapter.lookupSeries(`tvdb:${externalIds.tvdb_id}`);
+          const match = lookupResults.find((r: any) => r.tvdbId === externalIds.tvdb_id) ?? lookupResults[0];
+          if (!match) throw new Error('Show not found in Sonarr lookup.');
           seriesData = match;
         }
 
@@ -148,14 +155,13 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
       } else {
         const adapter = getRadarrAdapter(config, isLocal);
 
-        // If this is a TMDB item (no tmdbId field from Radarr), lookup via Radarr
+        // If this is a TMDB search item, lookup via Radarr using tmdb:{id} for exact match
         let movieData = item;
         if (!item.tmdbId || item.poster_path) {
-          // Has poster_path = came from TMDB, needs Radarr lookup for proper format
-          const title = item.title ?? item.name;
-          const lookupResults = await adapter.lookupMovie(title);
-          const match = lookupResults[0];
-          if (!match) throw new Error(`Could not find "${title}" in Radarr lookup.`);
+          const tmdbId = item.tmdbId ?? item.id;
+          const lookupResults = await adapter.lookupMovie(`tmdb:${tmdbId}`);
+          const match = lookupResults.find((r: any) => r.tmdbId === tmdbId) ?? lookupResults[0];
+          if (!match) throw new Error('Movie not found in Radarr lookup.');
           movieData = match;
         }
 
