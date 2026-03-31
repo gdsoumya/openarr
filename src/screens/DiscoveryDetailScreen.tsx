@@ -1,31 +1,102 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../core/theme/tokens';
 import { Badge } from '../core/components/Badge';
 import { CachedImage } from '../core/components/CachedImage';
+import { RatingsBar } from '../core/components/RatingsBar';
+import { MediaInfo } from '../core/components/MediaInfo';
 import { useLibraryCache } from '../stores/libraryCache';
-import { posterUrl, backdropUrl } from '../services/tmdb/types';
+import { posterUrl, backdropUrl, WatchProviderCountry } from '../services/tmdb/types';
 import { AddItemSheet } from '../services/shared-arr/components/AddItemSheet';
+import { TMDBClient } from '../services/tmdb/client';
+import { OMDBClient, OMDBRatings } from '../services/omdb/client';
+import { TMDB_READ_ACCESS_TOKEN, OMDB_API_KEY } from '../core/config';
+
+const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
 
 export function DiscoveryDetailScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { item, type } = route.params ?? {}; // type: 'tv' | 'movie'
   const isInSonarr = useLibraryCache((s) => s.isInSonarr);
   const isInRadarr = useLibraryCache((s) => s.isInRadarr);
   const [showAddSheet, setShowAddSheet] = useState(false);
 
+  // Extra metadata
+  const [omdbRatings, setOmdbRatings] = useState<OMDBRatings | null>(null);
+  const [watchProviders, setWatchProviders] = useState<WatchProviderCountry | undefined>();
+  const [details, setDetails] = useState<any>(null);
+
+  const tmdbId = item?.id ?? item?.tmdbId;
+
+  useEffect(() => {
+    if (!tmdbId) return;
+
+    // Fetch full details from TMDB
+    if (type === 'tv') {
+      tmdb.getShowDetails(tmdbId).then(setDetails).catch(() => {});
+      tmdb.getTVWatchProviders(tmdbId).then((p) => {
+        setWatchProviders(p['US'] ?? p['GB'] ?? Object.values(p)[0]);
+      }).catch(() => {});
+    } else {
+      tmdb.getMovieDetails(tmdbId).then(setDetails).catch(() => {});
+      tmdb.getMovieWatchProviders(tmdbId).then((p) => {
+        setWatchProviders(p['US'] ?? p['GB'] ?? Object.values(p)[0]);
+      }).catch(() => {});
+    }
+
+    // Fetch OMDB ratings if we have an IMDB ID (from Sonarr/Radarr lookup results)
+    const imdbId = item?.imdbId;
+    if (imdbId && OMDB_API_KEY !== '__OMDB_API_KEY__') {
+      const omdb = new OMDBClient(OMDB_API_KEY);
+      omdb.getByImdbId(imdbId).then(setOmdbRatings).catch(() => {});
+    } else if (tmdbId && OMDB_API_KEY !== '__OMDB_API_KEY__') {
+      // For TMDB items without imdbId, try to get it from TMDB external IDs
+      if (type === 'tv') {
+        tmdb.getShowExternalIds(tmdbId).then((ids) => {
+          if (ids.imdb_id) {
+            const omdb = new OMDBClient(OMDB_API_KEY);
+            omdb.getByImdbId(ids.imdb_id).then(setOmdbRatings).catch(() => {});
+          }
+        }).catch(() => {});
+      }
+      // For movies, TMDB details include imdb_id
+    }
+  }, [tmdbId, type]);
+
+  // Once we have movie details with imdb_id, fetch OMDB
+  useEffect(() => {
+    if (details?.imdb_id && OMDB_API_KEY !== '__OMDB_API_KEY__' && !omdbRatings) {
+      const omdb = new OMDBClient(OMDB_API_KEY);
+      omdb.getByImdbId(details.imdb_id).then(setOmdbRatings).catch(() => {});
+    }
+  }, [details?.imdb_id]);
+
   if (!item) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;
 
-  const title = type === 'tv' ? item.name : item.title;
+  const title = type === 'tv' ? (item.name ?? item.title) : item.title;
   const year = type === 'tv' ? item.first_air_date?.slice(0, 4) : item.release_date?.slice(0, 4);
   const rating = item.vote_average;
-  const overview = item.overview;
+  const overview = item.overview ?? details?.overview;
   const poster = posterUrl(item.poster_path, 'w500');
   const backdrop = backdropUrl(item.backdrop_path);
   const inLibrary = type === 'tv' ? isInSonarr(item.id) : isInRadarr(item.id);
-  const arrType = type === 'tv' ? 'sonarr' : 'radarr';
+  const arrType = type === 'tv' ? 'sonarr' as const : 'radarr' as const;
+
+  // Build metadata from TMDB details
+  const releaseDate = type === 'tv' ? (item.first_air_date ?? details?.first_air_date) : (item.release_date ?? details?.release_date);
+  const originCountry = item.origin_country ?? details?.origin_country ?? details?.production_countries?.map((c: any) => c.iso_3166_1);
+  const originalLanguage = item.original_language ?? details?.original_language;
+  const genres = details?.genres?.map((g: any) => g.name);
+  const runtime = details?.runtime ?? details?.episode_run_time?.[0];
+  const seasonCount = details?.number_of_seasons;
+  const episodeCount = details?.number_of_episodes;
+  const network = details?.networks?.[0]?.name;
+  const status = details?.status;
 
   return (
     <>
@@ -33,19 +104,45 @@ export function DiscoveryDetailScreen() {
         {backdrop && <CachedImage uri={backdrop} style={styles.backdrop as any} />}
         <View style={styles.heroOverlay} />
 
+        {/* Back button */}
+        <Pressable style={[styles.backButton, { top: insets.top + 8 }]} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color="#fff" />
+        </Pressable>
+
         <View style={styles.heroContent}>
           {poster && <CachedImage uri={poster} style={styles.poster as any} />}
           <View style={styles.titleBlock}>
             <Text style={styles.title}>{title}</Text>
-            <Text style={styles.subtitle}>{year} · ★ {rating?.toFixed(1)}</Text>
+            <Text style={styles.subtitle}>
+              {year}{runtime ? ` · ${runtime}min` : ''}{network ? ` · ${network}` : ''}
+            </Text>
             {inLibrary && <Badge label="In Library" variant="inLibrary" style={{ alignSelf: 'flex-start', marginTop: 8 }} />}
           </View>
         </View>
 
+        {/* Ratings */}
+        <RatingsBar ratings={omdbRatings} tmdbRating={rating} />
+
+        {/* Overview */}
         <View style={styles.section}>
           <Text style={styles.overview}>{overview}</Text>
         </View>
 
+        {/* Media info + streaming providers */}
+        <MediaInfo
+          releaseDate={releaseDate}
+          status={status}
+          network={network}
+          originCountry={originCountry}
+          originalLanguage={originalLanguage}
+          genres={genres}
+          runtime={runtime}
+          seasonCount={seasonCount}
+          episodeCount={episodeCount}
+          watchProviders={watchProviders}
+        />
+
+        {/* Add buttons */}
         {!inLibrary && (
           <View style={styles.section}>
             <Pressable style={styles.addButton} onPress={() => setShowAddSheet(true)}>
@@ -56,6 +153,8 @@ export function DiscoveryDetailScreen() {
             </Pressable>
           </View>
         )}
+
+        <View style={{ height: 40 }} />
       </ScrollView>
 
       <AddItemSheet
@@ -63,9 +162,7 @@ export function DiscoveryDetailScreen() {
         type={arrType}
         item={item}
         onDismiss={() => setShowAddSheet(false)}
-        onAdded={() => {
-          // Library cache will refresh on next poll; nothing extra needed here
-        }}
+        onAdded={() => {}}
       />
     </>
   );
@@ -74,14 +171,15 @@ export function DiscoveryDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   loading: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 100 },
-  backdrop: { width: '100%', height: 220, resizeMode: 'cover' },
+  backdrop: { width: '100%', height: 220 },
   heroOverlay: { position: 'absolute', top: 0, left: 0, right: 0, height: 220, backgroundColor: 'rgba(15,16,35,0.5)' },
+  backButton: { position: 'absolute', left: spacing.lg, zIndex: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   heroContent: { flexDirection: 'row', gap: spacing.lg, paddingHorizontal: spacing.xl, marginTop: -60 },
-  poster: { width: 100, height: 150, borderRadius: radii.md },
+  poster: { width: 100, height: 150, borderRadius: radii.md, overflow: 'hidden' },
   titleBlock: { flex: 1, justifyContent: 'flex-end', paddingBottom: spacing.sm },
   title: { ...typography.h2, color: colors.textPrimary },
   subtitle: { ...typography.caption, color: colors.textMuted, marginTop: 4 },
-  section: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
+  section: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg },
   overview: { ...typography.body, color: colors.textSecondary, lineHeight: 22 },
   addButton: { backgroundColor: colors.primary, borderRadius: radii.md, padding: spacing.lg, alignItems: 'center', marginTop: spacing.lg },
   addButtonText: { ...typography.bodyBold, color: '#0f1023' },
