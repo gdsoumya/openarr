@@ -40,9 +40,12 @@ export function Carousel({
       </View>
 
       {showPlaceholder ? (
-        <View style={[styles.placeholder, { minHeight }]}>
+        <View style={[styles.placeholder, { height: minHeight }]}>
           {status === 'loading' && (
-            <Text style={styles.placeholderText}>Loading...</Text>
+            <>
+              <Text style={styles.placeholderIcon}>⏳</Text>
+              <Text style={styles.placeholderText}>Loading...</Text>
+            </>
           )}
           {status === 'error' && (
             <>
@@ -51,7 +54,10 @@ export function Carousel({
             </>
           )}
           {(status === 'empty' || (!status && empty)) && (
-            <Text style={styles.placeholderText}>No items</Text>
+            <>
+              <Text style={styles.placeholderIcon}>📭</Text>
+              <Text style={styles.placeholderText}>No items yet</Text>
+            </>
           )}
         </View>
       ) : (
@@ -78,15 +84,14 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: spacing.xl, gap: spacing.md },
   placeholder: {
     marginHorizontal: spacing.xl,
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    backgroundColor: 'rgba(255,255,255,0.015)',
     borderWidth: 1,
-    borderColor: colors.divider,
+    borderColor: 'rgba(255,255,255,0.04)',
     borderRadius: radii.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    borderStyle: 'dashed',
   },
-  placeholderIcon: { fontSize: 24, marginBottom: spacing.sm },
+  placeholderIcon: { fontSize: 32, marginBottom: spacing.sm, opacity: 0.5 },
   placeholderText: { ...typography.caption, color: colors.textMuted },
   placeholderError: { ...typography.caption, color: colors.textMuted, textAlign: 'center', paddingHorizontal: spacing.xl },
 });
