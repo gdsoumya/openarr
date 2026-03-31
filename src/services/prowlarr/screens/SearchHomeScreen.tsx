@@ -116,21 +116,20 @@ export function SearchHomeScreen() {
           {!loading && (
             <FlashList data={results} estimatedItemSize={80}
               renderItem={({ item }) => (
-                <Pressable style={styles.resultItem} onPress={() => {
-                  Alert.alert(item.title, `${formatSize(item.size)} · ${item.indexer}`, [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Grab', onPress: () => grabResult(item) },
-                  ]);
-                }}>
+                <Pressable style={styles.resultItem} onPress={() => grabResult(item)}>
                   <View style={styles.resultTop}>
                     <Text style={styles.resultTitle} numberOfLines={2}>{item.title}</Text>
+                    <View style={styles.grabBadge}>
+                      <Text style={styles.grabBadgeText}>GRAB</Text>
+                    </View>
                   </View>
                   <View style={styles.resultStats}>
                     <Text style={styles.resultStat}>{formatSize(item.size)}</Text>
                     <Text style={styles.resultStat}>{formatAge(item.ageHours)}</Text>
-                    {item.seeders !== undefined && <Text style={styles.resultStat}>S:{item.seeders}</Text>}
-                    {item.leechers !== undefined && <Text style={styles.resultStat}>L:{item.leechers}</Text>}
+                    {item.seeders !== undefined && <Text style={[styles.resultStat, { color: colors.success }]}>S:{item.seeders}</Text>}
+                    {item.leechers !== undefined && <Text style={[styles.resultStat, { color: colors.error }]}>L:{item.leechers}</Text>}
                     <Text style={[styles.resultStat, { color: colors.primary }]}>{item.indexer}</Text>
+                    <Text style={styles.resultStat}>{item.protocol}</Text>
                   </View>
                 </Pressable>
               )}
@@ -213,8 +212,10 @@ const styles = StyleSheet.create({
   searchRow: { paddingHorizontal: spacing.xl, marginBottom: spacing.md },
   searchInput: { ...typography.body, color: colors.textPrimary, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.lg, paddingHorizontal: spacing.lg, paddingVertical: 11 },
   resultItem: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
-  resultTop: { marginBottom: spacing.sm },
-  resultTitle: { ...typography.caption, fontWeight: '600', color: colors.textPrimary, lineHeight: 17 },
+  resultTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.sm, marginBottom: spacing.sm },
+  resultTitle: { ...typography.caption, fontWeight: '600', color: colors.textPrimary, lineHeight: 17, flex: 1 },
+  grabBadge: { backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder, borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 2 },
+  grabBadgeText: { ...typography.badge, color: colors.primary },
   resultStats: { flexDirection: 'row', gap: spacing.md },
   resultStat: { ...typography.micro, color: colors.textMuted },
   placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
