@@ -1,3 +1,4 @@
-// Replace with your TMDB API key from https://www.themoviedb.org/settings/api
+// Replace with your TMDB Read Access Token from https://www.themoviedb.org/settings/api
+// Found under "API Read Access Token" (starts with "eyJ...")
 // Free tier: 40 requests/second
-export const TMDB_API_KEY = '__TMDB_API_KEY__';
+export const TMDB_READ_ACCESS_TOKEN = '__TMDB_READ_ACCESS_TOKEN__';

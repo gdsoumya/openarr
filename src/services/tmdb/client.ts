@@ -4,8 +4,12 @@ import { TMDBShow, TMDBMovie, TMDBExternalIds, TMDBCredits } from './types';
 export class TMDBClient {
   private client: AxiosInstance;
 
-  constructor(apiKey: string) {
-    this.client = axios.create({ baseURL: 'https://api.themoviedb.org/3', params: { api_key: apiKey }, timeout: 10000 });
+  constructor(readAccessToken: string) {
+    this.client = axios.create({
+      baseURL: 'https://api.themoviedb.org/3',
+      timeout: 10000,
+      headers: { Authorization: `Bearer ${readAccessToken}` },
+    });
   }
 
   async getTrendingShows(): Promise<TMDBShow[]> { const { data } = await this.client.get('/trending/tv/week'); return data.results; }

@@ -11,11 +11,11 @@ import { useConnectionStore } from '../../../stores/connectionStore';
 import { getRadarrAdapter } from '../../../services/adapterFactory';
 import { useLibraryCache } from '../../../stores/libraryCache';
 import { TMDBClient } from '../../tmdb/client';
-import { TMDB_API_KEY } from '../../../core/config';
+import { TMDB_READ_ACCESS_TOKEN } from '../../../core/config';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { useToastStore } from '../../../core/hooks/useToast';
 
-const tmdb = new TMDBClient(TMDB_API_KEY);
+const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
 
 function getMovieBadge(m: Movie) {
   if (m.hasFile && m.movieFile) {
