@@ -43,7 +43,19 @@ export function createServiceClient(config: ServiceConfig, isLocal: boolean): Ax
 }
 
 export function createTransmissionClient(config: ServiceConfig, isLocal: boolean): AxiosInstance {
-  const client = createServiceClient(config, isLocal);
+  // Transmission RPC endpoint must end with /rpc — auto-append if missing
+  const fixedConfig = { ...config };
+  const fixUrl = (url: string) => {
+    if (!url) return url;
+    const trimmed = url.replace(/\/+$/, '');
+    if (trimmed.endsWith('/rpc')) return trimmed;
+    if (trimmed.endsWith('/transmission')) return `${trimmed}/rpc`;
+    return `${trimmed}/transmission/rpc`;
+  };
+  fixedConfig.localUrl = fixUrl(config.localUrl);
+  fixedConfig.remoteUrl = fixUrl(config.remoteUrl || config.localUrl);
+
+  const client = createServiceClient(fixedConfig, isLocal);
   let csrfToken: string | null = null;
 
   client.interceptors.request.use((req: InternalAxiosRequestConfig) => {
@@ -60,6 +72,11 @@ export function createTransmissionClient(config: ServiceConfig, isLocal: boolean
         csrfToken = error.response.headers['x-transmission-session-id'];
         if (csrfToken && error.config) {
           error.config.headers['X-Transmission-Session-Id'] = csrfToken;
+          // Re-apply auth for retry — axios doesn't carry defaults.auth on retried configs
+          if (fixedConfig.username && fixedConfig.password) {
+            const encoded = btoa(`${fixedConfig.username}:${fixedConfig.password}`);
+            error.config.headers['Authorization'] = `Basic ${encoded}`;
+          }
           return client.request(error.config);
         }
       }
