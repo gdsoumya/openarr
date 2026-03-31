@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ScrollView, View, Text, StyleSheet, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../../core/theme/tokens';
@@ -17,6 +17,8 @@ import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { useToastStore } from '../../../core/hooks/useToast';
 
 const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
+
+type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
 
 function getSeriesBadge(s: Series) {
   const st = s.statistics;
@@ -39,32 +41,63 @@ export function TVHomeScreen() {
   const [library, setLibrary] = useState<Series[]>([]);
   const [trending, setTrending] = useState<TMDBShow[]>([]);
   const [recentlyAired, setRecentlyAired] = useState<TMDBShow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const showToast = useToastStore((s) => s.show);
 
-  async function fetchData() {
-    try {
-      if (adapter) {
+  const [libraryStatus, setLibraryStatus] = useState<LoadStatus>('loading');
+  const [trendingStatus, setTrendingStatus] = useState<LoadStatus>('loading');
+  const [recentStatus, setRecentStatus] = useState<LoadStatus>('loading');
+  const [trendingError, setTrendingError] = useState('');
+  const [recentError, setRecentError] = useState('');
+
+  const fetchData = useCallback(async () => {
+    // Fetch library from Sonarr
+    if (adapter) {
+      setLibraryStatus('loading');
+      try {
         const series = await adapter.getSeries();
         setLibrary(series);
         setSonarrIds(adapter.getTvdbIds(series));
+        setLibraryStatus(series.length > 0 ? 'loaded' : 'empty');
+      } catch (e: any) {
+        setLibraryStatus('error');
+        showToast(`Sonarr: ${e.message ?? 'Connection failed'}`, 'error');
       }
-      const [trendingData, recentData] = await Promise.all([
-        tmdb.getTrendingShows().catch(() => []),
-        tmdb.getOnTheAirShows().catch(() => []),
-      ]);
-      setTrending(trendingData);
-      setRecentlyAired(recentData);
-    } catch (e: any) {
-      showToast(e.message ?? 'Failed to fetch TV shows', 'error');
+    } else {
+      setLibraryStatus('empty');
     }
-    setLoading(false);
-  }
 
-  useEffect(() => { fetchData(); }, [adapter]);
+    // Fetch trending from TMDB
+    setTrendingStatus('loading');
+    try {
+      const data = await tmdb.getTrendingShows();
+      setTrending(data);
+      setTrendingStatus(data.length > 0 ? 'loaded' : 'empty');
+      setTrendingError('');
+    } catch (e: any) {
+      setTrendingStatus('error');
+      setTrendingError(e.response?.status === 401 ? 'Invalid TMDB token — check config.ts' : `TMDB: ${e.message ?? 'Failed to load'}`);
+    }
 
-  if (loading) return <LoadingSpinner message="Loading TV shows..." />;
+    // Fetch recently aired from TMDB
+    setRecentStatus('loading');
+    try {
+      const data = await tmdb.getOnTheAirShows();
+      setRecentlyAired(data);
+      setRecentStatus(data.length > 0 ? 'loaded' : 'empty');
+      setRecentError('');
+    } catch (e: any) {
+      setRecentStatus('error');
+      setRecentError(e.response?.status === 401 ? 'Invalid TMDB token' : `TMDB: ${e.message ?? 'Failed to load'}`);
+    }
+
+    setInitialLoading(false);
+  }, [adapter]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  if (initialLoading) return <LoadingSpinner message="Loading TV shows..." />;
 
   const displayLibrary = searchQuery
     ? library.filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -88,21 +121,23 @@ export function TVHomeScreen() {
         </View>
       )}
 
-      {(config || displayLibrary.length > 0) && (
-        <Carousel title="My Library" count={displayLibrary.length} onSeeAll={() => {}}>
-          {displayLibrary.map((s) => (
-            <PosterCard key={s.id} title={s.title} subtitle={`${s.network} · ${s.status === 'continuing' ? 'Airing' : 'Ended'}`}
-              posterUrl={s.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getSeriesBadge(s)} onPress={() => {}} />
-          ))}
-        </Carousel>
-      )}
+      <Carousel title="My Library" count={displayLibrary.length} onSeeAll={() => {}}
+        status={!config ? 'empty' : libraryStatus}>
+        {displayLibrary.map((s) => (
+          <PosterCard key={s.id} title={s.title} subtitle={`${s.network} · ${s.status === 'continuing' ? 'Airing' : 'Ended'}`}
+            posterUrl={s.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getSeriesBadge(s)} onPress={() => {}} />
+        ))}
+      </Carousel>
 
-      <Carousel title="Trending This Week" onSeeAll={() => {}}>
+      <Carousel title="Trending This Week" onSeeAll={() => {}}
+        status={trendingStatus} errorMessage={trendingError}>
         {trending.map((s) => (
           <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md" onPress={() => {}} />
         ))}
       </Carousel>
-      <Carousel title="Recently Aired" onSeeAll={() => {}}>
+
+      <Carousel title="Recently Aired" onSeeAll={() => {}}
+        status={recentStatus} errorMessage={recentError}>
         {recentlyAired.map((s) => (
           <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md" onPress={() => {}} />
         ))}

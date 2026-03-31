@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ScrollView, View, Text, StyleSheet, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../../core/theme/tokens';
@@ -17,6 +17,8 @@ import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { useToastStore } from '../../../core/hooks/useToast';
 
 const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
+
+type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
 
 function getMovieBadge(m: Movie) {
   if (m.hasFile && m.movieFile) {
@@ -39,32 +41,63 @@ export function MoviesHomeScreen() {
   const [library, setLibrary] = useState<Movie[]>([]);
   const [trending, setTrending] = useState<TMDBMovie[]>([]);
   const [recentlyReleased, setRecentlyReleased] = useState<TMDBMovie[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const showToast = useToastStore((s) => s.show);
 
-  async function fetchData() {
-    try {
-      if (adapter) {
+  const [libraryStatus, setLibraryStatus] = useState<LoadStatus>('loading');
+  const [trendingStatus, setTrendingStatus] = useState<LoadStatus>('loading');
+  const [recentStatus, setRecentStatus] = useState<LoadStatus>('loading');
+  const [trendingError, setTrendingError] = useState('');
+  const [recentError, setRecentError] = useState('');
+
+  const fetchData = useCallback(async () => {
+    // Library from Radarr
+    if (adapter) {
+      setLibraryStatus('loading');
+      try {
         const movies = await adapter.getMovies();
         setLibrary(movies);
         setRadarrIds(adapter.getTmdbIds(movies));
+        setLibraryStatus(movies.length > 0 ? 'loaded' : 'empty');
+      } catch (e: any) {
+        setLibraryStatus('error');
+        showToast(`Radarr: ${e.message ?? 'Connection failed'}`, 'error');
       }
-      const [trendingData, nowPlayingData] = await Promise.all([
-        tmdb.getTrendingMovies().catch(() => []),
-        tmdb.getNowPlayingMovies().catch(() => []),
-      ]);
-      setTrending(trendingData);
-      setRecentlyReleased(nowPlayingData);
-    } catch (e: any) {
-      showToast(e.message ?? 'Failed to fetch movies', 'error');
+    } else {
+      setLibraryStatus('empty');
     }
-    setLoading(false);
-  }
 
-  useEffect(() => { fetchData(); }, [adapter]);
+    // Trending from TMDB
+    setTrendingStatus('loading');
+    try {
+      const data = await tmdb.getTrendingMovies();
+      setTrending(data);
+      setTrendingStatus(data.length > 0 ? 'loaded' : 'empty');
+      setTrendingError('');
+    } catch (e: any) {
+      setTrendingStatus('error');
+      setTrendingError(e.response?.status === 401 ? 'Invalid TMDB token — check config.ts' : `TMDB: ${e.message ?? 'Failed to load'}`);
+    }
 
-  if (loading) return <LoadingSpinner message="Loading movies..." />;
+    // Recently released from TMDB
+    setRecentStatus('loading');
+    try {
+      const data = await tmdb.getNowPlayingMovies();
+      setRecentlyReleased(data);
+      setRecentStatus(data.length > 0 ? 'loaded' : 'empty');
+      setRecentError('');
+    } catch (e: any) {
+      setRecentStatus('error');
+      setRecentError(e.response?.status === 401 ? 'Invalid TMDB token' : `TMDB: ${e.message ?? 'Failed to load'}`);
+    }
+
+    setInitialLoading(false);
+  }, [adapter]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  if (initialLoading) return <LoadingSpinner message="Loading movies..." />;
 
   const displayLibrary = searchQuery
     ? library.filter(m => m.title.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -88,21 +121,23 @@ export function MoviesHomeScreen() {
         </View>
       )}
 
-      {(config || displayLibrary.length > 0) && (
-        <Carousel title="My Library" count={displayLibrary.length} onSeeAll={() => {}}>
-          {displayLibrary.map((m) => (
-            <PosterCard key={m.id} title={m.title} subtitle={`${m.year} · ${m.genres?.[0] ?? ''}`}
-              posterUrl={m.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getMovieBadge(m)} onPress={() => {}} />
-          ))}
-        </Carousel>
-      )}
+      <Carousel title="My Library" count={displayLibrary.length} onSeeAll={() => {}}
+        status={!config ? 'empty' : libraryStatus}>
+        {displayLibrary.map((m) => (
+          <PosterCard key={m.id} title={m.title} subtitle={`${m.year} · ${m.genres?.[0] ?? ''}`}
+            posterUrl={m.images.find(i => i.coverType === 'poster')?.remoteUrl} badge={getMovieBadge(m)} onPress={() => {}} />
+        ))}
+      </Carousel>
 
-      <Carousel title="Trending This Week" onSeeAll={() => {}}>
+      <Carousel title="Trending This Week" onSeeAll={() => {}}
+        status={trendingStatus} errorMessage={trendingError}>
         {trending.map((m) => (
           <PosterCard key={m.id} title={m.title} subtitle={m.release_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => {}} />
         ))}
       </Carousel>
-      <Carousel title="Recently Released" onSeeAll={() => {}}>
+
+      <Carousel title="Recently Released" onSeeAll={() => {}}
+        status={recentStatus} errorMessage={recentError}>
         {recentlyReleased.map((m) => (
           <PosterCard key={m.id} title={m.title} subtitle={m.release_date ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md" onPress={() => {}} />
         ))}
