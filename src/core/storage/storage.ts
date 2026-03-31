@@ -17,7 +17,12 @@ export class AppStorage {
   getServers(): ServerConfig[] {
     const raw = this.mmkv.getString(KEYS.SERVERS);
     if (!raw) return [];
-    return JSON.parse(raw);
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   }
 
   saveServer(server: ServerConfig): void {

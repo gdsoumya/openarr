@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -42,16 +42,17 @@ export function DashboardScreen() {
     transmission: 'Torrents', sonarr: 'TV', radarr: 'Movies', prowlarr: 'Search', bazarr: 'Subs',
   };
   const previousQueueRef = useRef<Array<{ id: number; title: string }>>([]);
+  const erroredServicesRef = useRef<Set<string>>(new Set());
   const showToast = useToastStore((s) => s.show);
 
   const fetchStatuses = useCallback(async () => {
     if (!server) return;
     const newStatuses: Partial<Record<ServiceId, ServiceStatus>> = {};
 
-    for (const svc of enabledServices) {
-      try {
+    const results = await Promise.allSettled(
+      enabledServices.map(async (svc) => {
         const config = server.services.find(s => s.serviceId === svc.serviceId);
-        if (!config) continue;
+        if (!config) return;
         let adapter: any;
         switch (svc.serviceId) {
           case 'transmission': adapter = getTransmissionAdapter(config, isLocal); break;
@@ -60,11 +61,26 @@ export function DashboardScreen() {
           case 'prowlarr': adapter = getProwlarrAdapter(config, isLocal); break;
           case 'bazarr': adapter = getBazarrAdapter(config, isLocal); break;
         }
-        if (adapter) newStatuses[svc.serviceId] = await adapter.getStatus();
-      } catch (e: any) {
-        showToast(`${svc.serviceId}: ${e.message ?? 'Connection failed'}`, 'error');
+        if (adapter) {
+          const status = await adapter.getStatus();
+          return { serviceId: svc.serviceId, status };
+        }
+      })
+    );
+
+    results.forEach((result, index) => {
+      const svc = enabledServices[index];
+      if (result.status === 'fulfilled' && result.value) {
+        newStatuses[result.value.serviceId] = result.value.status;
+        erroredServicesRef.current.delete(svc.serviceId);
+      } else if (result.status === 'rejected') {
+        if (!erroredServicesRef.current.has(svc.serviceId)) {
+          erroredServicesRef.current.add(svc.serviceId);
+          showToast(`${svc.serviceId}: ${result.reason?.message ?? 'Connection failed'}`, 'error');
+        }
       }
-    }
+    });
+
     setStatuses(newStatuses);
 
     // Transmission speed data + queue comparison for download notifications

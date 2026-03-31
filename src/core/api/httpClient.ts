@@ -71,6 +71,9 @@ export function createTransmissionClient(config: ServiceConfig, isLocal: boolean
     (response) => response,
     async (error) => {
       if (error.response?.status === 409) {
+        const retries = (error.config as any).__csrfRetryCount ?? 0;
+        if (retries >= 2) return Promise.reject(error);
+        (error.config as any).__csrfRetryCount = retries + 1;
         csrfToken = error.response.headers['x-transmission-session-id'];
         if (csrfToken && error.config) {
           error.config.headers['X-Transmission-Session-Id'] = csrfToken;

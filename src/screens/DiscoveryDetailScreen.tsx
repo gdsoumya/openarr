@@ -36,18 +36,19 @@ export function DiscoveryDetailScreen() {
 
   useEffect(() => {
     if (!tmdbId) return;
+    let cancelled = false;
     const itemTitle = type === 'tv' ? (item?.name ?? item?.title) : item?.title;
 
     // Fetch full details from TMDB
     if (type === 'tv') {
-      tmdb.getShowDetails(tmdbId).then(setDetails).catch(() => {});
+      tmdb.getShowDetails(tmdbId).then((d) => { if (!cancelled) setDetails(d); }).catch(() => {});
       tmdb.getTVWatchProviders(tmdbId).then((p) => {
-        setWatchProviders(p['US'] ?? p['GB'] ?? Object.values(p)[0]);
+        if (!cancelled) setWatchProviders(p['US'] ?? p['GB'] ?? Object.values(p)[0]);
       }).catch(() => {});
     } else {
-      tmdb.getMovieDetails(tmdbId).then(setDetails).catch(() => {});
+      tmdb.getMovieDetails(tmdbId).then((d) => { if (!cancelled) setDetails(d); }).catch(() => {});
       tmdb.getMovieWatchProviders(tmdbId).then((p) => {
-        setWatchProviders(p['US'] ?? p['GB'] ?? Object.values(p)[0]);
+        if (!cancelled) setWatchProviders(p['US'] ?? p['GB'] ?? Object.values(p)[0]);
       }).catch(() => {});
     }
 
@@ -58,7 +59,9 @@ export function DiscoveryDetailScreen() {
       title: itemTitle,
       year: parseInt(type === 'tv' ? item?.first_air_date?.slice(0, 4) : item?.release_date?.slice(0, 4)) || undefined,
       type,
-    }).then(setOmdbRatings).catch(() => {});
+    }).then((r) => { if (!cancelled) setOmdbRatings(r); }).catch(() => {});
+
+    return () => { cancelled = true; };
   }, [tmdbId, type]);
 
   if (!item) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;

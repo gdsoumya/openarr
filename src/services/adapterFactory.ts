@@ -18,9 +18,10 @@ export function getAdapter(config: ServiceConfig, isLocal: boolean): AnyAdapter 
       case 'radarr': adapters.set(key, new RadarrAdapter(config, isLocal)); break;
       case 'prowlarr': adapters.set(key, new ProwlarrAdapter(config, isLocal)); break;
       case 'bazarr': adapters.set(key, new BazarrAdapter(config, isLocal)); break;
+      default: throw new Error(`Unknown service: ${config.serviceId}`);
     }
   }
-  return adapters.get(key)!;
+  return adapters.get(key) as AnyAdapter;
 }
 
 export function getTransmissionAdapter(config: ServiceConfig, isLocal: boolean): TransmissionAdapter {

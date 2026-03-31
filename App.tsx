@@ -10,6 +10,7 @@ import { colors } from './src/core/theme/tokens';
 import { Toast } from './src/core/components/Toast';
 import { useToastStore } from './src/core/hooks/useToast';
 import { ThemedAlertProvider } from './src/core/components/ThemedAlert';
+import { ErrorBoundary } from './src/core/components/ErrorBoundary';
 
 export default function App() {
   const loadFromStorage = useServerStore((s) => s.loadFromStorage);
@@ -44,7 +45,9 @@ export default function App() {
           }}
         >
           <StatusBar barStyle="light-content" backgroundColor={colors.surfaceBase} />
-          <TabNavigator />
+          <ErrorBoundary>
+            <TabNavigator />
+          </ErrorBoundary>
           <Toast message={toast.message} type={toast.type} visible={toast.visible} onHide={toast.hide} />
         </NavigationContainer>
         </ThemedAlertProvider>

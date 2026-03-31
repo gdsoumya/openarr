@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { ServerConfig, ServiceConfig } from '../core/types/services';
 import { ServiceId } from '../core/theme/tokens';
 import { appStorage } from '../core/storage/storage';
+import { clearAdapters } from '../services/adapterFactory';
 
 interface ServerState {
   servers: ServerConfig[];
@@ -30,6 +31,7 @@ export const useServerStore = create<ServerState>((set, get) => ({
       servers: state.servers.map((s) => (s.id === server.id ? server : s)),
     }));
     appStorage.saveServer(server);
+    clearAdapters();
   },
 
   removeServer: (id) => {
@@ -38,6 +40,7 @@ export const useServerStore = create<ServerState>((set, get) => ({
       activeServerId: state.activeServerId === id ? undefined : state.activeServerId,
     }));
     appStorage.deleteServer(id);
+    clearAdapters();
   },
 
   setActiveServer: (id) => {
