@@ -39,9 +39,9 @@ export function SubsHomeScreen() {
         adapter.getWantedEpisodes(),
         adapter.getWantedMovies(),
       ]);
-      setWantedEpisodes(wEp.records);
-      setWantedMovies(wMov.records);
-      setSubsBadgeCount(wEp.records.length + wMov.records.length);
+      setWantedEpisodes(wEp.records ?? []);
+      setWantedMovies(wMov.records ?? []);
+      setSubsBadgeCount((wEp.records?.length ?? 0) + (wMov.records?.length ?? 0));
     } catch (e) {
       console.error('Bazarr fetch error:', e);
     }

@@ -24,11 +24,7 @@ export function createServiceClient(config: ServiceConfig, isLocal: boolean): Ax
         // Bazarr: use query param (header can be blocked by reverse proxies)
         req.params = { ...req.params, apikey: config.apiKey };
         req.headers.set('X-API-KEY', config.apiKey);
-        // Bazarr (Flask-RESTX) requires trailing slash on API paths
-        // Without it, Flask does a 308 redirect that hangs
-        if (req.url && !req.url.endsWith('/') && !req.url.includes('.')) {
-          req.url = req.url + '/';
-        }
+        // Do NOT add trailing slash — it causes SPA catch-all to return HTML
       } else {
         req.headers.set('X-Api-Key', config.apiKey);
       }
