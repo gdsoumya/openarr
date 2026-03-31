@@ -136,12 +136,9 @@ export function DashboardScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.title}>Dashboard</Text>
-        <View style={styles.headerActions}>
-          <Pressable style={styles.headerBtn}><Ionicons name="notifications-outline" size={20} color={colors.textMuted} /></Pressable>
-          <Pressable style={styles.headerBtn} onPress={() => navigation.navigate('Home', { screen: 'Settings' })}>
-            <Ionicons name="settings-outline" size={20} color={colors.textMuted} />
-          </Pressable>
-        </View>
+        <Pressable style={styles.headerBtn} onPress={() => navigation.navigate('Home', { screen: 'Settings' })}>
+          <Ionicons name="settings-outline" size={20} color={colors.textMuted} />
+        </Pressable>
       </View>
       <View style={styles.serverPill}>
         <View style={styles.serverDot} />
@@ -168,7 +165,6 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 100 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
-  headerActions: { flexDirection: 'row', gap: spacing.sm },
   headerBtn: { width: 36, height: 36, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   serverPill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginHorizontal: spacing.xl, marginBottom: spacing.lg, backgroundColor: 'rgba(100, 255, 218, 0.08)', borderWidth: 1, borderColor: 'rgba(100, 255, 218, 0.15)', paddingVertical: 4, paddingHorizontal: 12, borderRadius: 20 },
   serverDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary },

@@ -17,10 +17,13 @@ export function createServiceClient(config: ServiceConfig, isLocal: boolean): Ax
     timeout,
   });
 
-  // API key header (for *arr services)
+  // API key auth (for *arr services)
   if (config.apiKey) {
     client.interceptors.request.use((req: InternalAxiosRequestConfig) => {
       if (config.serviceId === 'bazarr') {
+        // Bazarr: use query param (header can be blocked by reverse proxies)
+        // Also set header as fallback for direct connections
+        req.params = { ...req.params, apikey: config.apiKey };
         req.headers.set('X-API-KEY', config.apiKey);
       } else {
         req.headers.set('X-Api-Key', config.apiKey);
