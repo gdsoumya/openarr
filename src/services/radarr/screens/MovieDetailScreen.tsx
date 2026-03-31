@@ -15,8 +15,8 @@ import { useConnectionStore } from '../../../stores/connectionStore';
 import { getRadarrAdapter } from '../../../services/adapterFactory';
 import { RatingsBar } from '../../../core/components/RatingsBar';
 import { MediaInfo } from '../../../core/components/MediaInfo';
-import { OMDBClient, OMDBRatings } from '../../omdb/client';
-import { OMDB_API_KEY } from '../../../core/config';
+import { OMDBRatings } from '../../omdb/client';
+import { fetchOMDBRatings } from '../../omdb/fetchRatings';
 import { TMDBClient } from '../../tmdb/client';
 import { TMDB_READ_ACCESS_TOKEN } from '../../../core/config';
 import { WatchProviderCountry } from '../../tmdb/types';
@@ -52,22 +52,17 @@ export function MovieDetailScreen() {
 
   // Fetch OMDB ratings + watch providers
   useEffect(() => {
-    if (OMDB_API_KEY !== '__OMDB_API_KEY__' && movie) {
+    if (movie) {
       setRatingsLoading(true);
-      const omdb = new OMDBClient(OMDB_API_KEY);
-      const fetchRatings = movie.imdbId
-        ? omdb.getByImdbId(movie.imdbId)
-        : omdb.getByTitle(movie.title, String(movie.year));
-      fetchRatings.then(setOmdbRatings).finally(() => setRatingsLoading(false));
+      fetchOMDBRatings({ imdbId: movie.imdbId, tmdbId: movie.tmdbId, title: movie.title, year: movie.year, type: 'movie' })
+        .then(setOmdbRatings).finally(() => setRatingsLoading(false));
     }
-    // Watch providers from TMDB
-    const tmdbId = movie?.tmdbId;
-    if (tmdbId) {
-      tmdb.getMovieWatchProviders(tmdbId).then((providers) => {
+    if (movie?.tmdbId) {
+      tmdb.getMovieWatchProviders(movie.tmdbId).then((providers) => {
         setWatchProviders(providers['US'] ?? providers['GB'] ?? Object.values(providers)[0]);
       }).catch(() => {});
     }
-  }, [movie?.imdbId, movie?.tmdbId, movie?.title]);
+  }, [movie?.imdbId, movie?.tmdbId]);
 
   useEffect(() => {
     async function fetchData() {
@@ -211,7 +206,7 @@ export function MovieDetailScreen() {
         </View>
 
         <MetadataPills pills={pills} />
-        <RatingsBar ratings={omdbRatings} tmdbRating={movie.ratings?.tmdb?.value} loading={ratingsLoading} />
+        <RatingsBar ratings={omdbRatings} tmdbRating={movie.ratings?.tmdb?.value} loading={ratingsLoading} title={movie.title} imdbId={movie.imdbId} tmdbId={movie.tmdbId} type="movie" />
 
         <View style={styles.tabs}>
           {tabs.map(tab => (

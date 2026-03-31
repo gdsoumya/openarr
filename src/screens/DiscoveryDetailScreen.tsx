@@ -12,8 +12,9 @@ import { useLibraryCache } from '../stores/libraryCache';
 import { posterUrl, backdropUrl, WatchProviderCountry } from '../services/tmdb/types';
 import { AddItemSheet } from '../services/shared-arr/components/AddItemSheet';
 import { TMDBClient } from '../services/tmdb/client';
-import { OMDBClient, OMDBRatings } from '../services/omdb/client';
-import { TMDB_READ_ACCESS_TOKEN, OMDB_API_KEY } from '../core/config';
+import { OMDBRatings } from '../services/omdb/client';
+import { fetchOMDBRatings } from '../services/omdb/fetchRatings';
+import { TMDB_READ_ACCESS_TOKEN } from '../core/config';
 
 const tmdb = new TMDBClient(TMDB_READ_ACCESS_TOKEN);
 
@@ -35,6 +36,7 @@ export function DiscoveryDetailScreen() {
 
   useEffect(() => {
     if (!tmdbId) return;
+    const itemTitle = type === 'tv' ? (item?.name ?? item?.title) : item?.title;
 
     // Fetch full details from TMDB
     if (type === 'tv') {
@@ -49,32 +51,15 @@ export function DiscoveryDetailScreen() {
       }).catch(() => {});
     }
 
-    // Fetch OMDB ratings if we have an IMDB ID (from Sonarr/Radarr lookup results)
-    const imdbId = item?.imdbId;
-    if (imdbId && OMDB_API_KEY !== '__OMDB_API_KEY__') {
-      const omdb = new OMDBClient(OMDB_API_KEY);
-      omdb.getByImdbId(imdbId).then(setOmdbRatings).catch(() => {});
-    } else if (tmdbId && OMDB_API_KEY !== '__OMDB_API_KEY__') {
-      // For TMDB items without imdbId, try to get it from TMDB external IDs
-      if (type === 'tv') {
-        tmdb.getShowExternalIds(tmdbId).then((ids) => {
-          if (ids.imdb_id) {
-            const omdb = new OMDBClient(OMDB_API_KEY);
-            omdb.getByImdbId(ids.imdb_id).then(setOmdbRatings).catch(() => {});
-          }
-        }).catch(() => {});
-      }
-      // For movies, TMDB details include imdb_id
-    }
+    // Fetch OMDB ratings via helper (tries imdbId → TMDB external IDs → title)
+    fetchOMDBRatings({
+      imdbId: item?.imdbId,
+      tmdbId,
+      title: itemTitle,
+      year: parseInt(type === 'tv' ? item?.first_air_date?.slice(0, 4) : item?.release_date?.slice(0, 4)) || undefined,
+      type,
+    }).then(setOmdbRatings).catch(() => {});
   }, [tmdbId, type]);
-
-  // Once we have movie details with imdb_id, fetch OMDB
-  useEffect(() => {
-    if (details?.imdb_id && OMDB_API_KEY !== '__OMDB_API_KEY__' && !omdbRatings) {
-      const omdb = new OMDBClient(OMDB_API_KEY);
-      omdb.getByImdbId(details.imdb_id).then(setOmdbRatings).catch(() => {});
-    }
-  }, [details?.imdb_id]);
 
   if (!item) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;
 
@@ -121,7 +106,7 @@ export function DiscoveryDetailScreen() {
         </View>
 
         {/* Ratings */}
-        <RatingsBar ratings={omdbRatings} tmdbRating={rating} />
+        <RatingsBar ratings={omdbRatings} tmdbRating={rating} title={title} imdbId={item?.imdbId ?? details?.imdb_id} tmdbId={tmdbId} type={type} />
 
         {/* Overview */}
         <View style={styles.section}>

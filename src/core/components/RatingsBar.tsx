@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
 import { colors, spacing, radii, typography } from '../theme/tokens';
 import { OMDBRatings } from '../../services/omdb/client';
 
@@ -7,9 +7,17 @@ interface RatingsBarProps {
   ratings: OMDBRatings | null;
   tmdbRating?: number;
   loading?: boolean;
+  title?: string;
+  imdbId?: string;
+  tmdbId?: number;
+  type?: 'tv' | 'movie';
 }
 
-export function RatingsBar({ ratings, tmdbRating, loading }: RatingsBarProps) {
+function openUrl(url: string) { Linking.openURL(url).catch(() => {}); }
+
+function encTitle(title?: string) { return encodeURIComponent(title ?? ''); }
+
+export function RatingsBar({ ratings, tmdbRating, loading, title, imdbId, tmdbId, type }: RatingsBarProps) {
   if (loading) {
     return (
       <View style={styles.container}>
@@ -24,29 +32,36 @@ export function RatingsBar({ ratings, tmdbRating, loading }: RatingsBarProps) {
     <View style={styles.container}>
       {/* IMDB */}
       {ratings && ratings.imdbRating !== 'N/A' && (
-        <View style={styles.ratingItem}>
+        <Pressable style={styles.ratingItem} onPress={() => {
+          if (imdbId) openUrl(`https://www.imdb.com/title/${imdbId}/`);
+          else openUrl(`https://www.imdb.com/find/?q=${encTitle(title)}`);
+        }}>
           <Text style={styles.ratingIcon}>⭐</Text>
           <View>
             <Text style={styles.ratingValue}>{ratings.imdbRating}</Text>
             <Text style={styles.ratingLabel}>IMDb</Text>
           </View>
-        </View>
+        </Pressable>
       )}
 
-      {/* Rotten Tomatoes Critic */}
+      {/* Rotten Tomatoes */}
       {ratings?.rottenTomatoesCritic && (
-        <View style={styles.ratingItem}>
+        <Pressable style={styles.ratingItem} onPress={() => {
+          openUrl(`https://www.rottentomatoes.com/search?search=${encTitle(title)}`);
+        }}>
           <Text style={styles.ratingIcon}>{parseInt(ratings.rottenTomatoesCritic) >= 60 ? '🍅' : '🤢'}</Text>
           <View>
             <Text style={styles.ratingValue}>{ratings.rottenTomatoesCritic}</Text>
             <Text style={styles.ratingLabel}>Tomatometer</Text>
           </View>
-        </View>
+        </Pressable>
       )}
 
       {/* Metacritic */}
       {ratings?.metacritic && (
-        <View style={styles.ratingItem}>
+        <Pressable style={styles.ratingItem} onPress={() => {
+          openUrl(`https://www.metacritic.com/search/${encTitle(title)}/`);
+        }}>
           <View style={[styles.metacriticBadge, {
             backgroundColor: getMetacriticColor(ratings.metacritic),
           }]}>
@@ -56,18 +71,21 @@ export function RatingsBar({ ratings, tmdbRating, loading }: RatingsBarProps) {
             <Text style={styles.ratingValue}>{ratings.metacritic}</Text>
             <Text style={styles.ratingLabel}>Metacritic</Text>
           </View>
-        </View>
+        </Pressable>
       )}
 
       {/* TMDB */}
       {tmdbRating !== undefined && tmdbRating > 0 && (
-        <View style={styles.ratingItem}>
+        <Pressable style={styles.ratingItem} onPress={() => {
+          if (tmdbId) openUrl(`https://www.themoviedb.org/${type === 'tv' ? 'tv' : 'movie'}/${tmdbId}`);
+          else openUrl(`https://www.themoviedb.org/search?query=${encTitle(title)}`);
+        }}>
           <Text style={styles.ratingIcon}>🎬</Text>
           <View>
             <Text style={styles.ratingValue}>{tmdbRating.toFixed(1)}</Text>
             <Text style={styles.ratingLabel}>TMDB</Text>
           </View>
-        </View>
+        </Pressable>
       )}
 
       {/* Content rating */}

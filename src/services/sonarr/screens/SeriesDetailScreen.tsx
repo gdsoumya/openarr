@@ -17,8 +17,9 @@ import { useConnectionStore } from '../../../stores/connectionStore';
 import { getSonarrAdapter } from '../../../services/adapterFactory';
 import { RatingsBar } from '../../../core/components/RatingsBar';
 import { MediaInfo } from '../../../core/components/MediaInfo';
-import { OMDBClient, OMDBRatings } from '../../omdb/client';
-import { OMDB_API_KEY, TMDB_READ_ACCESS_TOKEN } from '../../../core/config';
+import { OMDBRatings } from '../../omdb/client';
+import { fetchOMDBRatings } from '../../omdb/fetchRatings';
+import { TMDB_READ_ACCESS_TOKEN } from '../../../core/config';
 import { TMDBClient } from '../../tmdb/client';
 import { WatchProviderCountry } from '../../tmdb/types';
 
@@ -55,25 +56,26 @@ export function SeriesDetailScreen() {
 
   // Fetch OMDB ratings + watch providers
   useEffect(() => {
-    if (OMDB_API_KEY !== '__OMDB_API_KEY__' && series) {
+    if (series) {
       setRatingsLoading(true);
-      const omdb = new OMDBClient(OMDB_API_KEY);
-      const fetchRatings = series.imdbId
-        ? omdb.getByImdbId(series.imdbId)
-        : omdb.getByTitle(series.title, String(series.year));
-      fetchRatings.then(setOmdbRatings).finally(() => setRatingsLoading(false));
-    }
-    // Watch providers via TMDB
-    if (series?.title) {
-      tmdb.searchTV(series.title, 1).then(async (result) => {
-        const match = result.results?.[0];
-        if (match) {
-          const providers = await tmdb.getTVWatchProviders(match.id);
-          setWatchProviders(providers['US'] ?? providers['GB'] ?? Object.values(providers)[0]);
+      // For TV, we don't have tmdbId directly — search TMDB to get it
+      const getTmdbId = async (): Promise<number | undefined> => {
+        const result = await tmdb.searchTV(series.title, 1).catch(() => ({ results: [] }));
+        return result.results?.[0]?.id;
+      };
+      getTmdbId().then(async (foundTmdbId) => {
+        // Fetch OMDB ratings
+        fetchOMDBRatings({ imdbId: series.imdbId, tmdbId: foundTmdbId, title: series.title, year: series.year, type: 'tv' })
+          .then(setOmdbRatings).finally(() => setRatingsLoading(false));
+        // Fetch watch providers
+        if (foundTmdbId) {
+          tmdb.getTVWatchProviders(foundTmdbId).then((providers) => {
+            setWatchProviders(providers['US'] ?? providers['GB'] ?? Object.values(providers)[0]);
+          }).catch(() => {});
         }
-      }).catch(() => {});
+      });
     }
-  }, [series?.imdbId, series?.tvdbId]);
+  }, [series?.imdbId, series?.title]);
 
   useEffect(() => {
     async function fetchData() {
@@ -318,7 +320,7 @@ export function SeriesDetailScreen() {
         </View>
 
         <MetadataPills pills={pills} />
-        <RatingsBar ratings={omdbRatings} loading={ratingsLoading} />
+        <RatingsBar ratings={omdbRatings} loading={ratingsLoading} title={series.title} imdbId={series.imdbId} type="tv" />
         <MediaInfo
           releaseDate={series.firstAired}
           status={series.status}
