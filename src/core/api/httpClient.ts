@@ -43,18 +43,16 @@ export function createServiceClient(config: ServiceConfig, isLocal: boolean): Ax
 }
 
 export function createTransmissionClient(config: ServiceConfig, isLocal: boolean): AxiosInstance {
-  // Always append /rpc — user provides the base Transmission URL, RPC is at /rpc
-  const fixedConfig = { ...config };
-  const fixUrl = (url: string) => {
-    if (!url) return url;
-    const trimmed = url.replace(/\/+$/, '');
-    if (trimmed.endsWith('/rpc')) return trimmed;
-    return `${trimmed}/rpc`;
-  };
-  fixedConfig.localUrl = fixUrl(config.localUrl);
-  fixedConfig.remoteUrl = fixUrl(config.remoteUrl || config.localUrl);
+  // Build the full URL first (base + basePath), then append /rpc
+  const client = createServiceClient(config, isLocal);
 
-  const client = createServiceClient(fixedConfig, isLocal);
+  // Fix the baseURL to ensure it ends with /rpc
+  if (client.defaults.baseURL) {
+    const trimmed = client.defaults.baseURL.replace(/\/+$/, '');
+    if (!trimmed.endsWith('/rpc')) {
+      client.defaults.baseURL = `${trimmed}/rpc`;
+    }
+  }
   let csrfToken: string | null = null;
 
   client.interceptors.request.use((req: InternalAxiosRequestConfig) => {
@@ -72,9 +70,8 @@ export function createTransmissionClient(config: ServiceConfig, isLocal: boolean
         if (csrfToken && error.config) {
           error.config.headers['X-Transmission-Session-Id'] = csrfToken;
           // Re-apply auth for retry — axios doesn't carry defaults.auth on retried configs
-          if (fixedConfig.username && fixedConfig.password) {
-            // Buffer.from works in both Node and React Native (Hermes), btoa may not
-            const credentials = `${fixedConfig.username}:${fixedConfig.password}`;
+          if (config.username && config.password) {
+            const credentials = `${config.username}:${config.password}`;
             const encoded = typeof btoa === 'function'
               ? btoa(credentials)
               : Buffer.from(credentials).toString('base64');
