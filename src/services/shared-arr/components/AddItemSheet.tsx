@@ -129,26 +129,39 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
           seriesData = match;
         }
 
+        const allMonitored = seasons.length === 0 || seasons.every(s => seasonMonitored.get(s.seasonNumber));
         const noneMonitored = seasons.length > 0 && seasons.every(s => !seasonMonitored.get(s.seasonNumber));
+
+        // Determine addOptions.monitor:
+        // - 'all' if all seasons selected (or no season info)
+        // - 'none' if no seasons selected
+        // - For partial selection: use 'none' but set per-season monitored flags
+        //   then after adding, the seasons array controls what's monitored
+        const monitorPreset = noneMonitored ? 'none' : allMonitored ? 'all' : 'none';
 
         const body: any = {
           ...seriesData,
           qualityProfileId: selectedProfile,
           rootFolderPath: selectedFolder,
           seriesType: seriesData.seriesType ?? 'standard',
-          monitored: !noneMonitored,
+          monitored: true, // Series itself should always be monitored
           tags: [],
           addOptions: {
-            monitor: 'none',
+            monitor: monitorPreset,
             searchForMissingEpisodes: withSearch,
           },
         };
 
+        // For partial season selection, override the seasons array
         if (seasons.length > 0) {
           body.seasons = seasons.map(s => ({
             seasonNumber: s.seasonNumber,
             monitored: seasonMonitored.get(s.seasonNumber) ?? true,
           }));
+          // Also include season 0 (specials) as unmonitored
+          if (!body.seasons.find((s: any) => s.seasonNumber === 0)) {
+            body.seasons.unshift({ seasonNumber: 0, monitored: false });
+          }
         }
 
         await adapter.addSeries(body);

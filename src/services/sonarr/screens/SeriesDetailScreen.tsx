@@ -211,12 +211,30 @@ export function SeriesDetailScreen() {
       title: `Season ${season.seasonNumber}`,
       options: [
         {
-          label: 'Search Season',
+          label: 'Auto Search Season',
           icon: '🔍',
-          onPress: () => {
-            adapter
-              ?.searchSeason(series.id, season.seasonNumber)
-              .catch((e) => console.error('searchSeason error:', e));
+          onPress: async () => {
+            try {
+              await adapter?.searchSeason(series.id, season.seasonNumber);
+              alert('Search Started', `Searching indexers for all episodes in Season ${season.seasonNumber}.`);
+            } catch (e: any) { alert('Search Failed', e.message); }
+          },
+        },
+        {
+          label: 'Manual Search Season',
+          icon: '📋',
+          onPress: async () => {
+            if (!adapter) return;
+            setShowManualSearch(true);
+            setManualSearchReleases([]);
+            try {
+              const releases = await adapter.manualSearchSeason(series.id, season.seasonNumber);
+              setManualSearchReleases(releases);
+              if (releases.length === 0) {
+                alert('No Results', `No releases found for Season ${season.seasonNumber}. Check indexer configuration.`);
+                setShowManualSearch(false);
+              }
+            } catch (e: any) { alert('Search Failed', e.message); setShowManualSearch(false); }
           },
         },
         {
