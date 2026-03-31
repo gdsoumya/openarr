@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, FlatList, ScrollView } from 'react-native';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
@@ -87,29 +87,31 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
 
         {/* Sort chips */}
         {!isLoading && releases.length > 0 && (
-          <View style={styles.sortRow}>
-            <Text style={styles.sortLabel}>Sort:</Text>
-            {sortChips.map((chip) => (
-              <Pressable
-                key={chip.id}
-                style={[styles.sortChip, sortBy === chip.id && styles.sortChipActive]}
-                onPress={() => setSortBy(prev => prev === chip.id ? null : chip.id)}
-              >
-                <Text style={[styles.sortChipText, sortBy === chip.id && styles.sortChipTextActive]}>
-                  {chip.label}
-                </Text>
-              </Pressable>
-            ))}
-            {rejectedCount > 0 && (
-              <Pressable
-                style={[styles.sortChip, hideRejected && styles.sortChipActive]}
-                onPress={() => setHideRejected(prev => !prev)}
-              >
-                <Text style={[styles.sortChipText, hideRejected && styles.sortChipTextActive]}>
-                  {hideRejected ? '✓ Rejected Hidden' : 'Hide Rejected'}
-                </Text>
-              </Pressable>
-            )}
+          <View style={styles.sortWrapper}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sortRow}>
+              <Text style={styles.sortLabel}>Sort:</Text>
+              {sortChips.map((chip) => (
+                <Pressable
+                  key={chip.id}
+                  style={[styles.sortChip, sortBy === chip.id && styles.sortChipActive]}
+                  onPress={() => setSortBy(prev => prev === chip.id ? null : chip.id)}
+                >
+                  <Text style={[styles.sortChipText, sortBy === chip.id && styles.sortChipTextActive]}>
+                    {chip.label}
+                  </Text>
+                </Pressable>
+              ))}
+              {rejectedCount > 0 && (
+                <Pressable
+                  style={[styles.sortChip, hideRejected && styles.sortChipActive]}
+                  onPress={() => setHideRejected(prev => !prev)}
+                >
+                  <Text style={[styles.sortChipText, hideRejected && styles.sortChipTextActive]}>
+                    {hideRejected ? '✓ Hidden' : 'Hide Rejected'}
+                  </Text>
+                </Pressable>
+              )}
+            </ScrollView>
           </View>
         )}
 
@@ -166,7 +168,8 @@ const styles = StyleSheet.create({
   subtitle: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   closeBtn: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
   closeBtnText: { ...typography.bodyBold, color: colors.primary },
-  sortRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  sortWrapper: { height: 44, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  sortRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, height: 44 },
   sortLabel: { ...typography.micro, color: colors.textMuted },
   sortChip: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider },
   sortChipActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
