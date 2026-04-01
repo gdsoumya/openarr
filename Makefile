@@ -30,11 +30,24 @@ dev: ## Start Expo dev server
 start: ## Start Expo dev server (alias)
 	npx expo start --dev-client
 
-android: prebuild-android ## Build and run on connected Android device
+android: prebuild-android ## Build and run debug on connected Android device
 	npx expo run:android
 
-android-release: prebuild-android ## Build Android release APK
+android-release: prebuild-android ## Build signed release APK
 	cd android && ./gradlew assembleRelease
+	@echo ""
+	@echo "✅ Signed release APK built at:"
+	@ls -lh android/app/build/outputs/apk/release/app-release.apk 2>/dev/null || echo "   Check android/app/build/outputs/apk/release/"
+
+android-bundle: prebuild-android ## Build signed release AAB (for Play Store)
+	cd android && ./gradlew bundleRelease
+	@echo ""
+	@echo "✅ Signed release AAB built at:"
+	@ls -lh android/app/build/outputs/bundle/release/app-release.aab 2>/dev/null || echo "   Check android/app/build/outputs/bundle/release/"
+
+android-install: android-release ## Build release APK and install on device
+	adb install -r android/app/build/outputs/apk/release/app-release.apk
+	@echo "✅ Installed on device"
 
 ios: prebuild-ios ## Build and run on iOS simulator
 	npx expo run:ios

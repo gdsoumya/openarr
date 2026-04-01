@@ -11,3 +11,9 @@ npm-debug.*
 *.orig.*
 web-build/
 .env
+
+# Release signing
+android/keystore.properties
+android/app/openarr-release.keystore
+*.keystore
+!android/app/debug.keystore
