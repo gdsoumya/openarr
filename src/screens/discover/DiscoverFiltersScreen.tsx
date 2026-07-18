@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Modal, FlatList } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../core/theme/tokens';
 import { tmdb } from '../../services/tmdb/instance';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -65,7 +64,6 @@ export function DiscoverFiltersScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { mediaType, filters, onApply } = route.params as RouteParams;
-  const insets = useSafeAreaInsets();
   const region = useSettingsStore((s) => s.region);
   const [genres, setGenres] = useState<TMDBGenre[]>([]);
   const [providers, setProviders] = useState<WatchProvider[]>([]);
@@ -243,7 +241,7 @@ export function DiscoverFiltersScreen() {
         </Pressable>
       </Modal>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+      <View style={styles.footer}>
         <Pressable style={styles.resetBtn} onPress={() => setDraft({ sortBy: 'popularity.desc' })}>
           <Text style={styles.resetBtnText}>Reset</Text>
         </Pressable>
