@@ -1,10 +1,10 @@
 import React from 'react';
-import { StyleSheet, ViewStyle } from 'react-native';
+import { ImageStyle, StyleProp } from 'react-native';
 import { Image } from 'expo-image';
 
 interface CachedImageProps {
   uri: string | undefined;
-  style?: ViewStyle;
+  style?: StyleProp<ImageStyle>;
   contentFit?: 'cover' | 'contain' | 'fill';
   placeholder?: string;
 }

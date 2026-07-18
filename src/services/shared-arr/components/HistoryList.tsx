@@ -10,7 +10,7 @@ export function HistoryList({ items }: HistoryListProps) {
   if (items.length === 0) return <View style={styles.empty}><Text style={styles.emptyText}>No history</Text></View>;
 
   return (
-    <FlashList data={items} estimatedItemSize={64}
+    <FlashList data={items}
       renderItem={({ item }) => (
         <View style={styles.item}>
           <View style={styles.row}>

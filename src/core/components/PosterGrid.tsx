@@ -17,7 +17,7 @@ export function PosterGrid<T extends { id: string | number }>({
   return (
     <FlashList data={data} renderItem={({ item }) => renderItem(item)}
       keyExtractor={(item) => String(item.id)} numColumns={numColumns}
-      estimatedItemSize={230} contentContainerStyle={styles.container}
+      contentContainerStyle={styles.container}
       onEndReached={onEndReached} onEndReachedThreshold={0.5}
       ListHeaderComponent={ListHeaderComponent} />
   );

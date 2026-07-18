@@ -148,7 +148,6 @@ export function TorrentListScreen() {
           />
         )}
         keyExtractor={(item) => String(item.id)}
-        estimatedItemSize={120}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

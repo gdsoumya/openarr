@@ -9,7 +9,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: './assets/images/icon.png',
   scheme: 'openarr',
   userInterfaceStyle: 'dark',
-  newArchEnabled: true,
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.openarr.app',
@@ -26,7 +25,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     package: 'com.openarr.app',
     permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'],
-    usesCleartextTraffic: true,
+    // Dropped from the SDK 55 Android config type but still honored by prebuild;
+    // required for HTTP access to LAN services.
+    ...({ usesCleartextTraffic: true } as object),
   },
   splash: {
     image: './assets/images/splash-icon.png',

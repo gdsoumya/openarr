@@ -11,7 +11,7 @@ export function QueueList({ items }: QueueListProps) {
   if (items.length === 0) return <View style={styles.empty}><Text style={styles.emptyText}>Queue is empty</Text></View>;
 
   return (
-    <FlashList data={items} estimatedItemSize={80}
+    <FlashList data={items}
       renderItem={({ item }) => {
         const progress = item.size > 0 ? (item.size - item.sizeleft) / item.size : 0;
         return (
