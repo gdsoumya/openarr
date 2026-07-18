@@ -61,8 +61,8 @@ export function InfraHomeScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={styles.title}>Infra</Text>
         <DashboardButton />
+        <Text style={styles.title}>Infra</Text>
       </View>
 
       <View style={styles.tabsWrapper}>
@@ -139,7 +139,7 @@ export function InfraHomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
   tabsWrapper: { height: 44, borderBottomWidth: 1, borderBottomColor: colors.divider },
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.xl, height: 44, alignItems: 'center' },

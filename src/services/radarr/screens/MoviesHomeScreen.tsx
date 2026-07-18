@@ -3,7 +3,7 @@ import { ScrollView, View, Text, StyleSheet, RefreshControl, ActivityIndicator, 
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '../../../core/theme/tokens';
+import { colors, spacing, typography, radii } from '../../../core/theme/tokens';
 import { Carousel } from '../../../core/components/Carousel';
 import { PosterCard } from '../../../core/components/PosterCard';
 import { SearchBar } from '../../../core/components/SearchBar';
@@ -172,19 +172,20 @@ export function MoviesHomeScreen() {
         />
       }>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={styles.title}>Movies</Text>
-        <View style={styles.headerActions}>
-        <DashboardButton />
+        <View style={styles.headerLeft}>
+          <DashboardButton />
+          <Text style={styles.title}>Movies</Text>
+        </View>
         {adapter && (
-          <Pressable style={styles.syncBtn} onPress={async () => {
+          <Pressable style={styles.syncChip} onPress={async () => {
             showToast('Syncing RSS feeds...', 'info');
             try { await adapter.rssSync(); showToast('RSS sync triggered', 'success'); }
             catch (e: any) { showToast(`Sync failed: ${e.message}`, 'error'); }
           }}>
-            <Ionicons name="sync" size={20} color={colors.textMuted} />
+            <Ionicons name="sync" size={14} color={colors.primary} />
+            <Text style={styles.syncChipText}>RSS Sync</Text>
           </Pressable>
         )}
-        </View>
       </View>
       <SearchBar
         placeholder="Search for movies to add..."
@@ -311,8 +312,9 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 8 },
   header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { ...typography.h1, color: colors.textPrimary },
-  syncBtn: { padding: spacing.sm },
-  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  syncChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.round, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder },
+  syncChipText: { ...typography.micro, color: colors.primary, fontWeight: '600' },
   notConfigured: { marginHorizontal: spacing.xl, marginBottom: spacing.lg, padding: spacing.lg, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, borderWidth: 1, borderColor: colors.divider },
   notConfiguredText: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
   searchingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },

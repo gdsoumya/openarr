@@ -92,8 +92,8 @@ export function SubsHomeScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={styles.title}>Subtitles</Text>
         <DashboardButton />
+        <Text style={styles.title}>Subtitles</Text>
       </View>
 
       <View style={styles.tabsWrapper}>
@@ -208,7 +208,7 @@ export function SubsHomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   tabContent: { flex: 1 },
-  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { ...typography.h1, color: colors.textPrimary },
   tabsWrapper: { height: 44, borderBottomWidth: 1, borderBottomColor: colors.divider, marginBottom: spacing.sm },
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.xl, height: 44, alignItems: 'center' },

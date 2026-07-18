@@ -118,21 +118,22 @@ export function SearchHomeScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={styles.title}>Search</Text>
-        <View style={styles.headerActions}>
-        <DashboardButton />
+        <View style={styles.headerLeft}>
+          <DashboardButton />
+          <Text style={styles.title}>Search</Text>
+        </View>
         {adapter && (
-          <Pressable style={styles.syncBtn} onPress={async () => {
+          <Pressable style={styles.syncChip} onPress={async () => {
             showToast('Testing indexers & syncing...', 'info');
             try {
               await Promise.all([adapter.testAllIndexers().catch(() => {}), adapter.syncIndexers().catch(() => {})]);
               showToast('Indexer sync complete', 'success');
             } catch (e: any) { showToast('Sync failed', 'error'); }
           }}>
-            <Ionicons name="sync" size={20} color={colors.textMuted} />
+            <Ionicons name="sync" size={14} color={colors.primary} />
+            <Text style={styles.syncChipText}>Sync Indexers</Text>
           </Pressable>
         )}
-        </View>
       </View>
 
       <View style={styles.tabsWrapper}>
@@ -308,8 +309,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
-  syncBtn: { padding: spacing.sm },
-  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  syncChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.round, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder },
+  syncChipText: { ...typography.micro, color: colors.primary, fontWeight: '600' },
   tabsWrapper: { height: 44, borderBottomWidth: 1, borderBottomColor: colors.divider, marginBottom: spacing.sm },
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.xl, height: 44, alignItems: 'center' },
   tab: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg, borderBottomWidth: 2, borderBottomColor: 'transparent' },

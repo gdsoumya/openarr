@@ -114,8 +114,8 @@ export function TorrentListScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={styles.title}>Torrents</Text>
         <DashboardButton />
+        <Text style={styles.title}>Torrents</Text>
       </View>
 
       {showAddInput && (
@@ -173,7 +173,7 @@ export function TorrentListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { ...typography.h1, color: colors.textPrimary },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
   emptyText: { ...typography.body, color: colors.textMuted, textAlign: 'center' },
