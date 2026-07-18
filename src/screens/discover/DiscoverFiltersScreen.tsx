@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../core/theme/tokens';
@@ -42,6 +42,9 @@ const TV_NETWORKS: Array<{ id: number; label: string }> = [
   { id: 1024, label: 'Prime Video' }, { id: 2552, label: 'Apple TV+' }, { id: 453, label: 'Hulu' },
   { id: 4, label: 'BBC One' }, { id: 174, label: 'AMC' }, { id: 88, label: 'FX' },
 ];
+
+// Recent years first, back to 1950
+const YEARS = Array.from({ length: new Date().getFullYear() - 1949 }, (_, i) => new Date().getFullYear() - i);
 
 const RUNTIMES: Array<{ id: string; label: string; from?: number; to?: number }> = [
   { id: 'any', label: 'Any' },
@@ -141,28 +144,23 @@ export function DiscoverFiltersScreen() {
           </>
         )}
 
-        <Text style={styles.sectionTitle}>{mediaType === 'movie' ? 'Release Year' : 'First Aired'}</Text>
-        <View style={styles.yearRow}>
-          <TextInput
-            style={styles.yearInput}
-            placeholder="From"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="number-pad"
-            maxLength={4}
-            value={draft.yearFrom ? String(draft.yearFrom) : ''}
-            onChangeText={(t) => setDraft((d) => ({ ...d, yearFrom: t ? parseInt(t, 10) || undefined : undefined }))}
-          />
-          <Text style={styles.yearDash}>—</Text>
-          <TextInput
-            style={styles.yearInput}
-            placeholder="To"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="number-pad"
-            maxLength={4}
-            value={draft.yearTo ? String(draft.yearTo) : ''}
-            onChangeText={(t) => setDraft((d) => ({ ...d, yearTo: t ? parseInt(t, 10) || undefined : undefined }))}
-          />
-        </View>
+        <Text style={styles.sectionTitle}>{mediaType === 'movie' ? 'Release Year' : 'First Aired'} — From</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.yearScroll}>
+          <Chip label="Any" active={!draft.yearFrom} onPress={() => setDraft((d) => ({ ...d, yearFrom: undefined }))} />
+          {YEARS.map((y) => (
+            <Chip key={y} label={String(y)} active={draft.yearFrom === y}
+              onPress={() => setDraft((d) => ({ ...d, yearFrom: y, yearTo: d.yearTo && d.yearTo < y ? undefined : d.yearTo }))} />
+          ))}
+        </ScrollView>
+
+        <Text style={styles.sectionTitle}>{mediaType === 'movie' ? 'Release Year' : 'First Aired'} — To</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.yearScroll}>
+          <Chip label="Any" active={!draft.yearTo} onPress={() => setDraft((d) => ({ ...d, yearTo: undefined }))} />
+          {YEARS.map((y) => (
+            <Chip key={y} label={String(y)} active={draft.yearTo === y}
+              onPress={() => setDraft((d) => ({ ...d, yearTo: y, yearFrom: d.yearFrom && d.yearFrom > y ? undefined : d.yearFrom }))} />
+          ))}
+        </ScrollView>
 
         {mediaType === 'movie' && (
           <>
@@ -236,9 +234,7 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
   chipText: { ...typography.caption, color: colors.textMuted },
   chipTextActive: { color: colors.primary, fontWeight: '600' },
-  yearRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.xl },
-  yearInput: { ...typography.body, color: colors.textPrimary, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.md, padding: spacing.md, width: 100, textAlign: 'center' },
-  yearDash: { ...typography.body, color: colors.textMuted },
+  yearScroll: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', gap: spacing.sm, padding: spacing.md, paddingHorizontal: spacing.lg, borderTopWidth: 1, borderTopColor: colors.divider, backgroundColor: colors.surfaceElevated },
   resetBtn: { flex: 1, paddingVertical: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider, alignItems: 'center' },
   resetBtnText: { ...typography.bodyBold, color: colors.textMuted },
