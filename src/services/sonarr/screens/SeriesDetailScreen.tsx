@@ -14,7 +14,7 @@ import { Series, Episode, Season } from '../types';
 import { useReleaseSearch } from '../../shared-arr/hooks';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
-import { getSonarrAdapter, getBazarrAdapter } from '../../../services/adapterFactory';
+import { getSonarrAdapter } from '../../../services/adapterFactory';
 import { useServerStore } from '../../../stores/serverStore';
 import { useToastStore } from '../../../core/hooks/useToast';
 import { RatingsBar } from '../../../core/components/RatingsBar';
@@ -157,15 +157,15 @@ export function SeriesDetailScreen() {
       options.push({
         label: 'Search Subtitles',
         icon: '💬',
-        onPress: async () => {
+        onPress: () => {
           const bazarrConfig = useServerStore.getState().getServiceConfig('bazarr');
           if (!bazarrConfig) { alert('Bazarr Not Configured', 'Set up Bazarr in Settings to search subtitles.'); return; }
-          const bazarr = getBazarrAdapter(bazarrConfig, isLocal);
-          try {
-            const results = await bazarr.searchEpisodeSubtitles(episode.id);
-            if (results.length === 0) { alert('No Subtitles', 'No subtitles found for this episode.'); return; }
-            alert('Subtitles Found', `${results.length} subtitles found.\nBest: ${results[0].provider} (${results[0].language}, score: ${results[0].score})`);
-          } catch (e: any) { alert('Error', e.message); }
+          if (!series) return;
+          // Bazarr keys on Sonarr IDs directly
+          navigation.navigate('Subs', {
+            screen: 'SubsSeriesDetail',
+            params: { sonarrSeriesId: series.id, title: series.title, focusEpisodeId: episode.id },
+          });
         },
       });
       options.push({

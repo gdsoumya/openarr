@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, RefreshControl, ScrollView, FlatList } from 'react-native';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, FlatList } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
-import BottomSheet from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { SubtitleBadge } from '../components/SubtitleBadge';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
-import { BottomSheetWrapper } from '../../../core/components/BottomSheetWrapper';
-import { EpisodeSubtitles, MovieSubtitles, SubtitleSearchResult } from '../types';
+import { useToastStore } from '../../../core/hooks/useToast';
+import { WantedTab } from '../components/WantedTab';
+import { HistoryTab } from '../components/HistoryTab';
+import { BlacklistTab } from '../components/BlacklistTab';
+import { LanguageProfile, MovieSubtitles, ProviderInfo, SeriesItem } from '../types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getBazarrAdapter } from '../../../services/adapterFactory';
@@ -15,37 +18,34 @@ import { getBazarrAdapter } from '../../../services/adapterFactory';
 export function SubsHomeScreen() {
   const { alert } = useThemedAlert();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const config = useServiceConfig('bazarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getBazarrAdapter(config, isLocal) : null, [config, isLocal]);
+  const showToast = useToastStore((s) => s.show);
 
   const [activeTab, setActiveTab] = useState('series');
-  const [series, setSeries] = useState<any[]>([]);
-  const [movies, setMovies] = useState<any[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
-  const [providers, setProviders] = useState<any[]>([]);
+  const [series, setSeries] = useState<SeriesItem[]>([]);
+  const [movies, setMovies] = useState<MovieSubtitles[]>([]);
+  const [providers, setProviders] = useState<ProviderInfo[]>([]);
+  const [profiles, setProfiles] = useState<LanguageProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const setSubsBadgeCount = useConnectionStore((s) => s.setSubsBadgeCount);
 
-  const [subResults, setSubResults] = useState<SubtitleSearchResult[]>([]);
-  const [searchingEpId, setSearchingEpId] = useState<number | null>(null);
-  const [searchingMovieId, setSearchingMovieId] = useState<number | null>(null);
-  const subSheetRef = useRef<BottomSheet>(null);
-
   const fetchData = useCallback(async () => {
     if (!adapter) { setLoading(false); return; }
     try {
-      const [seriesData, moviesData, hist, prov] = await Promise.all([
+      const [seriesData, moviesData, prov, profs] = await Promise.all([
         adapter.getAllSeries().catch(() => []),
         adapter.getAllMovies().catch(() => []),
-        adapter.getEpisodeHistory().catch(() => ({ records: [] })),
         adapter.getProviders().catch(() => []),
+        adapter.getLanguageProfiles().catch(() => []),
       ]);
       setSeries(seriesData);
       setMovies(moviesData);
-      setHistory(hist.records ?? []);
       setProviders(Array.isArray(prov) ? prov : []);
+      setProfiles(profs);
       const wantedEps = seriesData.reduce((sum: number, s: any) => sum + (s.episodeMissingCount ?? 0), 0);
       const wantedMovs = moviesData.filter((m: any) => (m.missing_subtitles?.length ?? 0) > 0).length;
       setSubsBadgeCount(wantedEps + wantedMovs);
@@ -63,67 +63,53 @@ export function SubsHomeScreen() {
     setRefreshing(false);
   }, [fetchData]);
 
-  const searchEpisodeSubs = async (episodeId: number) => {
-    if (!adapter) return;
-    setSearchingEpId(episodeId);
-    setSearchingMovieId(null);
-    try {
-      const results = await adapter.searchEpisodeSubtitles(episodeId);
-      setSubResults(results);
-      subSheetRef.current?.snapToIndex(0);
-    } catch (e: any) { alert('Error', e.message); }
-  };
+  const profileName = (profileId: number | null | undefined) =>
+    profiles.find((p) => p.profileId === profileId)?.name;
 
-  const searchMovieSubs = async (radarrId: number) => {
+  const resetProviders = () => {
     if (!adapter) return;
-    setSearchingMovieId(radarrId);
-    setSearchingEpId(null);
-    try {
-      const results = await adapter.searchMovieSubtitles(radarrId);
-      setSubResults(results);
-      subSheetRef.current?.snapToIndex(0);
-    } catch (e: any) { alert('Error', e.message); }
-  };
-
-  const downloadSub = async (sub: SubtitleSearchResult) => {
-    if (!adapter) return;
-    try {
-      if (searchingEpId) {
-        await adapter.downloadEpisodeSubtitle({ episodeid: searchingEpId, ...sub });
-      } else if (searchingMovieId) {
-        await adapter.downloadMovieSubtitle({ radarrid: searchingMovieId, ...sub });
-      }
-      subSheetRef.current?.close();
-      alert('Success', 'Subtitle downloaded');
-    } catch (e: any) { alert('Error', e.message); }
+    alert('Reset Providers', 'Reset throttled provider states?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reset',
+        onPress: async () => {
+          try {
+            await adapter.resetProviders();
+            showToast('Providers reset', 'success');
+            fetchData();
+          } catch (e: any) { alert('Reset Failed', e.message); }
+        },
+      },
+    ]);
   };
 
   const tabs = [
     { id: 'series', label: 'Series', count: series.length },
     { id: 'movies', label: 'Movies', count: movies.length },
+    { id: 'wanted', label: 'Wanted' },
     { id: 'history', label: 'History' },
+    { id: 'blacklist', label: 'Blacklist' },
     { id: 'providers', label: 'Providers' },
   ];
 
   return (
-    <>
-      <View style={styles.container}>
-        <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>Subtitles</Text></View>
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>Subtitles</Text></View>
 
-        <View style={styles.tabsWrapper}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-            {tabs.map(tab => (
-              <Pressable key={tab.id} style={[styles.tab, activeTab === tab.id && styles.tabActive]}
-                onPress={() => setActiveTab(tab.id)}>
-                <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>
-                  {tab.label}{'count' in tab ? ` (${tab.count})` : ''}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
+      <View style={styles.tabsWrapper}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+          {tabs.map(tab => (
+            <Pressable key={tab.id} style={[styles.tab, activeTab === tab.id && styles.tabActive]}
+              onPress={() => setActiveTab(tab.id)}>
+              <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>
+                {tab.label}{'count' in tab && tab.count !== undefined ? ` (${tab.count})` : ''}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
 
-        <View style={styles.tabContent}>
+      <View style={styles.tabContent}>
         {!config && (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>Bazarr not configured. Add it in Settings to manage subtitles.</Text>
@@ -132,14 +118,16 @@ export function SubsHomeScreen() {
 
         {config && loading && <LoadingSpinner message="Loading subtitles..." />}
 
-        {config && !loading && activeTab === 'series' && (
+        {config && adapter && !loading && activeTab === 'series' && (
           <FlatList data={series}
             renderItem={({ item: s }) => (
-              <View style={styles.seriesItem}>
+              <Pressable style={styles.seriesItem}
+                onPress={() => navigation.navigate('SubsSeriesDetail', { sonarrSeriesId: s.sonarrSeriesId, title: s.title })}>
                 <View style={styles.seriesInfo}>
                   <Text style={styles.seriesTitle} numberOfLines={1}>{s.title}</Text>
                   <Text style={styles.seriesMeta}>
                     {s.episodeFileCount ?? 0} episodes · {s.episodeMissingCount ?? 0} missing subs
+                    {profileName(s.profileId) ? ` · ${profileName(s.profileId)}` : ''}
                   </Text>
                 </View>
                 <View style={[styles.seriesStatus, (s.episodeMissingCount ?? 0) > 0 ? styles.seriesStatusWarn : styles.seriesStatusOk]}>
@@ -147,7 +135,7 @@ export function SubsHomeScreen() {
                     {(s.episodeMissingCount ?? 0) > 0 ? s.episodeMissingCount : '✓'}
                   </Text>
                 </View>
-              </View>
+              </Pressable>
             )}
             keyExtractor={(item) => String(item.sonarrSeriesId)}
             contentContainerStyle={{ paddingBottom: 20 }}
@@ -157,15 +145,16 @@ export function SubsHomeScreen() {
           />
         )}
 
-        {config && !loading && activeTab === 'movies' && (
+        {config && adapter && !loading && activeTab === 'movies' && (
           <FlatList data={movies}
             renderItem={({ item: m }) => (
-              <View style={styles.seriesItem}>
+              <Pressable style={styles.seriesItem}
+                onPress={() => navigation.navigate('SubsMovieDetail', { radarrId: m.radarrId, title: m.title })}>
                 <View style={styles.seriesInfo}>
                   <Text style={styles.seriesTitle} numberOfLines={1}>{m.title}</Text>
                   <View style={styles.subRow}>
-                    {(m.subtitles ?? []).map((s: any, i: number) => <SubtitleBadge key={`h${i}`} code={s.code2} has={true} />)}
-                    {(m.missing_subtitles ?? []).map((s: any, i: number) => <SubtitleBadge key={`m${i}`} code={s.code2} has={false} />)}
+                    {(m.subtitles ?? []).map((s, i) => <SubtitleBadge key={`h${i}`} code={s.code2} has={true} />)}
+                    {(m.missing_subtitles ?? []).map((s, i) => <SubtitleBadge key={`m${i}`} code={s.code2} has={false} />)}
                   </View>
                 </View>
                 <View style={[styles.seriesStatus, (m.missing_subtitles?.length ?? 0) > 0 ? styles.seriesStatusWarn : styles.seriesStatusOk]}>
@@ -173,7 +162,7 @@ export function SubsHomeScreen() {
                     {(m.missing_subtitles?.length ?? 0) > 0 ? m.missing_subtitles.length : '✓'}
                   </Text>
                 </View>
-              </View>
+              </Pressable>
             )}
             keyExtractor={(item) => String(item.radarrId)}
             contentContainerStyle={{ paddingBottom: 20 }}
@@ -183,33 +172,23 @@ export function SubsHomeScreen() {
           />
         )}
 
-        {activeTab === 'history' && (
-          <FlatList data={history}
-            renderItem={({ item: h }) => (
-              <View style={styles.historyItem}>
-                <View style={styles.historyHeader}>
-                  <Text style={styles.historyTitle} numberOfLines={1}>{h.seriesTitle ?? h.title}</Text>
-                  <Text style={styles.historyEp}>{h.episode_number ?? ''}</Text>
-                </View>
-                <Text style={styles.historyDesc} numberOfLines={2}>{h.description}</Text>
-                <View style={styles.historyMeta}>
-                  {h.provider && <Text style={styles.historyProvider}>{h.provider}</Text>}
-                  {h.language?.name && <Text style={styles.historyLang}>{h.language.name}</Text>}
-                  {h.score && <Text style={styles.historyScore}>{h.score}</Text>}
-                  <Text style={styles.historyTime}>{h.timestamp}</Text>
-                </View>
-              </View>
-            )}
-            keyExtractor={(_, idx) => String(idx)}
-            contentContainerStyle={{ paddingBottom: 20 }}
-            ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No subtitle history yet</Text></View>}
-          />
-        )}
-        {activeTab === 'providers' && (
+        {config && adapter && !loading && activeTab === 'wanted' && <WantedTab adapter={adapter} />}
+        {config && adapter && !loading && activeTab === 'history' && <HistoryTab adapter={adapter} />}
+        {config && adapter && !loading && activeTab === 'blacklist' && <BlacklistTab adapter={adapter} />}
+
+        {config && adapter && !loading && activeTab === 'providers' && (
           <FlatList data={providers}
+            ListHeaderComponent={
+              <Pressable style={styles.resetBtn} onPress={resetProviders}>
+                <Text style={styles.resetBtnText}>Reset Throttled Providers</Text>
+              </Pressable>
+            }
             renderItem={({ item: p }) => (
               <View style={styles.providerItem}>
-                <Text style={styles.providerName}>{p.name}</Text>
+                <View>
+                  <Text style={styles.providerName}>{p.name}</Text>
+                  {p.retry && p.retry !== '-' ? <Text style={styles.providerRetry}>retry {p.retry}</Text> : null}
+                </View>
                 <View style={styles.providerStatus}>
                   <View style={[styles.providerDot, { backgroundColor: p.status === 'Good' ? colors.success : colors.warning }]} />
                   <Text style={[styles.providerStatusText, { color: p.status === 'Good' ? colors.success : colors.warning }]}>{p.status}</Text>
@@ -221,33 +200,8 @@ export function SubsHomeScreen() {
             ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No providers configured</Text></View>}
           />
         )}
-        </View>
       </View>
-
-      <BottomSheetWrapper ref={subSheetRef} snapPoints={['60%']} onClose={() => { setSubResults([]); setSearchingEpId(null); setSearchingMovieId(null); }}>
-        <Text style={styles.sheetTitle}>Subtitle Search Results</Text>
-        <FlatList data={subResults}
-          renderItem={({ item: sub }) => (
-            <Pressable style={styles.subResultItem} onPress={() => downloadSub(sub)}>
-              <View style={styles.subResultRow}>
-                <Text style={styles.subProvider}>{sub.provider}</Text>
-                <Text style={styles.subScore}>Score: {sub.score}</Text>
-              </View>
-              <Text style={styles.subRelease} numberOfLines={1}>{sub.release_info?.join(', ') || 'Unknown release'}</Text>
-              <View style={styles.subResultRow}>
-                <Text style={styles.subLang}>{sub.language}</Text>
-                <View style={styles.subResultRow}>
-                  {sub.hi && <Text style={styles.subFlag}>HI</Text>}
-                  {sub.forced && <Text style={styles.subFlag}>Forced</Text>}
-                </View>
-              </View>
-            </Pressable>
-          )}
-          keyExtractor={(_, idx) => String(idx)}
-          ListEmptyComponent={<Text style={styles.emptyText}>No subtitles found</Text>}
-        />
-      </BottomSheetWrapper>
-    </>
+    </View>
   );
 }
 
@@ -262,7 +216,6 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: colors.primary },
   tabText: { ...typography.caption, fontWeight: '500', color: colors.textMuted },
   tabTextActive: { color: colors.primary },
-  // Series/Movie list items
   seriesItem: { flexDirection: 'row', alignItems: 'center', marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md, gap: spacing.md },
   seriesInfo: { flex: 1 },
   seriesTitle: { ...typography.bodyBold, color: colors.textPrimary },
@@ -274,31 +227,14 @@ const styles = StyleSheet.create({
   seriesStatusTextOk: { color: colors.success },
   seriesStatusTextWarn: { color: colors.error },
   subRow: { flexDirection: 'row', marginTop: spacing.sm, flexWrap: 'wrap', gap: 2 },
-  // History items
-  historyItem: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
-  historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  historyTitle: { ...typography.bodyBold, color: colors.textPrimary, flex: 1, marginRight: spacing.sm },
-  historyEp: { ...typography.micro, color: colors.textMuted },
-  historyDesc: { ...typography.caption, color: colors.textMuted, marginTop: 4 },
-  historyMeta: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm, flexWrap: 'wrap' },
-  historyProvider: { ...typography.micro, color: colors.primary },
-  historyLang: { ...typography.micro, color: colors.bazarr },
-  historyScore: { ...typography.micro, color: colors.success },
-  historyTime: { ...typography.micro, color: colors.textMuted },
-  // Provider items
   providerItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
   providerName: { ...typography.bodyBold, color: colors.textPrimary },
+  providerRetry: { ...typography.micro, color: colors.warning, marginTop: 2 },
   providerStatus: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   providerDot: { width: 8, height: 8, borderRadius: 4 },
   providerStatusText: { ...typography.micro, fontWeight: '600' },
+  resetBtn: { marginHorizontal: spacing.xl, marginBottom: spacing.md, padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder, alignItems: 'center' },
+  resetBtnText: { ...typography.bodyBold, color: colors.primary },
   empty: { alignItems: 'center', paddingVertical: spacing.xxxl },
   emptyText: { ...typography.body, color: colors.textMuted, textAlign: 'center', paddingHorizontal: spacing.xl },
-  sheetTitle: { ...typography.h3, color: colors.textPrimary, marginBottom: spacing.md, paddingHorizontal: spacing.xl },
-  subResultItem: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)' },
-  subResultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  subProvider: { ...typography.bodyBold, color: colors.textPrimary },
-  subScore: { ...typography.micro, color: colors.primary },
-  subRelease: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
-  subLang: { ...typography.micro, color: colors.bazarr, marginTop: 4 },
-  subFlag: { ...typography.badge, color: colors.textMuted, backgroundColor: 'rgba(255,255,255,0.06)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 4 },
 });

@@ -351,6 +351,9 @@ export function MovieDetailScreen() {
                   setMovie(prev => prev ? { ...prev, monitored: !prev.monitored } : prev);
                 } catch (e: any) { alert('Error', e.message); }
               }},
+              { label: 'Search Subtitles', icon: '💬', onPress: () => {
+                navigation.navigate('Subs', { screen: 'SubsMovieDetail', params: { radarrId: movie.id, title: movie.title } });
+              }},
               { label: 'Open in IMDb', icon: '🎬', onPress: () => { if (movie.imdbId) Linking.openURL(`https://www.imdb.com/title/${movie.imdbId}`); }},
               { label: 'Delete Movie', icon: '🗑', onPress: () => handleDelete(), destructive: true },
             ],
