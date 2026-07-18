@@ -32,6 +32,9 @@ export function TabNavigator() {
     <Tab.Navigator
       screenOptions={({ route, navigation }) => ({
         headerShown: false,
+        // Inactive tabs are frozen so they can't re-render in the background
+        freezeOnBlur: true,
+        lazy: true,
         tabBarStyle: {
           backgroundColor: 'rgba(15, 16, 35, 0.95)',
           borderTopColor: colors.divider,

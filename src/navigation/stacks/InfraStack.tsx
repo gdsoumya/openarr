@@ -14,6 +14,7 @@ export function InfraStack() {
   return (
     <Stack.Navigator
       screenOptions={{
+        freezeOnBlur: true,
         headerStyle: { backgroundColor: colors.surfaceBase },
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,

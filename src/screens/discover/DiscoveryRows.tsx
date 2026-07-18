@@ -49,7 +49,8 @@ function Row({ def, mediaType, onItemPress, getItemBadge, refreshToken }: {
     def.fetch()
       .then((data) => {
         if (cancelled) return;
-        setItems(data);
+        // Carousels cap at 12 posters — "See All" has the rest
+        setItems(data.slice(0, 12));
         setStatus(data.length > 0 ? 'loaded' : 'empty');
       })
       .catch((e) => {

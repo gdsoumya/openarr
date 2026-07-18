@@ -66,6 +66,7 @@ export function Carousel({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
           decelerationRate="fast"
+          removeClippedSubviews
         >
           {children}
         </ScrollView>
