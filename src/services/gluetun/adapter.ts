@@ -6,19 +6,31 @@ import {
   UpdaterStatus, VpnSettings, VpnStatus,
 } from './types';
 
-// The custom gluetun build serves its web UI at / and the control API under /api
-const API = '/api/v1';
-
 export class GluetunAdapter {
   readonly id = 'gluetun' as const;
   private client: AxiosInstance;
+  // Older custom builds serve the control API under /api/v1 (web UI owns /),
+  // newer builds serve it at /v1 upstream-style. Detect once and cache.
+  private prefix: string | null = null;
 
   constructor(config: ServiceConfig, isLocal: boolean) {
     this.client = createServiceClient(config, isLocal);
   }
 
+  private async api(): Promise<string> {
+    if (this.prefix) return this.prefix;
+    try {
+      const { data } = await this.client.get('/v1/version');
+      // The SPA catch-all answers 200 with HTML, so require a JSON shape
+      this.prefix = data && typeof data === 'object' ? '/v1' : '/api/v1';
+    } catch {
+      this.prefix = '/api/v1';
+    }
+    return this.prefix;
+  }
+
   async testConnection(): Promise<boolean> {
-    await this.client.get(`${API}/version`);
+    await this.client.get(`${await this.api()}/version`);
     return true;
   }
 
@@ -45,19 +57,19 @@ export class GluetunAdapter {
     }
   }
 
-  async getVersion(): Promise<GluetunVersion> { const { data } = await this.client.get(`${API}/version`); return data; }
-  async getVpnStatus(): Promise<VpnStatus> { const { data } = await this.client.get(`${API}/vpn/status`); return data; }
-  async setVpnStatus(status: 'running' | 'stopped'): Promise<void> { await this.client.put(`${API}/vpn/status`, { status }); }
-  async getPublicIp(): Promise<PublicIp> { const { data } = await this.client.get(`${API}/publicip/ip`); return data; }
-  async refreshPublicIp(): Promise<void> { await this.client.get(`${API}/publicip/refresh`); }
-  async getPortForward(): Promise<PortForward> { const { data } = await this.client.get(`${API}/portforward`); return data; }
-  async getVpnSettings(): Promise<VpnSettings> { const { data } = await this.client.get(`${API}/vpn/settings`); return data; }
-  async setVpnSettings(settings: VpnSettings): Promise<void> { await this.client.put(`${API}/vpn/settings`, settings); }
-  async getServerChoices(): Promise<ServerChoices> { const { data } = await this.client.get(`${API}/vpn/serverchoices`); return data; }
-  async getDnsStatus(): Promise<DnsStatus> { const { data } = await this.client.get(`${API}/dns/status`); return data; }
-  async setDnsStatus(status: string): Promise<void> { await this.client.put(`${API}/dns/status`, { status }); }
-  async getUpdaterStatus(): Promise<UpdaterStatus> { const { data } = await this.client.get(`${API}/updater/status`); return data; }
-  async triggerUpdater(): Promise<void> { await this.client.put(`${API}/updater/status`, { status: 'running' }); }
+  async getVersion(): Promise<GluetunVersion> { const { data } = await this.client.get(`${await this.api()}/version`); return data; }
+  async getVpnStatus(): Promise<VpnStatus> { const { data } = await this.client.get(`${await this.api()}/vpn/status`); return data; }
+  async setVpnStatus(status: 'running' | 'stopped'): Promise<void> { await this.client.put(`${await this.api()}/vpn/status`, { status }); }
+  async getPublicIp(): Promise<PublicIp> { const { data } = await this.client.get(`${await this.api()}/publicip/ip`); return data; }
+  async refreshPublicIp(): Promise<void> { await this.client.get(`${await this.api()}/publicip/refresh`); }
+  async getPortForward(): Promise<PortForward> { const { data } = await this.client.get(`${await this.api()}/portforward`); return data; }
+  async getVpnSettings(): Promise<VpnSettings> { const { data } = await this.client.get(`${await this.api()}/vpn/settings`); return data; }
+  async setVpnSettings(settings: VpnSettings): Promise<void> { await this.client.put(`${await this.api()}/vpn/settings`, settings); }
+  async getServerChoices(): Promise<ServerChoices> { const { data } = await this.client.get(`${await this.api()}/vpn/serverchoices`); return data; }
+  async getDnsStatus(): Promise<DnsStatus> { const { data } = await this.client.get(`${await this.api()}/dns/status`); return data; }
+  async setDnsStatus(status: string): Promise<void> { await this.client.put(`${await this.api()}/dns/status`, { status }); }
+  async getUpdaterStatus(): Promise<UpdaterStatus> { const { data } = await this.client.get(`${await this.api()}/updater/status`); return data; }
+  async triggerUpdater(): Promise<void> { await this.client.put(`${await this.api()}/updater/status`, { status: 'running' }); }
 
   // Saving the selection alone does not re-dial — gluetun keeps the current
   // tunnel until the VPN loop restarts, so cycle it after the settings PUT.

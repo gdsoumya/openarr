@@ -10,18 +10,33 @@ describe('GluetunAdapter', () => {
     adapter = new GluetunAdapter({ serviceId: 'gluetun' as const, enabled: true, localUrl: 'http://nas:8000', remoteUrl: 'http://nas:8000' }, true);
   });
 
-  test('endpoints carry the /api/v1 prefix', async () => {
-    mockGet.mockResolvedValue({ data: { status: 'running' } });
+  const oldBuild = () => mockGet.mockImplementation((url: string) =>
+    url === '/v1/version'
+      ? Promise.resolve({ data: '<html>spa</html>' })
+      : Promise.resolve({ data: { status: 'running' } }));
+
+  test('old builds detected via SPA response use the /api/v1 prefix', async () => {
+    oldBuild();
     await adapter.getVpnStatus();
     await adapter.getPublicIp();
     await adapter.getPortForward();
     await adapter.getServerChoices();
     expect(mockGet.mock.calls.map(c => c[0])).toEqual([
-      '/api/v1/vpn/status', '/api/v1/publicip/ip', '/api/v1/portforward', '/api/v1/vpn/serverchoices',
+      '/v1/version', '/api/v1/vpn/status', '/api/v1/publicip/ip', '/api/v1/portforward', '/api/v1/vpn/serverchoices',
     ]);
   });
 
+  test('new builds serving JSON at /v1 use the root prefix', async () => {
+    mockGet.mockImplementation((url: string) =>
+      url === '/v1/version'
+        ? Promise.resolve({ data: { version: 'v3.41.1' } })
+        : Promise.resolve({ data: { status: 'running' } }));
+    await adapter.getVpnStatus();
+    expect(mockGet.mock.calls.map(c => c[0])).toEqual(['/v1/version', '/v1/vpn/status']);
+  });
+
   test('setVpnStatus PUTs the status body', async () => {
+    oldBuild();
     mockPut.mockResolvedValue({ data: {} });
     await adapter.setVpnStatus('stopped');
     expect(mockPut).toHaveBeenCalledWith('/api/v1/vpn/status', { status: 'stopped' });
@@ -29,6 +44,7 @@ describe('GluetunAdapter', () => {
 
   test('getStatus reports exit IP when running', async () => {
     mockGet.mockImplementation((url: string) => {
+      if (url === '/v1/version') return Promise.resolve({ data: '<html>spa</html>' });
       if (url === '/api/v1/vpn/status') return Promise.resolve({ data: { status: 'running' } });
       if (url === '/api/v1/publicip/ip') return Promise.resolve({ data: { public_ip: '1.2.3.4', city: 'Amsterdam', country: 'Netherlands' } });
       return Promise.reject(new Error('unexpected'));
@@ -39,7 +55,9 @@ describe('GluetunAdapter', () => {
   });
 
   test('changeLocation merges selection, preserves other fields, and cycles the VPN in order', async () => {
-    mockGet.mockResolvedValue({
+    mockGet.mockImplementation((url: string) => url === '/v1/version'
+      ? Promise.resolve({ data: '<html>spa</html>' })
+      : Promise.resolve({
       data: {
         type: 'openvpn',
         provider: {
@@ -47,7 +65,7 @@ describe('GluetunAdapter', () => {
           server_selection: { vpn: 'openvpn', countries: ['india'], cities: null, port_forward_only: true },
         },
       },
-    });
+    }));
     mockPut.mockResolvedValue({ data: {} });
 
     await adapter.changeLocation(['netherlands'], ['amsterdam']);
@@ -66,7 +84,9 @@ describe('GluetunAdapter', () => {
   });
 
   test('changeLocation with empty arrays clears the selection', async () => {
-    mockGet.mockResolvedValue({ data: { provider: { name: 'p', server_selection: { countries: ['x'] } } } });
+    mockGet.mockImplementation((url: string) => url === '/v1/version'
+      ? Promise.resolve({ data: '<html>spa</html>' })
+      : Promise.resolve({ data: { provider: { name: 'p', server_selection: { countries: ['x'] } } } }));
     mockPut.mockResolvedValue({ data: {} });
     await adapter.changeLocation([], []);
     expect(mockPut.mock.calls[0][1].provider.server_selection.countries).toBeNull();

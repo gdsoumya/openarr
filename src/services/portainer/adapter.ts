@@ -131,4 +131,12 @@ export class PortainerAdapter {
     const { data } = await this.client.get(`${this.docker(endpointId)}/images/json`);
     return data;
   }
+
+  // dangling=false removes ALL images unreferenced by containers, not just untagged layers
+  async pruneImages(endpointId: number): Promise<{ imagesDeleted: number; spaceReclaimed: number }> {
+    const { data } = await this.client.post(`${this.docker(endpointId)}/images/prune`, undefined, {
+      params: { filters: JSON.stringify({ dangling: ['false'] }) },
+    });
+    return { imagesDeleted: (data.ImagesDeleted ?? []).length, spaceReclaimed: data.SpaceReclaimed ?? 0 };
+  }
 }

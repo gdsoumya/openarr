@@ -13,6 +13,9 @@ import { getPortainerAdapter } from '../services/adapterFactory';
 import { GluetunPanel } from '../services/gluetun/components/GluetunPanel';
 import { PortainerEndpoint, PortainerStack } from '../services/portainer/types';
 import { DashboardButton } from '../core/components/DashboardButton';
+import { useThemedAlert } from '../core/components/ThemedAlert';
+import { useToastStore } from '../core/hooks/useToast';
+import { formatBytes } from '../core/utils/format';
 
 type InfraTab = 'docker' | 'vpn';
 
@@ -32,6 +35,42 @@ export function InfraHomeScreen() {
   const [stacks, setStacks] = useState<PortainerStack[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [dockerError, setDockerError] = useState('');
+  const [pruning, setPruning] = useState(false);
+  const { alert } = useThemedAlert();
+  const showToast = useToastStore((s) => s.show);
+
+  const pruneImages = () => {
+    if (!adapter || pruning || endpoints.length === 0) return;
+    alert(
+      'Prune Unused Images',
+      'This deletes every image not referenced by a container. Images are re-downloaded when needed. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Prune',
+          style: 'destructive',
+          onPress: async () => {
+            setPruning(true);
+            try {
+              let deleted = 0;
+              let reclaimed = 0;
+              for (const ep of endpoints) {
+                const result = await adapter.pruneImages(ep.Id);
+                deleted += result.imagesDeleted;
+                reclaimed += result.spaceReclaimed;
+              }
+              showToast(deleted > 0
+                ? `Pruned ${deleted} images, reclaimed ${formatBytes(reclaimed)}`
+                : 'Nothing to prune', 'success');
+            } catch (e: any) {
+              alert('Prune Failed', e.message);
+            }
+            setPruning(false);
+          },
+        },
+      ],
+    );
+  };
 
   const fetchDocker = useCallback(async () => {
     if (!adapter) return;
@@ -128,6 +167,19 @@ export function InfraHomeScreen() {
                 </View>
               </Pressable>
             ))}
+
+            <Text style={styles.sectionTitle}>Maintenance</Text>
+            <Pressable style={styles.card} onPress={pruneImages} disabled={pruning}>
+              <View style={styles.cardRow}>
+                <MaterialCommunityIcons name="broom" size={20} color={colors.warning} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cardTitle}>Prune Unused Images</Text>
+                  <Text style={styles.cardSub}>
+                    {pruning ? 'Pruning — this can take a few minutes...' : 'Delete all images not used by any container'}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
           </>
         )}
 

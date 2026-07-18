@@ -48,6 +48,15 @@ describe('PortainerAdapter', () => {
     expect(status.metric).toEqual({ value: 12, label: 'running' });
   });
 
+  test('pruneImages posts the dangling=false filter and summarizes the result', async () => {
+    mockPost.mockResolvedValue({ data: { ImagesDeleted: [{}, {}, {}], SpaceReclaimed: 1073741824 } });
+    const result = await adapter.pruneImages(2);
+    expect(mockPost).toHaveBeenCalledWith('/api/endpoints/2/docker/images/prune', undefined, {
+      params: { filters: JSON.stringify({ dangling: ['false'] }) },
+    });
+    expect(result).toEqual({ imagesDeleted: 3, spaceReclaimed: 1073741824 });
+  });
+
   test('getStackFile unwraps StackFileContent', async () => {
     mockGet.mockResolvedValue({ data: { StackFileContent: 'version: "3"' } });
     expect(await adapter.getStackFile(4)).toBe('version: "3"');
