@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Pressable, Linking, TextInput } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemedAlert } from '../core/components/ThemedAlert';
@@ -10,6 +10,7 @@ import { useServerStore } from '../stores/serverStore';
 import { useConnectionStore } from '../stores/connectionStore';
 import { appStorage } from '../core/storage/storage';
 import { clearAdapters } from '../services/adapterFactory';
+import { useSettingsStore } from '../stores/settingsStore';
 
 export function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -19,6 +20,11 @@ export function SettingsScreen() {
   const isLocal = useConnectionStore((s) => s.isLocal);
   const navigation = useNavigation<any>();
   const { alert } = useThemedAlert();
+
+  const settings = useSettingsStore();
+  const [tmdbDraft, setTmdbDraft] = useState(settings.tmdbToken ?? '');
+  const [omdbDraft, setOmdbDraft] = useState(settings.omdbKey ?? '');
+  const [regionDraft, setRegionDraft] = useState(settings.region);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}>
@@ -68,6 +74,54 @@ export function SettingsScreen() {
           <Text style={styles.rowSub}>{isLocal ? 'Using local server URLs' : 'Using remote server URLs'}</Text>
         </View>
         <View style={[styles.statusDot, { backgroundColor: isLocal ? colors.success : colors.info }]} />
+      </View>
+
+      {/* Discovery */}
+      <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Discovery</Text>
+      <View style={styles.inputRow}>
+        <Text style={styles.inputLabel}>TMDB Read Access Token</Text>
+        <Text style={styles.inputHint}>themoviedb.org → Settings → API → API Read Access Token</Text>
+        <TextInput
+          style={styles.input}
+          value={tmdbDraft}
+          onChangeText={setTmdbDraft}
+          onEndEditing={() => settings.setTmdbToken(tmdbDraft)}
+          placeholder="eyJ..."
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry
+        />
+      </View>
+      <View style={styles.inputRow}>
+        <Text style={styles.inputLabel}>OMDB API Key (IMDB/RT ratings)</Text>
+        <Text style={styles.inputHint}>Free key at omdbapi.com/apikey.aspx</Text>
+        <TextInput
+          style={styles.input}
+          value={omdbDraft}
+          onChangeText={setOmdbDraft}
+          onEndEditing={() => settings.setOmdbKey(omdbDraft)}
+          placeholder="OMDB key"
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry
+        />
+      </View>
+      <View style={styles.inputRow}>
+        <Text style={styles.inputLabel}>Streaming Region</Text>
+        <Text style={styles.inputHint}>Two-letter country code for watch providers (e.g. US, IN, GB)</Text>
+        <TextInput
+          style={[styles.input, { width: 100 }]}
+          value={regionDraft}
+          onChangeText={setRegionDraft}
+          onEndEditing={() => settings.setRegion(regionDraft)}
+          placeholder="US"
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          maxLength={2}
+        />
       </View>
 
       {/* Data */}
@@ -163,4 +217,8 @@ const styles = StyleSheet.create({
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   addButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder, borderRadius: radii.lg, padding: spacing.lg, marginTop: spacing.sm },
   addButtonText: { ...typography.bodyBold, color: colors.primary },
+  inputRow: { backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.lg, marginBottom: spacing.sm },
+  inputLabel: { ...typography.bodyBold, color: colors.textPrimary },
+  inputHint: { ...typography.micro, color: colors.textMuted, marginTop: 2, marginBottom: spacing.sm },
+  input: { ...typography.body, color: colors.textPrimary, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.md, padding: spacing.md },
 });

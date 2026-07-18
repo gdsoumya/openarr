@@ -7,16 +7,19 @@ import { colors, spacing, typography } from '../../../core/theme/tokens';
 import { Carousel } from '../../../core/components/Carousel';
 import { PosterCard } from '../../../core/components/PosterCard';
 import { SearchBar } from '../../../core/components/SearchBar';
-import { useLibraryCache } from '../../../stores/libraryCache';
+import { useLibraryStore } from '../../../stores/libraryStore';
 import { Series } from '../types';
-import { TMDBShow, posterUrl } from '../../tmdb/types';
+import { TMDBShow, posterUrl, profileUrl } from '../../tmdb/types';
+import { CastCard } from '../../../core/components/CastCard';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getSonarrAdapter } from '../../../services/adapterFactory';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { useToastStore } from '../../../core/hooks/useToast';
 import { useDebouncedValue } from '../../../core/hooks/useDebounce';
-import { tmdb } from '../../tmdb/instance';
+import { tmdb, isTmdbConfigured } from '../../tmdb/instance';
+import { useWatchlistStore } from '../../../stores/watchlistStore';
+import { DiscoveryRows } from '../../../screens/discover/DiscoveryRows';
 
 type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
 
@@ -42,15 +45,17 @@ export function TVHomeScreen() {
   const config = useServiceConfig('sonarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getSonarrAdapter(config, isLocal) : null, [config, isLocal]);
-  const setSonarrIds = useLibraryCache((s) => s.setSonarrIds);
+  const setShows = useLibraryStore((s) => s.setShows);
+  const libraryShows = useLibraryStore((s) => s.shows);
+  const getBadge = useLibraryStore((s) => s.getBadge);
+  const tvWatchlist = useWatchlistStore((s) => s.items).filter((w) => w.type === 'tv');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [library, setLibrary] = useState<Series[]>([]);
-  const [trending, setTrending] = useState<TMDBShow[]>([]);
-  const [recentlyAired, setRecentlyAired] = useState<TMDBShow[]>([]);
   // Search results — Sonarr lookup returns Series[], TMDB returns TMDBShow[]
   const [sonarrSearchResults, setSonarrSearchResults] = useState<Series[]>([]);
   const [tmdbSearchResults, setTmdbSearchResults] = useState<TMDBShow[]>([]);
+  const [peopleResults, setPeopleResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [queueMap, setQueueMap] = useState<Map<number, QueueInfo>>(new Map());
   const [initialLoading, setInitialLoading] = useState(true);
@@ -58,10 +63,7 @@ export function TVHomeScreen() {
   const showToast = useToastStore((s) => s.show);
 
   const [libraryStatus, setLibraryStatus] = useState<LoadStatus>('loading');
-  const [trendingStatus, setTrendingStatus] = useState<LoadStatus>('loading');
-  const [recentStatus, setRecentStatus] = useState<LoadStatus>('loading');
-  const [trendingError, setTrendingError] = useState('');
-  const [recentError, setRecentError] = useState('');
+  const [discoveryRefresh, setDiscoveryRefresh] = useState(0);
 
   const fetchData = useCallback(async () => {
     if (adapter) {
@@ -72,7 +74,6 @@ export function TVHomeScreen() {
           adapter.getQueue(1, 50).catch(() => ({ records: [], totalRecords: 0, page: 1, pageSize: 50 })),
         ]);
         setLibrary(series);
-        setSonarrIds(adapter.getTvdbIds(series));
         // Build queue map: seriesId → download info
         const qm = new Map<number, QueueInfo>();
         for (const qi of queueResult.records) {
@@ -84,6 +85,9 @@ export function TVHomeScreen() {
           }
         }
         setQueueMap(qm);
+        const progressByArrId = new Map<number, number>();
+        qm.forEach((info, seriesId) => progressByArrId.set(seriesId, info.progress));
+        setShows(series, progressByArrId).catch(() => {});
         setLibraryStatus(series.length > 0 ? 'loaded' : 'empty');
       } catch (e: any) {
         setLibraryStatus('error');
@@ -93,28 +97,7 @@ export function TVHomeScreen() {
       setLibraryStatus('empty');
     }
 
-    setTrendingStatus('loading');
-    try {
-      const data = await tmdb.getTrendingShows();
-      setTrending(data);
-      setTrendingStatus(data.length > 0 ? 'loaded' : 'empty');
-      setTrendingError('');
-    } catch (e: any) {
-      setTrendingStatus('error');
-      setTrendingError(e.response?.status === 401 ? 'Invalid TMDB token — check config.ts' : `TMDB: ${e.message ?? 'Failed to load'}`);
-    }
-
-    setRecentStatus('loading');
-    try {
-      const data = await tmdb.getOnTheAirShows();
-      setRecentlyAired(data);
-      setRecentStatus(data.length > 0 ? 'loaded' : 'empty');
-      setRecentError('');
-    } catch (e: any) {
-      setRecentStatus('error');
-      setRecentError(e.response?.status === 401 ? 'Invalid TMDB token' : `TMDB: ${e.message ?? 'Failed to load'}`);
-    }
-
+    setDiscoveryRefresh((n) => n + 1);
     setInitialLoading(false);
   }, [adapter]);
 
@@ -132,13 +115,15 @@ export function TVHomeScreen() {
       // Search both Sonarr (if configured) AND TMDB in parallel for best results
       const promises: Promise<any>[] = [
         tmdb.searchTV(q).catch(() => ({ results: [], totalResults: 0 })),
+        tmdb.searchPeople(q).catch(() => ({ results: [] })),
       ];
       if (adapter) {
         promises.push(adapter.lookupSeries(q).catch(() => []));
       }
-      const [tmdbResult, sonarrResult] = await Promise.all(promises);
+      const [tmdbResult, peopleResult, sonarrResult] = await Promise.all(promises);
       if (id !== searchRequestId.current) return;
       setTmdbSearchResults(tmdbResult.results ?? []);
+      setPeopleResults((peopleResult.results ?? []).filter((person: any) => person.profile_path).slice(0, 10));
       setSonarrSearchResults(sonarrResult ?? []);
     } catch (e: any) {
       showToast(`Search failed: ${e.message}`, 'error');
@@ -150,15 +135,21 @@ export function TVHomeScreen() {
   useEffect(() => { doSearch(); }, [doSearch]);
 
   useEffect(() => {
-    if (!searchQuery.trim()) { setSonarrSearchResults([]); setTmdbSearchResults([]); }
+    if (!searchQuery.trim()) { setSonarrSearchResults([]); setTmdbSearchResults([]); setPeopleResults([]); }
   }, [searchQuery]);
 
   // Must be before any early returns — Rules of Hooks
-  const libraryByTitle = useMemo(() => {
-    const map = new Map<string, Series>();
-    library.forEach(s => map.set(s.title.toLowerCase(), s));
+  const libraryByArrId = useMemo(() => {
+    const map = new Map<number, Series>();
+    library.forEach(s => map.set(s.id, s));
     return map;
   }, [library]);
+
+  // Resolve a TMDB show to its library Series (tmdbId-keyed, not title matching)
+  const libraryMatch = useCallback((tmdbId: number): Series | undefined => {
+    const entry = libraryShows.get(tmdbId);
+    return entry ? libraryByArrId.get(entry.arrId) : undefined;
+  }, [libraryShows, libraryByArrId]);
 
   if (initialLoading) return <LoadingSpinner message="Loading TV shows..." />;
 
@@ -171,9 +162,15 @@ export function TVHomeScreen() {
   const libraryTvdbIds = new Set(library.map(s => s.tvdbId));
 
   const getTmdbItemBadge = (tmdbItem: TMDBShow) => {
-    const match = libraryByTitle.get(tmdbItem.name?.toLowerCase());
+    const match = libraryMatch(tmdbItem.id);
     if (match) return getSeriesBadge(match, queueMap) ?? { label: 'In Library', variant: 'inLibrary' as const };
     return undefined;
+  };
+
+  const openTmdbShow = (s: TMDBShow) => {
+    const match = libraryMatch(s.id);
+    if (match) navigation.navigate('SeriesDetail', { series: match });
+    else navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' });
   };
 
   return (
@@ -250,11 +247,17 @@ export function TVHomeScreen() {
                 <PosterCard key={`tmdb-${s.id}-${idx}`} title={s.name} subtitle={`${s.first_air_date?.slice(0, 4) ?? ''} · ★ ${s.vote_average?.toFixed(1) ?? ''}`}
                   posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md"
                   badge={getTmdbItemBadge(s)}
-                  onPress={() => {
-                    const match = libraryByTitle.get(s.name?.toLowerCase());
-                    if (match) navigation.navigate('SeriesDetail', { series: match });
-                    else navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' });
-                  }} />
+                  onPress={() => openTmdbShow(s)} />
+              ))}
+            </Carousel>
+          )}
+
+          {!searching && peopleResults.length > 0 && (
+            <Carousel title="People" count={peopleResults.length} status="loaded" minHeight={140}>
+              {peopleResults.map((person) => (
+                <CastCard key={person.id} name={person.name} role={person.known_for_department}
+                  imageUrl={profileUrl(person.profile_path)}
+                  onPress={() => navigation.navigate('Person', { personId: person.id })} />
               ))}
             </Carousel>
           )}
@@ -281,34 +284,30 @@ export function TVHomeScreen() {
         </Carousel>
       )}
 
-      {/* Discovery carousels — hide when searching */}
+      {/* Discovery rows — hide when searching */}
       {!isSearchMode && (
         <>
-          <Carousel title="Trending This Week"
-            status={trendingStatus} errorMessage={trendingError}>
-            {trending.map((s) => (
-              <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md"
-                badge={getTmdbItemBadge(s)}
-                onPress={() => {
-                  const match = libraryByTitle.get(s.name?.toLowerCase());
-                  if (match) navigation.navigate('SeriesDetail', { series: match });
-                  else navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' });
-                }} />
-            ))}
-          </Carousel>
-
-          <Carousel title="Recently Aired"
-            status={recentStatus} errorMessage={recentError}>
-            {recentlyAired.map((s) => (
-              <PosterCard key={s.id} title={s.name} subtitle={s.first_air_date ?? ''} posterUrl={posterUrl(s.poster_path)} rating={s.vote_average} size="md"
-                badge={getTmdbItemBadge(s)}
-                onPress={() => {
-                  const match = libraryByTitle.get(s.name?.toLowerCase());
-                  if (match) navigation.navigate('SeriesDetail', { series: match });
-                  else navigation.navigate('DiscoveryDetail', { item: s, type: 'tv' });
-                }} />
-            ))}
-          </Carousel>
+          {tvWatchlist.length > 0 && (
+            <Carousel title="My Watchlist" count={tvWatchlist.length} status="loaded">
+              {tvWatchlist.map((w) => (
+                <PosterCard key={w.tmdbId} title={w.title}
+                  posterUrl={posterUrl(w.posterPath)} size="md"
+                  badge={getBadge('tv', w.tmdbId)}
+                  onPress={() => openTmdbShow({ id: w.tmdbId, name: w.title, poster_path: w.posterPath } as TMDBShow)} />
+              ))}
+            </Carousel>
+          )}
+          {!isTmdbConfigured() && (
+            <View style={styles.notConfigured}>
+              <Text style={styles.notConfiguredText}>Discovery is disabled — add a TMDB API token in Settings → Discovery.</Text>
+            </View>
+          )}
+          <DiscoveryRows
+            mediaType="tv"
+            refreshToken={discoveryRefresh}
+            onItemPress={(item) => openTmdbShow(item as TMDBShow)}
+            getItemBadge={(item) => getTmdbItemBadge(item as TMDBShow)}
+          />
         </>
       )}
     </ScrollView>

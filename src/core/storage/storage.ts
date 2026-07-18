@@ -48,6 +48,26 @@ export class AppStorage {
   setActiveServerId(id: string): void {
     this.mmkv.set(KEYS.ACTIVE_SERVER, id);
   }
+
+  // Generic key/value helpers for settings and small persisted state
+  getValue(key: string): string | undefined {
+    return this.mmkv.getString(key);
+  }
+
+  setValue(key: string, value: string | undefined): void {
+    if (value === undefined) this.mmkv.remove(key);
+    else this.mmkv.set(key, value);
+  }
+
+  getJSON<T>(key: string): T | undefined {
+    const raw = this.mmkv.getString(key);
+    if (!raw) return undefined;
+    try { return JSON.parse(raw) as T; } catch { return undefined; }
+  }
+
+  setJSON(key: string, value: unknown): void {
+    this.mmkv.set(key, JSON.stringify(value));
+  }
 }
 
 export const appStorage = new AppStorage();

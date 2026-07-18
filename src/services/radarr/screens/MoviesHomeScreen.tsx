@@ -8,15 +8,18 @@ import { Carousel } from '../../../core/components/Carousel';
 import { PosterCard } from '../../../core/components/PosterCard';
 import { SearchBar } from '../../../core/components/SearchBar';
 import { Movie } from '../types';
-import { TMDBMovie, posterUrl } from '../../tmdb/types';
+import { TMDBMovie, posterUrl, profileUrl } from '../../tmdb/types';
+import { CastCard } from '../../../core/components/CastCard';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getRadarrAdapter } from '../../../services/adapterFactory';
-import { useLibraryCache } from '../../../stores/libraryCache';
+import { useLibraryStore } from '../../../stores/libraryStore';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { useToastStore } from '../../../core/hooks/useToast';
 import { useDebouncedValue } from '../../../core/hooks/useDebounce';
-import { tmdb } from '../../tmdb/instance';
+import { tmdb, isTmdbConfigured } from '../../tmdb/instance';
+import { useWatchlistStore } from '../../../stores/watchlistStore';
+import { DiscoveryRows } from '../../../screens/discover/DiscoveryRows';
 
 type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
 
@@ -41,14 +44,15 @@ export function MoviesHomeScreen() {
   const config = useServiceConfig('radarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
   const adapter = useMemo(() => config ? getRadarrAdapter(config, isLocal) : null, [config, isLocal]);
-  const setRadarrIds = useLibraryCache((s) => s.setRadarrIds);
+  const setMovies = useLibraryStore((s) => s.setMovies);
+  const getLibBadge = useLibraryStore((s) => s.getBadge);
+  const movieWatchlist = useWatchlistStore((s) => s.items).filter((w) => w.type === 'movie');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [library, setLibrary] = useState<Movie[]>([]);
-  const [trending, setTrending] = useState<TMDBMovie[]>([]);
-  const [recentlyReleased, setRecentlyReleased] = useState<TMDBMovie[]>([]);
   const [radarrSearchResults, setRadarrSearchResults] = useState<Movie[]>([]);
   const [tmdbSearchResults, setTmdbSearchResults] = useState<TMDBMovie[]>([]);
+  const [peopleResults, setPeopleResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [queueMap, setQueueMap] = useState<Map<number, QueueInfo>>(new Map());
   const [initialLoading, setInitialLoading] = useState(true);
@@ -56,10 +60,7 @@ export function MoviesHomeScreen() {
   const showToast = useToastStore((s) => s.show);
 
   const [libraryStatus, setLibraryStatus] = useState<LoadStatus>('loading');
-  const [trendingStatus, setTrendingStatus] = useState<LoadStatus>('loading');
-  const [recentStatus, setRecentStatus] = useState<LoadStatus>('loading');
-  const [trendingError, setTrendingError] = useState('');
-  const [recentError, setRecentError] = useState('');
+  const [discoveryRefresh, setDiscoveryRefresh] = useState(0);
 
   const fetchData = useCallback(async () => {
     if (adapter) {
@@ -70,7 +71,6 @@ export function MoviesHomeScreen() {
           adapter.getQueue(1, 50).catch(() => ({ records: [], totalRecords: 0, page: 1, pageSize: 50 })),
         ]);
         setLibrary(movies);
-        setRadarrIds(adapter.getTmdbIds(movies));
         // Build queue map: movieId → download info
         const qm = new Map<number, QueueInfo>();
         for (const qi of queueResult.records) {
@@ -81,6 +81,9 @@ export function MoviesHomeScreen() {
           }
         }
         setQueueMap(qm);
+        const progressByArrId = new Map<number, number>();
+        qm.forEach((info, movieId) => progressByArrId.set(movieId, info.progress));
+        setMovies(movies, progressByArrId);
         setLibraryStatus(movies.length > 0 ? 'loaded' : 'empty');
       } catch (e: any) {
         setLibraryStatus('error');
@@ -90,28 +93,7 @@ export function MoviesHomeScreen() {
       setLibraryStatus('empty');
     }
 
-    setTrendingStatus('loading');
-    try {
-      const data = await tmdb.getTrendingMovies();
-      setTrending(data);
-      setTrendingStatus(data.length > 0 ? 'loaded' : 'empty');
-      setTrendingError('');
-    } catch (e: any) {
-      setTrendingStatus('error');
-      setTrendingError(e.response?.status === 401 ? 'Invalid TMDB token — check config.ts' : `TMDB: ${e.message ?? 'Failed to load'}`);
-    }
-
-    setRecentStatus('loading');
-    try {
-      const data = await tmdb.getNowPlayingMovies();
-      setRecentlyReleased(data);
-      setRecentStatus(data.length > 0 ? 'loaded' : 'empty');
-      setRecentError('');
-    } catch (e: any) {
-      setRecentStatus('error');
-      setRecentError(e.response?.status === 401 ? 'Invalid TMDB token' : `TMDB: ${e.message ?? 'Failed to load'}`);
-    }
-
+    setDiscoveryRefresh((n) => n + 1);
     setInitialLoading(false);
   }, [adapter]);
 
@@ -129,13 +111,15 @@ export function MoviesHomeScreen() {
       // Search both Radarr (if configured) AND TMDB in parallel for best results
       const promises: Promise<any>[] = [
         tmdb.searchMovies(q).catch(() => ({ results: [], totalResults: 0 })),
+        tmdb.searchPeople(q).catch(() => ({ results: [] })),
       ];
       if (adapter) {
         promises.push(adapter.lookupMovie(q).catch(() => []));
       }
-      const [tmdbResult, radarrResult] = await Promise.all(promises);
+      const [tmdbResult, peopleResult, radarrResult] = await Promise.all(promises);
       if (id !== searchRequestId.current) return;
       setTmdbSearchResults(tmdbResult.results ?? []);
+      setPeopleResults((peopleResult.results ?? []).filter((person: any) => person.profile_path).slice(0, 10));
       setRadarrSearchResults(radarrResult ?? []);
     } catch (e: any) {
       showToast(`Search failed: ${e.message}`, 'error');
@@ -147,7 +131,7 @@ export function MoviesHomeScreen() {
   useEffect(() => { doSearch(); }, [doSearch]);
 
   useEffect(() => {
-    if (!searchQuery.trim()) { setRadarrSearchResults([]); setTmdbSearchResults([]); }
+    if (!searchQuery.trim()) { setRadarrSearchResults([]); setTmdbSearchResults([]); setPeopleResults([]); }
   }, [searchQuery]);
 
   const libraryByTmdbId = useMemo(() => {
@@ -255,6 +239,16 @@ export function MoviesHomeScreen() {
             </Carousel>
           )}
 
+          {!searching && peopleResults.length > 0 && (
+            <Carousel title="People" count={peopleResults.length} status="loaded" minHeight={140}>
+              {peopleResults.map((person) => (
+                <CastCard key={person.id} name={person.name} role={person.known_for_department}
+                  imageUrl={profileUrl(person.profile_path)}
+                  onPress={() => navigation.navigate('Person', { personId: person.id })} />
+              ))}
+            </Carousel>
+          )}
+
           {!searching && !hasSearchResults && (
             <View style={styles.noResults}>
               <Text style={styles.noResultsText}>Press return to search.</Text>
@@ -277,34 +271,38 @@ export function MoviesHomeScreen() {
         </Carousel>
       )}
 
-      {/* Discovery carousels — hide when searching */}
+      {/* Discovery rows — hide when searching */}
       {!isSearchMode && (
         <>
-          <Carousel title="Trending This Week"
-            status={trendingStatus} errorMessage={trendingError}>
-            {trending.map((m) => (
-              <PosterCard key={m.id} title={m.title} subtitle={m.release_date?.slice(0, 4) ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md"
-                badge={getTmdbMovieBadge(m)}
-                onPress={() => {
-                  const match = libraryByTmdbId.get(m.id);
-                  if (match) navigation.navigate('MovieDetail', { movie: match });
-                  else navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' });
-                }} />
-            ))}
-          </Carousel>
-
-          <Carousel title="Recently Released"
-            status={recentStatus} errorMessage={recentError}>
-            {recentlyReleased.map((m) => (
-              <PosterCard key={m.id} title={m.title} subtitle={m.release_date ?? ''} posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md"
-                badge={getTmdbMovieBadge(m)}
-                onPress={() => {
-                  const match = libraryByTmdbId.get(m.id);
-                  if (match) navigation.navigate('MovieDetail', { movie: match });
-                  else navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' });
-                }} />
-            ))}
-          </Carousel>
+          {movieWatchlist.length > 0 && (
+            <Carousel title="My Watchlist" count={movieWatchlist.length} status="loaded">
+              {movieWatchlist.map((w) => (
+                <PosterCard key={w.tmdbId} title={w.title}
+                  posterUrl={posterUrl(w.posterPath)} size="md"
+                  badge={getLibBadge('movie', w.tmdbId)}
+                  onPress={() => {
+                    const match = libraryByTmdbId.get(w.tmdbId);
+                    if (match) navigation.navigate('MovieDetail', { movie: match });
+                    else navigation.navigate('DiscoveryDetail', { item: { id: w.tmdbId, title: w.title, poster_path: w.posterPath }, type: 'movie' });
+                  }} />
+              ))}
+            </Carousel>
+          )}
+          {!isTmdbConfigured() && (
+            <View style={styles.notConfigured}>
+              <Text style={styles.notConfiguredText}>Discovery is disabled — add a TMDB API token in Settings → Discovery.</Text>
+            </View>
+          )}
+          <DiscoveryRows
+            mediaType="movie"
+            refreshToken={discoveryRefresh}
+            onItemPress={(item: any) => {
+              const match = libraryByTmdbId.get(item.id);
+              if (match) navigation.navigate('MovieDetail', { movie: match });
+              else navigation.navigate('DiscoveryDetail', { item, type: 'movie' });
+            }}
+            getItemBadge={(item: any) => getTmdbMovieBadge(item)}
+          />
         </>
       )}
     </ScrollView>

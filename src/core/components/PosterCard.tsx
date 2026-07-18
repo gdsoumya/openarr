@@ -19,18 +19,19 @@ interface PosterCardProps {
   bottomLabel?: string;
   rating?: number;
   onPress: () => void;
+  onLongPress?: () => void;
   style?: ViewStyle;
 }
 
 export function PosterCard({
   title, subtitle, posterUrl, placeholderText, size = 'lg',
-  badge, progress, bottomLabel, rating, onPress, style,
+  badge, progress, bottomLabel, rating, onPress, onLongPress, style,
 }: PosterCardProps) {
   const width = posterWidths[size];
   const height = width * 1.5;
 
   return (
-    <Pressable style={[{ width }, style]} onPress={onPress}>
+    <Pressable style={[{ width }, style]} onPress={onPress} onLongPress={onLongPress}>
       <View style={[styles.poster, { width, height }]}>
         {posterUrl ? (
           <CachedImage uri={posterUrl} style={styles.posterImage as any} />

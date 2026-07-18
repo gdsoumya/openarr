@@ -1,8 +1,11 @@
 import { OMDBClient, OMDBRatings } from './client';
-import { OMDB_API_KEY } from '../../core/config';
 import { tmdb } from '../tmdb/instance';
+import { useSettingsStore } from '../../stores/settingsStore';
 
-const omdb = OMDB_API_KEY !== '__OMDB_API_KEY__' ? new OMDBClient(OMDB_API_KEY) : null;
+function getOmdb(): OMDBClient | null {
+  const key = useSettingsStore.getState().resolvedOmdbKey();
+  return key ? new OMDBClient(key) : null;
+}
 
 /**
  * Fetches OMDB ratings using the best available identifier.
@@ -15,6 +18,7 @@ export async function fetchOMDBRatings(params: {
   year?: number;
   type?: 'tv' | 'movie';
 }): Promise<OMDBRatings | null> {
+  const omdb = getOmdb();
   if (!omdb) return null;
   const { imdbId, tmdbId, title, year, type } = params;
 
