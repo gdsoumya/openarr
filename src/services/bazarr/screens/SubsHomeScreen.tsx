@@ -64,7 +64,7 @@ export function SubsHomeScreen() {
   }, [fetchData]);
 
   const profileName = (profileId: number | null | undefined) =>
-    profiles.find((p) => p.profileId === profileId)?.name;
+    (profiles ?? []).find((p) => p.profileId === profileId)?.name;
 
   const resetProviders = () => {
     if (!adapter) return;

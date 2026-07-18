@@ -40,18 +40,19 @@ export class BazarrAdapter {
     }
   }
 
-  async getBadges(): Promise<Badges> { const { data } = await this.client.get('/api/badges'); return data.data; }
+  // Some Bazarr endpoints wrap payloads in {data: ...}, others return them bare
+  async getBadges(): Promise<Badges> { const { data } = await this.client.get('/api/badges'); return data.data ?? data; }
 
   async getAllSeries(): Promise<SeriesItem[]> { const { data } = await this.client.get('/api/series'); return data.data ?? []; }
   async getAllMovies(): Promise<MovieSubtitles[]> { const { data } = await this.client.get('/api/movies'); return data.data ?? []; }
-  async getEpisodeSubtitles(seriesId: number): Promise<EpisodeSubtitles[]> { const { data } = await this.client.get('/api/episodes', { params: { 'seriesid[]': seriesId } }); return data.data; }
-  async getMovieSubtitles(radarrId: number): Promise<MovieSubtitles> { const { data } = await this.client.get('/api/movies', { params: { 'radarrid[]': radarrId } }); return data.data[0]; }
+  async getEpisodeSubtitles(seriesId: number): Promise<EpisodeSubtitles[]> { const { data } = await this.client.get('/api/episodes', { params: { 'seriesid[]': seriesId } }); return data.data ?? []; }
+  async getMovieSubtitles(radarrId: number): Promise<MovieSubtitles> { const { data } = await this.client.get('/api/movies', { params: { 'radarrid[]': radarrId } }); return (data.data ?? [])[0]; }
 
   // --- Manual search + download (provider params travel as query args) ---
 
   async searchEpisodeSubtitles(episodeId: number): Promise<SubtitleSearchResult[]> {
     const { data } = await this.client.get('/api/providers/episodes', { params: { episodeid: episodeId } });
-    return data.data;
+    return data.data ?? [];
   }
 
   async downloadEpisodeSubtitle(seriesId: number, episodeId: number, sub: SubtitleSearchResult): Promise<void> {
@@ -65,7 +66,7 @@ export class BazarrAdapter {
 
   async searchMovieSubtitles(radarrId: number): Promise<SubtitleSearchResult[]> {
     const { data } = await this.client.get('/api/providers/movies', { params: { radarrid: radarrId } });
-    return data.data;
+    return data.data ?? [];
   }
 
   async downloadMovieSubtitle(radarrId: number, sub: SubtitleSearchResult): Promise<void> {
@@ -180,7 +181,10 @@ export class BazarrAdapter {
     await this.runTask('wanted_search_missing_subtitles_movies');
   }
 
-  async getProviders(): Promise<ProviderInfo[]> { const { data } = await this.client.get('/api/providers'); return data.data; }
+  async getProviders(): Promise<ProviderInfo[]> { const { data } = await this.client.get('/api/providers'); return data.data ?? []; }
   async resetProviders(): Promise<void> { await this.client.post('/api/providers'); }
-  async getLanguageProfiles(): Promise<LanguageProfile[]> { const { data } = await this.client.get('/api/system/languages/profiles'); return data.data; }
+  async getLanguageProfiles(): Promise<LanguageProfile[]> {
+    const { data } = await this.client.get('/api/system/languages/profiles');
+    return Array.isArray(data) ? data : data.data ?? [];
+  }
 }
