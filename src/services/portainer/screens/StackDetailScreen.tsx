@@ -102,8 +102,10 @@ export function StackDetailScreen() {
 
       {showCompose && (
         <View style={styles.composeBox}>
-          <ScrollView horizontal>
-            <Text style={styles.composeText} selectable>{composeFile || 'No compose file'}</Text>
+          <ScrollView nestedScrollEnabled>
+            <ScrollView horizontal nestedScrollEnabled>
+              <Text style={styles.composeText} selectable>{composeFile || 'No compose file'}</Text>
+            </ScrollView>
           </ScrollView>
         </View>
       )}
