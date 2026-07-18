@@ -31,7 +31,6 @@ export function SubsHomeScreen() {
   const [profiles, setProfiles] = useState<LanguageProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const setSubsBadgeCount = useConnectionStore((s) => s.setSubsBadgeCount);
 
   const fetchData = useCallback(async () => {
     if (!adapter) { setLoading(false); return; }
@@ -46,9 +45,6 @@ export function SubsHomeScreen() {
       setMovies(moviesData);
       setProviders(Array.isArray(prov) ? prov : []);
       setProfiles(profs);
-      const wantedEps = seriesData.reduce((sum: number, s: any) => sum + (s.episodeMissingCount ?? 0), 0);
-      const wantedMovs = moviesData.filter((m: any) => (m.missing_subtitles?.length ?? 0) > 0).length;
-      setSubsBadgeCount(wantedEps + wantedMovs);
     } catch (e) {
       console.error('Bazarr fetch error:', e);
     }

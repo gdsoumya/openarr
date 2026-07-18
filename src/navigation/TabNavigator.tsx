@@ -10,7 +10,6 @@ import { SearchStack } from './stacks/SearchStack';
 import { SubsStack } from './stacks/SubsStack';
 import { InfraStack } from './stacks/InfraStack';
 import { colors, typography } from '../core/theme/tokens';
-import { useConnectionStore } from '../stores/connectionStore';
 
 const Tab = createBottomTabNavigator();
 
@@ -25,7 +24,6 @@ const tabIconMap: Record<string, { lib: 'mci' | 'ion'; name: string }> = {
 };
 
 export function TabNavigator() {
-  const subsBadge = useConnectionStore((s) => s.subsBadgeCount);
   const insets = useSafeAreaInsets();
 
   return (
@@ -60,10 +58,6 @@ export function TabNavigator() {
       <Tab.Screen name="Movies" component={MoviesStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Movies', { screen: 'MoviesHome' }) })} />
       <Tab.Screen name="Search" component={SearchStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Search', { screen: 'SearchHome' }) })} />
       <Tab.Screen name="Subs" component={SubsStack}
-        options={{
-          tabBarBadge: subsBadge > 0 ? subsBadge : undefined,
-          tabBarBadgeStyle: { backgroundColor: colors.error, fontSize: 10, fontWeight: '700' },
-        }}
         listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Subs', { screen: 'SubsHome' }) })}
       />
       <Tab.Screen name="Infra" component={InfraStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Infra', { screen: 'InfraHome' }) })} />
