@@ -16,15 +16,40 @@ interface DiscoverFilterSheetProps {
 
 const SORT_OPTIONS: Array<{ id: string; label: string }> = [
   { id: 'popularity.desc', label: 'Popular' },
-  { id: 'vote_average.desc', label: 'Top Rated' },
+  { id: 'vote_average.desc', label: 'TMDB Rating' },
+  { id: 'client:imdb', label: 'IMDB Rating' },
+  { id: 'client:rt', label: 'RT Score' },
   { id: 'primary_release_date.desc', label: 'Newest' },
+  { id: 'primary_release_date.asc', label: 'Oldest' },
   { id: 'revenue.desc', label: 'Box Office' },
 ];
 
 const TV_SORT_OPTIONS: Array<{ id: string; label: string }> = [
   { id: 'popularity.desc', label: 'Popular' },
-  { id: 'vote_average.desc', label: 'Top Rated' },
+  { id: 'vote_average.desc', label: 'TMDB Rating' },
+  { id: 'client:imdb', label: 'IMDB Rating' },
+  { id: 'client:rt', label: 'RT Score' },
   { id: 'first_air_date.desc', label: 'Newest' },
+  { id: 'first_air_date.asc', label: 'Oldest' },
+];
+
+const LANGUAGES: Array<{ id: string; label: string }> = [
+  { id: 'en', label: 'English' }, { id: 'hi', label: 'Hindi' }, { id: 'ja', label: 'Japanese' },
+  { id: 'ko', label: 'Korean' }, { id: 'es', label: 'Spanish' }, { id: 'fr', label: 'French' },
+  { id: 'de', label: 'German' }, { id: 'ta', label: 'Tamil' }, { id: 'te', label: 'Telugu' },
+  { id: 'it', label: 'Italian' }, { id: 'zh', label: 'Chinese' },
+];
+
+const COUNTRIES: Array<{ id: string; label: string }> = [
+  { id: 'US', label: 'USA' }, { id: 'IN', label: 'India' }, { id: 'GB', label: 'UK' },
+  { id: 'JP', label: 'Japan' }, { id: 'KR', label: 'Korea' }, { id: 'FR', label: 'France' },
+  { id: 'DE', label: 'Germany' }, { id: 'ES', label: 'Spain' }, { id: 'CA', label: 'Canada' },
+];
+
+const TV_NETWORKS: Array<{ id: number; label: string }> = [
+  { id: 213, label: 'Netflix' }, { id: 49, label: 'HBO' }, { id: 2739, label: 'Disney+' },
+  { id: 1024, label: 'Prime Video' }, { id: 2552, label: 'Apple TV+' }, { id: 453, label: 'Hulu' },
+  { id: 4, label: 'BBC One' }, { id: 174, label: 'AMC' }, { id: 88, label: 'FX' },
 ];
 
 export function DiscoverFilterSheet({ visible, mediaType, filters, onApply, onDismiss }: DiscoverFilterSheetProps) {
@@ -45,6 +70,11 @@ export function DiscoverFilterSheet({ visible, mediaType, filters, onApply, onDi
   const toggleGenre = (id: number) => setDraft((d) => ({
     ...d,
     genreIds: d.genreIds?.includes(id) ? d.genreIds.filter((g) => g !== id) : [...(d.genreIds ?? []), id],
+  }));
+
+  const toggleNetwork = (id: number) => setDraft((d) => ({
+    ...d,
+    networkIds: d.networkIds?.includes(id) ? d.networkIds.filter((n) => n !== id) : [...(d.networkIds ?? []), id],
   }));
 
   const toggleProvider = (id: number) => setDraft((d) => ({
@@ -87,6 +117,48 @@ export function DiscoverFilterSheet({ visible, mediaType, filters, onApply, onDi
               );
             })}
           </View>
+
+          <Text style={styles.sectionTitle}>Language</Text>
+          <View style={styles.chipWrap}>
+            {LANGUAGES.map((l) => {
+              const active = draft.originalLanguage === l.id;
+              return (
+                <Pressable key={l.id} style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => setDraft((d) => ({ ...d, originalLanguage: active ? undefined : l.id }))}>
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{l.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Text style={styles.sectionTitle}>Country of Origin</Text>
+          <View style={styles.chipWrap}>
+            {COUNTRIES.map((c) => {
+              const active = draft.originCountry === c.id;
+              return (
+                <Pressable key={c.id} style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => setDraft((d) => ({ ...d, originCountry: active ? undefined : c.id }))}>
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{c.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {mediaType === 'tv' && (
+            <>
+              <Text style={styles.sectionTitle}>Network</Text>
+              <View style={styles.chipWrap}>
+                {TV_NETWORKS.map((n) => {
+                  const active = draft.networkIds?.includes(n.id);
+                  return (
+                    <Pressable key={n.id} style={[styles.chip, active && styles.chipActive]} onPress={() => toggleNetwork(n.id)}>
+                      <Text style={[styles.chipText, active && styles.chipTextActive]}>{n.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          )}
 
           <Text style={styles.sectionTitle}>Year Range</Text>
           <View style={styles.yearRow}>

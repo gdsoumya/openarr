@@ -35,6 +35,7 @@ export interface TMDBCollection {
 }
 
 export interface DiscoverFilters {
+  // 'client:imdb' / 'client:rt' rank loaded results by external ratings app-side
   sortBy?: string;
   genreIds?: number[];
   yearFrom?: number;
@@ -44,6 +45,9 @@ export interface DiscoverFilters {
   watchProviderIds?: number[];
   region?: string;
   keywordIds?: number[];
+  originalLanguage?: string;
+  originCountry?: string;
+  networkIds?: number[];
 }
 
 export interface TMDBCredits {

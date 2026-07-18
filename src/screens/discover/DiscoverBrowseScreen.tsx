@@ -11,6 +11,7 @@ import { useLibraryStore } from '../../stores/libraryStore';
 import { tmdb } from '../../services/tmdb/instance';
 import { DiscoverFilters, PagedResponse, posterUrl, TMDBMovie, TMDBShow } from '../../services/tmdb/types';
 import { DiscoverFilterSheet } from './DiscoverFilterSheet';
+import { ExternalRatings, fetchExternalRatings, getCachedRatings } from '../../services/discover/ratingsCache';
 
 export type DiscoverFeed =
   | { kind: 'discover' }
@@ -36,8 +37,54 @@ export function DiscoverBrowseScreen() {
   const [state, setState] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [error, setError] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [externalRatings, setExternalRatings] = useState<Map<number, ExternalRatings>>(new Map());
   const seenIds = useRef(new Set<number>());
   const loadingRef = useRef(false);
+  const inFlightIds = useRef(new Set<number>());
+
+  const clientSort = filters.sortBy === 'client:imdb' ? 'imdb' : filters.sortBy === 'client:rt' ? 'rt' : null;
+
+  // Rank loaded titles by IMDB/RT only while that sort is selected. Ratings are
+  // fetched once per title ever (persistent cache), 3 at a time. The persistent
+  // cache is the completion record, so cancelled runs retry cleanly.
+  useEffect(() => {
+    if (!clientSort) return;
+    let cancelled = false;
+    const pending = items.filter((i) => !inFlightIds.current.has(i.id) && !getCachedRatings(mediaType, i.id));
+    if (pending.length === 0) return;
+    pending.forEach((i) => inFlightIds.current.add(i.id));
+
+    (async () => {
+      const collected = new Map<number, ExternalRatings>();
+      for (let batch = 0; batch < pending.length && !cancelled; batch += 3) {
+        const chunk = pending.slice(batch, batch + 3);
+        const results = await Promise.all(chunk.map(async (i) => ({
+          id: i.id,
+          ratings: await fetchExternalRatings(mediaType, i.id, (i as TMDBMovie).title ?? (i as TMDBShow).name),
+        })));
+        results.forEach((r) => collected.set(r.id, r.ratings));
+      }
+      pending.forEach((i) => inFlightIds.current.delete(i.id));
+      if (cancelled || collected.size === 0) return;
+      // One state publish per run — a single re-sort instead of one per chunk
+      setExternalRatings((prev) => {
+        const next = new Map(prev);
+        collected.forEach((ratings, id) => next.set(id, ratings));
+        return next;
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [clientSort, items, mediaType]);
+
+  const ratingOf = useCallback((id: number): number | undefined => {
+    const r = externalRatings.get(id) ?? getCachedRatings(mediaType, id);
+    return clientSort === 'imdb' ? r?.imdb : r?.rt;
+  }, [externalRatings, mediaType, clientSort]);
+
+  const displayItems = useMemo(() => {
+    if (!clientSort) return items;
+    return [...items].sort((a, b) => (ratingOf(b.id) ?? -1) - (ratingOf(a.id) ?? -1));
+  }, [items, clientSort, ratingOf]);
 
   const fetchPage = useCallback(async (pageNum: number): Promise<PagedResponse<MediaItem>> => {
     // List-only endpoints don't report totals; assume another page exists until one comes back empty
@@ -106,7 +153,9 @@ export function DiscoverBrowseScreen() {
 
   const activeFilterCount = useMemo(() =>
     (filters.genreIds?.length ?? 0) + (filters.watchProviderIds?.length ?? 0) +
-    (filters.yearFrom ? 1 : 0) + (filters.yearTo ? 1 : 0) + (filters.minRating ? 1 : 0),
+    (filters.networkIds?.length ?? 0) +
+    (filters.yearFrom ? 1 : 0) + (filters.yearTo ? 1 : 0) + (filters.minRating ? 1 : 0) +
+    (filters.originalLanguage ? 1 : 0) + (filters.originCountry ? 1 : 0),
   [filters]);
 
   const itemTitle = (item: MediaItem) => (item as TMDBMovie).title ?? (item as TMDBShow).name ?? '';
@@ -132,12 +181,14 @@ export function DiscoverBrowseScreen() {
 
       {state === 'loaded' && items.length > 0 && (
         <PosterGrid
-          data={items}
+          data={displayItems}
           onEndReached={() => loadMore()}
           renderItem={(item) => (
             <PosterCard
               title={itemTitle(item)}
-              subtitle={itemYear(item)}
+              subtitle={clientSort && ratingOf(item.id) !== undefined
+                ? `${clientSort === 'imdb' ? 'IMDB' : 'RT'} ${ratingOf(item.id)}${clientSort === 'rt' ? '%' : ''}`
+                : itemYear(item)}
               posterUrl={posterUrl(item.poster_path)}
               rating={item.vote_average || undefined}
               size="sm"

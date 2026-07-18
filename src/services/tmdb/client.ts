@@ -7,8 +7,10 @@ import {
 
 function toDiscoverParams(f: DiscoverFilters, mediaType: 'movie' | 'tv'): Record<string, any> {
   const dateKey = mediaType === 'movie' ? 'primary_release_date' : 'first_air_date';
+  // Client-side sorts can't go to TMDB; fetch a popularity-ordered pool instead
+  const sortBy = f.sortBy?.startsWith('client:') ? 'popularity.desc' : f.sortBy;
   const params: Record<string, any> = {
-    sort_by: f.sortBy ?? 'popularity.desc',
+    sort_by: sortBy ?? 'popularity.desc',
     include_adult: false,
     'vote_count.gte': f.minVotes ?? 50,
   };
@@ -17,6 +19,9 @@ function toDiscoverParams(f: DiscoverFilters, mediaType: 'movie' | 'tv'): Record
   if (f.yearTo) params[`${dateKey}.lte`] = `${f.yearTo}-12-31`;
   if (f.minRating) params['vote_average.gte'] = f.minRating;
   if (f.keywordIds?.length) params.with_keywords = f.keywordIds.join('|');
+  if (f.originalLanguage) params.with_original_language = f.originalLanguage;
+  if (f.originCountry) params.with_origin_country = f.originCountry;
+  if (mediaType === 'tv' && f.networkIds?.length) params.with_networks = f.networkIds.join('|');
   if (f.watchProviderIds?.length) {
     params.with_watch_providers = f.watchProviderIds.join('|');
     params.watch_region = f.region ?? 'US';

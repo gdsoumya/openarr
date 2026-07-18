@@ -306,6 +306,15 @@ export function TVHomeScreen() {
               <Text style={styles.notConfiguredText}>Discovery is disabled — add a TMDB API token in Settings → Discovery.</Text>
             </View>
           )}
+          <Pressable style={styles.discoverEntry}
+            onPress={() => navigation.navigate('DiscoverBrowse', { mediaType: 'tv', title: 'Discover', feed: { kind: 'discover' } })}>
+            <Ionicons name="compass-outline" size={20} color={colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.discoverEntryTitle}>Discover</Text>
+              <Text style={styles.discoverEntrySub}>Filter by genre, language, country, network and sort by ratings</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </Pressable>
           <DiscoveryRows
             mediaType="tv"
             refreshToken={discoveryRefresh}
@@ -331,5 +340,8 @@ const styles = StyleSheet.create({
   searchingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
   searchingText: { ...typography.caption, color: colors.textMuted },
   noResults: { padding: spacing.xl, alignItems: 'center' },
+  discoverEntry: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginHorizontal: spacing.xl, marginBottom: spacing.xl, padding: spacing.lg, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder, borderRadius: radii.lg },
+  discoverEntryTitle: { ...typography.bodyBold, color: colors.primary },
+  discoverEntrySub: { ...typography.micro, color: colors.textMuted, marginTop: 2 },
   noResultsText: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
 });
