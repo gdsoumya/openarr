@@ -1,5 +1,7 @@
 .superpowers/
+superpowers/
 node_modules/
+.vscode/
 .expo/
 dist/
 npm-debug.*
