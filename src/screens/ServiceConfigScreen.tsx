@@ -17,7 +17,7 @@ const SERVICE_META: Record<ServiceId, { defaultPort: string; authMode: AuthMode;
   radarr: { defaultPort: '7878', authMode: 'apikey', authHint: 'Settings → General → API Key' },
   prowlarr: { defaultPort: '9696', authMode: 'apikey', authHint: 'Settings → General → API Key' },
   bazarr: { defaultPort: '6767', authMode: 'apikey', authHint: 'Settings → General → API Key' },
-  portainer: { defaultPort: '9000', authMode: 'apikey', authHint: 'Portainer → My account → Access tokens. Self-signed HTTPS certs are rejected by Android, so use Portainer\'s HTTP port (9000 by default; NAS packages may remap it, e.g. TerraMaster uses 19000).' },
+  portainer: { defaultPort: '9000', authMode: 'apikey', authHint: 'Portainer → My account → Access tokens. If your HTTPS uses a self-signed cert, use the HTTP port (default: 9000) or a reverse proxy instead.' },
   gluetun: { defaultPort: '8000', authMode: 'none', authHint: 'Gluetun control server URL — the /api prefix is added automatically.' },
   emby: { defaultPort: '8096', authMode: 'apikey', authHint: 'Emby → Settings → Advanced → API Keys' },
 };
