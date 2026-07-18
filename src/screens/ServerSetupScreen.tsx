@@ -25,19 +25,20 @@ export function ServerSetupScreen() {
   const [name, setName] = useState(existingServer?.name ?? '');
   const [homeSSIDs, setHomeSSIDs] = useState(existingServer?.homeSSIDs.join(', ') ?? '');
 
-  // Initialize services from existing or create defaults
-  const [services, setServices] = useState<SvcConfig[]>(
-    existingServer?.services ?? Object.keys(serviceConfig).map((id) => ({
-      serviceId: id as ServiceId,
-      enabled: false,
-      localUrl: '',
-      remoteUrl: '',
-    })),
-  );
+  // Servers saved by older app versions may lack entries for newly added
+  // services — append disabled defaults without touching existing entries.
+  const withAllServices = (svcs: SvcConfig[]): SvcConfig[] => {
+    const missing = (Object.keys(serviceConfig) as ServiceId[])
+      .filter((id) => !svcs.some((s) => s.serviceId === id))
+      .map((id) => ({ serviceId: id, enabled: false, localUrl: '', remoteUrl: '' }));
+    return missing.length ? [...svcs, ...missing] : svcs;
+  };
+
+  const [services, setServices] = useState<SvcConfig[]>(withAllServices(existingServer?.services ?? []));
 
   // Re-read from store in case ServiceConfigScreen updated it
   const currentServer = useServerStore((s) => s.servers.find((srv) => srv.id === serverId));
-  const displayServices = currentServer?.services ?? services;
+  const displayServices = withAllServices(currentServer?.services ?? services);
 
   const toggleService = (serviceId: ServiceId) => {
     const updated = displayServices.map((s) =>

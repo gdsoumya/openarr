@@ -9,7 +9,7 @@ import { SpeedBanner } from '../core/components/SpeedBanner';
 import { useServerStore } from '../stores/serverStore';
 import { useConnectionStore } from '../stores/connectionStore';
 import { ServiceStatus } from '../core/types/services';
-import { getTransmissionAdapter, getSonarrAdapter, getRadarrAdapter, getProwlarrAdapter, getBazarrAdapter } from '../services/adapterFactory';
+import { getTransmissionAdapter, getSonarrAdapter, getRadarrAdapter, getProwlarrAdapter, getBazarrAdapter, getPortainerAdapter, getGluetunAdapter } from '../services/adapterFactory';
 import { usePolling } from '../core/hooks/usePolling';
 import { checkForCompletedDownloads } from '../core/notifications/downloadMonitor';
 import { useToastStore } from '../core/hooks/useToast';
@@ -40,6 +40,7 @@ export function DashboardScreen() {
   const enabledServices = useMemo(() => server?.services.filter((s) => s.enabled) ?? [], [server]);
   const tabMap: Partial<Record<ServiceId, string>> = {
     transmission: 'Torrents', sonarr: 'TV', radarr: 'Movies', prowlarr: 'Search', bazarr: 'Subs',
+    portainer: 'Infra', gluetun: 'Infra',
   };
   const previousQueueRef = useRef<Array<{ id: number; title: string }>>([]);
   const erroredServicesRef = useRef<Set<string>>(new Set());
@@ -60,6 +61,8 @@ export function DashboardScreen() {
           case 'radarr': adapter = getRadarrAdapter(config, isLocal); break;
           case 'prowlarr': adapter = getProwlarrAdapter(config, isLocal); break;
           case 'bazarr': adapter = getBazarrAdapter(config, isLocal); break;
+          case 'portainer': adapter = getPortainerAdapter(config, isLocal); break;
+          case 'gluetun': adapter = getGluetunAdapter(config, isLocal); break;
         }
         if (adapter) {
           const status = await adapter.getStatus();

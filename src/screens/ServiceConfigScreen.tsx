@@ -8,7 +8,7 @@ import { useServerStore } from '../stores/serverStore';
 import { useConnectionStore } from '../stores/connectionStore';
 import { getAdapter, clearAdapters } from '../services/adapterFactory';
 
-type AuthMode = 'apikey' | 'basic';
+type AuthMode = 'apikey' | 'basic' | 'none';
 
 const SERVICE_META: Record<ServiceId, { defaultPort: string; authMode: AuthMode; authHint: string; urlSuffix?: string }> = {
   transmission: { defaultPort: '9091', authMode: 'basic', authHint: 'Username/password from Transmission → Settings → Web (/rpc is appended automatically)', urlSuffix: '/transmission' },
@@ -16,6 +16,8 @@ const SERVICE_META: Record<ServiceId, { defaultPort: string; authMode: AuthMode;
   radarr: { defaultPort: '7878', authMode: 'apikey', authHint: 'Settings → General → API Key' },
   prowlarr: { defaultPort: '9696', authMode: 'apikey', authHint: 'Settings → General → API Key' },
   bazarr: { defaultPort: '6767', authMode: 'apikey', authHint: 'Settings → General → API Key' },
+  portainer: { defaultPort: '9443', authMode: 'apikey', authHint: 'Portainer → My account → Access tokens. Note: self-signed HTTPS certs are rejected by the app — use the HTTP port (9000) or a reverse-proxy route instead.' },
+  gluetun: { defaultPort: '8000', authMode: 'none', authHint: 'Gluetun control server URL — the /api prefix is added automatically.' },
 };
 
 export function ServiceConfigScreen() {
@@ -44,6 +46,7 @@ export function ServiceConfigScreen() {
 
   const { alert } = useThemedAlert();
   const usesApiKey = meta.authMode === 'apikey';
+  const usesBasic = meta.authMode === 'basic';
 
   const buildServiceConfig = () => ({
     serviceId,
@@ -52,8 +55,8 @@ export function ServiceConfigScreen() {
     remoteUrl: remoteUrl.trim() || localUrl.trim(),
     // Only set the auth method this service uses
     apiKey: usesApiKey ? (apiKey.trim() || undefined) : undefined,
-    username: !usesApiKey ? (username.trim() || undefined) : undefined,
-    password: !usesApiKey ? (password.trim() || undefined) : undefined,
+    username: usesBasic ? (username.trim() || undefined) : undefined,
+    password: usesBasic ? (password.trim() || undefined) : undefined,
     sslIgnoreCert,
   });
 
@@ -89,9 +92,10 @@ export function ServiceConfigScreen() {
       return;
     }
 
-    const updatedServices = server.services.map((s) =>
-      s.serviceId === serviceId ? svcConfig : s,
-    );
+    // Upsert — servers saved by older versions may lack an entry for this service
+    const updatedServices = server.services.some((s) => s.serviceId === serviceId)
+      ? server.services.map((s) => (s.serviceId === serviceId ? svcConfig : s))
+      : [...server.services, svcConfig];
 
     updateServer({ ...server, services: updatedServices });
     clearAdapters();
@@ -134,8 +138,10 @@ export function ServiceConfigScreen() {
         keyboardType="url"
       />
 
-      {/* Auth — API key OR username/password depending on service */}
-      {usesApiKey ? (
+      {/* Auth — API key, username/password, or none depending on service */}
+      {meta.authMode === 'none' ? (
+        <Text style={styles.hint}>{meta.authHint}</Text>
+      ) : usesApiKey ? (
         <>
           <Text style={styles.label}>API Key *</Text>
           <Text style={styles.hint}>{meta.authHint}</Text>

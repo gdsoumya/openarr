@@ -1,9 +1,11 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { ServiceConfig } from '../types/services';
 
-// Prowlarr search fans out to many indexers and can take a while
+// Prowlarr search fans out to many indexers and can take a while;
+// Bazarr manual subtitle search fans out to providers similarly
 const TIMEOUT_MS: Record<string, number> = {
   prowlarr: 120000,
+  bazarr: 60000,
   default: 30000,
 };
 
@@ -25,6 +27,9 @@ export function createServiceClient(config: ServiceConfig, isLocal: boolean): Ax
         req.params = { ...req.params, apikey: config.apiKey };
         req.headers.set('X-API-KEY', config.apiKey);
         // Do NOT add trailing slash — it causes SPA catch-all to return HTML
+      } else if (config.serviceId === 'portainer') {
+        // Portainer access tokens require this exact header casing
+        req.headers.set('X-API-Key', config.apiKey);
       } else {
         req.headers.set('X-Api-Key', config.apiKey);
       }

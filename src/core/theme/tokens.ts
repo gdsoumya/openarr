@@ -11,6 +11,8 @@ export const colors = {
   radarr: '#ffc107',
   prowlarr: '#e07b39',
   bazarr: '#a855f7',
+  portainer: '#13bef9',
+  gluetun: '#5dd39e',
   success: '#64ffda',
   error: '#e94560',
   warning: '#ffc107',
@@ -57,6 +59,8 @@ export const serviceConfig = {
   radarr: { color: colors.radarr, label: 'Radarr', icon: 'R' },
   prowlarr: { color: colors.prowlarr, label: 'Prowlarr', icon: 'P' },
   bazarr: { color: colors.bazarr, label: 'Bazarr', icon: 'B' },
+  portainer: { color: colors.portainer, label: 'Portainer', icon: 'P' },
+  gluetun: { color: colors.gluetun, label: 'Gluetun VPN', icon: 'G' },
 } as const;
 
 export type ServiceId = keyof typeof serviceConfig;

@@ -14,6 +14,8 @@ const serviceIconMap: Record<string, string> = {
   radarr: 'movie-open',
   prowlarr: 'magnify',
   bazarr: 'subtitles-outline',
+  portainer: 'docker',
+  gluetun: 'shield-lock',
 };
 
 export function ServiceIcon({ serviceId, size = 44 }: ServiceIconProps) {

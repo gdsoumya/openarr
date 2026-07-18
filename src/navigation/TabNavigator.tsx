@@ -8,6 +8,7 @@ import { TVStack } from './stacks/TVStack';
 import { MoviesStack } from './stacks/MoviesStack';
 import { SearchStack } from './stacks/SearchStack';
 import { SubsStack } from './stacks/SubsStack';
+import { InfraStack } from './stacks/InfraStack';
 import { colors, typography } from '../core/theme/tokens';
 import { useConnectionStore } from '../stores/connectionStore';
 
@@ -20,6 +21,7 @@ const tabIconMap: Record<string, { lib: 'mci' | 'ion'; name: string }> = {
   Movies: { lib: 'mci', name: 'movie-open' },
   Search: { lib: 'ion', name: 'search' },
   Subs: { lib: 'mci', name: 'subtitles' },
+  Infra: { lib: 'mci', name: 'server' },
 };
 
 export function TabNavigator() {
@@ -61,6 +63,7 @@ export function TabNavigator() {
         }}
         listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Subs', { screen: 'SubsHome' }) })}
       />
+      <Tab.Screen name="Infra" component={InfraStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Infra', { screen: 'InfraHome' }) })} />
     </Tab.Navigator>
   );
 }
