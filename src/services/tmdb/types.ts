@@ -48,6 +48,11 @@ export interface DiscoverFilters {
   originalLanguage?: string;
   originCountry?: string;
   networkIds?: number[];
+  runtimeFrom?: number;
+  runtimeTo?: number;
+  // Client-side minimums applied to loaded results via the external ratings cache
+  minImdb?: number;
+  minRt?: number;
 }
 
 export interface TMDBCredits {

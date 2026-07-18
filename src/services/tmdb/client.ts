@@ -20,6 +20,8 @@ function toDiscoverParams(f: DiscoverFilters, mediaType: 'movie' | 'tv'): Record
   if (f.minRating) params['vote_average.gte'] = f.minRating;
   if (f.keywordIds?.length) params.with_keywords = f.keywordIds.join('|');
   if (f.originalLanguage) params.with_original_language = f.originalLanguage;
+  if (f.runtimeFrom) params['with_runtime.gte'] = f.runtimeFrom;
+  if (f.runtimeTo) params['with_runtime.lte'] = f.runtimeTo;
   if (f.originCountry) params.with_origin_country = f.originCountry;
   if (mediaType === 'tv' && f.networkIds?.length) params.with_networks = f.networkIds.join('|');
   if (f.watchProviderIds?.length) {

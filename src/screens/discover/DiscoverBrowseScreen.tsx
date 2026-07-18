@@ -10,7 +10,6 @@ import { ErrorState } from '../../core/components/ErrorState';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { tmdb } from '../../services/tmdb/instance';
 import { DiscoverFilters, PagedResponse, posterUrl, TMDBMovie, TMDBShow } from '../../services/tmdb/types';
-import { DiscoverFilterSheet } from './DiscoverFilterSheet';
 import { ExternalRatings, fetchExternalRatings, getCachedRatings } from '../../services/discover/ratingsCache';
 
 export type DiscoverFeed =
@@ -36,19 +35,19 @@ export function DiscoverBrowseScreen() {
   const [totalPages, setTotalPages] = useState(1);
   const [state, setState] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [error, setError] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [externalRatings, setExternalRatings] = useState<Map<number, ExternalRatings>>(new Map());
   const seenIds = useRef(new Set<number>());
   const loadingRef = useRef(false);
   const inFlightIds = useRef(new Set<number>());
 
   const clientSort = filters.sortBy === 'client:imdb' ? 'imdb' : filters.sortBy === 'client:rt' ? 'rt' : null;
+  const needsRatings = !!clientSort || !!filters.minImdb || !!filters.minRt;
 
   // Rank loaded titles by IMDB/RT only while that sort is selected. Ratings are
   // fetched once per title ever (persistent cache), 3 at a time. The persistent
   // cache is the completion record, so cancelled runs retry cleanly.
   useEffect(() => {
-    if (!clientSort) return;
+    if (!needsRatings) return;
     let cancelled = false;
     const pending = items.filter((i) => !inFlightIds.current.has(i.id) && !getCachedRatings(mediaType, i.id));
     if (pending.length === 0) return;
@@ -74,17 +73,33 @@ export function DiscoverBrowseScreen() {
       });
     })();
     return () => { cancelled = true; };
-  }, [clientSort, items, mediaType]);
+  }, [needsRatings, items, mediaType]);
+
+  const ratingsFor = useCallback((id: number): ExternalRatings | undefined =>
+    externalRatings.get(id) ?? getCachedRatings(mediaType, id), [externalRatings, mediaType]);
 
   const ratingOf = useCallback((id: number): number | undefined => {
-    const r = externalRatings.get(id) ?? getCachedRatings(mediaType, id);
+    const r = ratingsFor(id);
     return clientSort === 'imdb' ? r?.imdb : r?.rt;
-  }, [externalRatings, mediaType, clientSort]);
+  }, [ratingsFor, clientSort]);
 
   const displayItems = useMemo(() => {
-    if (!clientSort) return items;
-    return [...items].sort((a, b) => (ratingOf(b.id) ?? -1) - (ratingOf(a.id) ?? -1));
-  }, [items, clientSort, ratingOf]);
+    let result = items;
+    if (filters.minImdb || filters.minRt) {
+      // Titles keep showing until their ratings resolve, then drop if below threshold
+      result = result.filter((i) => {
+        const r = ratingsFor(i.id);
+        if (!r) return true;
+        if (filters.minImdb && (r.imdb ?? 0) < filters.minImdb) return false;
+        if (filters.minRt && (r.rt ?? 0) < filters.minRt) return false;
+        return true;
+      });
+    }
+    if (clientSort) {
+      result = [...result].sort((a, b) => (ratingOf(b.id) ?? -1) - (ratingOf(a.id) ?? -1));
+    }
+    return result;
+  }, [items, clientSort, ratingOf, ratingsFor, filters.minImdb, filters.minRt]);
 
   const fetchPage = useCallback(async (pageNum: number): Promise<PagedResponse<MediaItem>> => {
     // List-only endpoints don't report totals; assume another page exists until one comes back empty
@@ -155,7 +170,8 @@ export function DiscoverBrowseScreen() {
     (filters.genreIds?.length ?? 0) + (filters.watchProviderIds?.length ?? 0) +
     (filters.networkIds?.length ?? 0) +
     (filters.yearFrom ? 1 : 0) + (filters.yearTo ? 1 : 0) + (filters.minRating ? 1 : 0) +
-    (filters.originalLanguage ? 1 : 0) + (filters.originCountry ? 1 : 0),
+    (filters.originalLanguage ? 1 : 0) + (filters.originCountry ? 1 : 0) +
+    (filters.minImdb ? 1 : 0) + (filters.minRt ? 1 : 0) + (filters.runtimeFrom || filters.runtimeTo ? 1 : 0),
   [filters]);
 
   const itemTitle = (item: MediaItem) => (item as TMDBMovie).title ?? (item as TMDBShow).name ?? '';
@@ -166,7 +182,7 @@ export function DiscoverBrowseScreen() {
       {feed.kind === 'discover' && (
         <View style={styles.toolbar}>
           <Text style={styles.resultCount}>{items.length} titles</Text>
-          <Pressable style={styles.filterBtn} onPress={() => setShowFilters(true)}>
+          <Pressable style={styles.filterBtn} onPress={() => navigation.navigate('DiscoverFilters', { mediaType, filters, onApply: (f: DiscoverFilters) => setFilters(f) })}>
             <Ionicons name="options-outline" size={16} color={colors.primary} />
             <Text style={styles.filterBtnText}>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</Text>
           </Pressable>
@@ -200,13 +216,6 @@ export function DiscoverBrowseScreen() {
         />
       )}
 
-      <DiscoverFilterSheet
-        visible={showFilters}
-        mediaType={mediaType}
-        filters={filters}
-        onApply={(f) => { setShowFilters(false); setFilters(f); }}
-        onDismiss={() => setShowFilters(false)}
-      />
     </View>
   );
 }

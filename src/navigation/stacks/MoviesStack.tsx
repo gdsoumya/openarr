@@ -5,6 +5,7 @@ import { MovieDetailScreen } from '../../services/radarr/screens/MovieDetailScre
 import { DiscoveryDetailScreen } from '../../screens/DiscoveryDetailScreen';
 import { DiscoverBrowseScreen } from '../../screens/discover/DiscoverBrowseScreen';
 import { PersonScreen } from '../../screens/discover/PersonScreen';
+import { DiscoverFiltersScreen } from '../../screens/discover/DiscoverFiltersScreen';
 import { colors } from '../../core/theme/tokens';
 
 const Stack = createNativeStackNavigator();
@@ -17,6 +18,7 @@ export function MoviesStack() {
       <Stack.Screen name="DiscoveryDetail" component={DiscoveryDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="DiscoverBrowse" component={DiscoverBrowseScreen} options={({ route }: any) => ({ title: route.params?.title ?? 'Discover' })} />
       <Stack.Screen name="Person" component={PersonScreen} options={{ title: '' }} />
+      <Stack.Screen name="DiscoverFilters" component={DiscoverFiltersScreen} options={{ title: 'Filters' }} />
     </Stack.Navigator>
   );
 }
