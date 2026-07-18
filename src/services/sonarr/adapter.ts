@@ -48,5 +48,4 @@ export class SonarrAdapter extends ArrServiceAdapter {
   async searchSeries(seriesId: number): Promise<void> { await this.executeCommand('SeriesSearch', { seriesId }); }
   async manualSearchEpisode(episodeId: number): Promise<any[]> { return this.manualSearch({ episodeId }); }
   async manualSearchSeason(seriesId: number, seasonNumber: number): Promise<any[]> { return this.manualSearch({ seriesId, seasonNumber }); }
-  getTvdbIds(series: Series[]): number[] { return series.map(s => s.tvdbId); }
 }

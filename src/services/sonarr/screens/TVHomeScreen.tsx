@@ -98,7 +98,6 @@ export function TVHomeScreen() {
       setLibraryStatus('empty');
     }
 
-    setDiscoveryRefresh((n) => n + 1);
     setInitialLoading(false);
   }, [adapter]);
 
@@ -159,7 +158,7 @@ export function TVHomeScreen() {
     : library;
 
   const isSearchMode = searchQuery.trim().length > 0;
-  const hasSearchResults = sonarrSearchResults.length > 0 || tmdbSearchResults.length > 0;
+  const hasSearchResults = sonarrSearchResults.length > 0 || tmdbSearchResults.length > 0 || peopleResults.length > 0;
   const libraryTvdbIds = new Set(library.map(s => s.tvdbId));
 
   const getTmdbItemBadge = (tmdbItem: TMDBShow) => {
@@ -179,7 +178,7 @@ export function TVHomeScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={async () => { setRefreshing(true); await fetchData(); setRefreshing(false); }}
+          onRefresh={async () => { setRefreshing(true); setDiscoveryRefresh((n) => n + 1); await fetchData(); setRefreshing(false); }}
           tintColor={colors.primary}
         />
       }>
@@ -280,7 +279,7 @@ export function TVHomeScreen() {
           status={!config ? 'empty' : libraryStatus}>
           {displayLibrary.map((s) => (
             <PosterCard key={s.id} title={s.title} subtitle={`${s.network} · ${s.status === 'continuing' ? 'Airing' : 'Ended'}`}
-              posterUrl={s.images.find(i => i.coverType === 'poster')?.remoteUrl}
+              posterUrl={s.images?.find(i => i.coverType === 'poster')?.remoteUrl}
               badge={getSeriesBadge(s, queueMap)}
               progress={queueMap?.has(s.id) ? (queueMap.get(s.id)!.progress / 100) : undefined}
               onPress={() => navigation.navigate('SeriesDetail', { series: s })} />

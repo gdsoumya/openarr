@@ -123,7 +123,7 @@ export function DiscoveryDetailScreen() {
     const cancelled = { value: false };
     resolveAndFetch(cancelled);
     return () => { cancelled.value = true; };
-  }, [item?.id, item?.tmdbId, item?.tvdbId, type]);
+  }, [item?.id, item?.tmdbId, item?.tvdbId, type, region]);
 
   if (!item) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;
 

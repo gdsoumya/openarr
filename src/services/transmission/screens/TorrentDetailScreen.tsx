@@ -11,18 +11,7 @@ import { useConnectionStore } from '../../../stores/connectionStore';
 import { getTransmissionAdapter } from '../../../services/adapterFactory';
 import { usePolling } from '../../../core/hooks/usePolling';
 import { Torrent, TorrentStatus } from '../types';
-
-function formatSpeed(bytes: number): string {
-  if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB/s`;
-  if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB/s`;
-  return `${bytes} B/s`;
-}
-
-function formatSize(bytes: number): string {
-  if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(2)} GB`;
-  if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`;
-  return `${(bytes / 1024).toFixed(0)} KB`;
-}
+import { formatBytes as formatSize, formatSpeed } from '../../../core/utils/format';
 
 function formatEta(seconds: number): string {
   if (seconds < 0) return '∞';
@@ -47,7 +36,7 @@ export function TorrentDetailScreen() {
   const refresh = useCallback(async () => {
     if (!adapter) return;
     try {
-      const torrents = await adapter.getTorrents();
+      const torrents = await adapter.getTorrents([torrent.id]);
       const updated = torrents.find(t => t.id === torrent.id);
       if (updated) setTorrent(updated);
     } catch {}

@@ -65,4 +65,3 @@ export interface TransmissionSession {
   altSpeedUp: number;
 }
 
-export type SortField = 'name' | 'totalSize' | 'uploadRatio' | 'rateDownload' | 'rateUpload' | 'percentDone' | 'queuePosition' | 'addedDate' | 'status';

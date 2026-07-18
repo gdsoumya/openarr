@@ -31,13 +31,14 @@ const TIER_CYCLE = ['all', '2160p', '1080p', '720p', 'sd'] as const;
 export function ManualSearchSheet({ visible, status, error, releases, context, onGrab, onRetry, onDismiss }: ManualSearchSheetProps) {
   const { alert } = useThemedAlert();
   const insets = useSafeAreaInsets();
-  const [sortBy, setSortBy] = useState<ReleaseSortKey | null>('quality');
+  // null = the arr's own decision-engine order (rejected still sinks last)
+  const [sortBy, setSortBy] = useState<ReleaseSortKey | null>(null);
   const [filters, setFilters] = useState<ReleaseFilters>(defaultReleaseFilters);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible) {
-      setSortBy('quality');
+      setSortBy(null);
       setFilters(defaultReleaseFilters);
       setExpandedKey(null);
     }

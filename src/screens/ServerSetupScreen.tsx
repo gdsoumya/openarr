@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography, serviceConfig, ServiceId } from '../core/theme/tokens';
 import { useServerStore } from '../stores/serverStore';
+import { ServiceIcon } from '../core/components/ServiceIcon';
 import { ServerConfig, ServiceConfig as SvcConfig } from '../core/types/services';
 
 export function ServerSetupScreen() {
@@ -117,9 +118,7 @@ export function ServerSetupScreen() {
             style={[styles.serviceRow, svc.enabled && configured && styles.serviceRowConfigured]}
             onPress={() => { if (svc.enabled) openServiceConfig(svc.serviceId); }}
           >
-            <View style={[styles.serviceIcon, { backgroundColor: cfg.color }]}>
-              <Text style={styles.serviceIconText}>{cfg.icon}</Text>
-            </View>
+            <ServiceIcon serviceId={svc.serviceId} size={36} />
             <View style={styles.serviceInfo}>
               <Text style={styles.serviceLabel}>{cfg.label}</Text>
               {svc.enabled && !configured && (

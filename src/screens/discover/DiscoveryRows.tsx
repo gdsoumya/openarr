@@ -97,6 +97,9 @@ function Row({ def, mediaType, onItemPress, getItemBadge, refreshToken }: {
 export function DiscoveryRows({ mediaType, onItemPress, getItemBadge, refreshToken }: DiscoveryRowsProps) {
   const libraryEntries = useLibraryStore((s) => (mediaType === 'movie' ? s.movies : s.shows));
   const watchlist = useWatchlistStore((s) => s.items);
+  // Key on membership content, not Map identity — store publishes new Maps every
+  // refresh and identity churn would re-roll seeds and refetch all rows
+  const libraryKey = useMemo(() => [...libraryEntries.keys()].sort((a, b) => a - b).join(','), [libraryEntries]);
 
   const rows = useMemo<RowDef[]>(() => {
     if (!isTmdbConfigured()) return [];
@@ -185,7 +188,8 @@ export function DiscoveryRows({ mediaType, onItemPress, getItemBadge, refreshTok
     }
 
     return defs;
-  }, [mediaType, libraryEntries, watchlist, refreshToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaType, libraryKey, watchlist.length, refreshToken]);
 
   return (
     <>

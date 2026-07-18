@@ -94,7 +94,6 @@ export function MoviesHomeScreen() {
       setLibraryStatus('empty');
     }
 
-    setDiscoveryRefresh((n) => n + 1);
     setInitialLoading(false);
   }, [adapter]);
 
@@ -148,8 +147,14 @@ export function MoviesHomeScreen() {
     : library;
 
   const isSearchMode = searchQuery.trim().length > 0;
-  const hasSearchResults = radarrSearchResults.length > 0 || tmdbSearchResults.length > 0;
+  const hasSearchResults = radarrSearchResults.length > 0 || tmdbSearchResults.length > 0 || peopleResults.length > 0;
   const libraryTmdbIds = new Set(library.map(m => m.tmdbId));
+
+  const openTmdbMovie = (m: { id: number; title?: string; poster_path?: string | null }) => {
+    const match = libraryByTmdbId.get(m.id);
+    if (match) navigation.navigate('MovieDetail', { movie: match });
+    else navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' });
+  };
 
   const getTmdbMovieBadge = (tmdbItem: TMDBMovie) => {
     const match = libraryByTmdbId.get(tmdbItem.id);
@@ -162,7 +167,7 @@ export function MoviesHomeScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={async () => { setRefreshing(true); await fetchData(); setRefreshing(false); }}
+          onRefresh={async () => { setRefreshing(true); setDiscoveryRefresh((n) => n + 1); await fetchData(); setRefreshing(false); }}
           tintColor={colors.primary}
         />
       }>
@@ -234,11 +239,7 @@ export function MoviesHomeScreen() {
                 <PosterCard key={`tmdb-${m.id}-${idx}`} title={m.title} subtitle={`${m.release_date?.slice(0, 4) ?? ''} · ★ ${m.vote_average?.toFixed(1) ?? ''}`}
                   posterUrl={posterUrl(m.poster_path)} rating={m.vote_average} size="md"
                   badge={getTmdbMovieBadge(m)}
-                  onPress={() => {
-                    const match = libraryByTmdbId.get(m.id);
-                    if (match) navigation.navigate('MovieDetail', { movie: match });
-                    else navigation.navigate('DiscoveryDetail', { item: m, type: 'movie' });
-                  }} />
+                  onPress={() => openTmdbMovie(m)} />
               ))}
             </Carousel>
           )}
@@ -267,7 +268,7 @@ export function MoviesHomeScreen() {
           status={!config ? 'empty' : libraryStatus}>
           {displayLibrary.map((m) => (
             <PosterCard key={m.id} title={m.title} subtitle={`${m.year} · ${m.genres?.[0] ?? ''}`}
-              posterUrl={m.images.find(i => i.coverType === 'poster')?.remoteUrl}
+              posterUrl={m.images?.find(i => i.coverType === 'poster')?.remoteUrl}
               badge={getMovieBadge(m, queueMap)}
               progress={queueMap?.has(m.id) ? (queueMap.get(m.id)!.progress / 100) : undefined}
               onPress={() => navigation.navigate('MovieDetail', { movie: m })} />
@@ -284,11 +285,7 @@ export function MoviesHomeScreen() {
                 <PosterCard key={w.tmdbId} title={w.title}
                   posterUrl={posterUrl(w.posterPath)} size="md"
                   badge={getLibBadge('movie', w.tmdbId)}
-                  onPress={() => {
-                    const match = libraryByTmdbId.get(w.tmdbId);
-                    if (match) navigation.navigate('MovieDetail', { movie: match });
-                    else navigation.navigate('DiscoveryDetail', { item: { id: w.tmdbId, title: w.title, poster_path: w.posterPath }, type: 'movie' });
-                  }} />
+                  onPress={() => openTmdbMovie({ id: w.tmdbId, title: w.title, poster_path: w.posterPath })} />
               ))}
             </Carousel>
           )}
@@ -300,11 +297,7 @@ export function MoviesHomeScreen() {
           <DiscoveryRows
             mediaType="movie"
             refreshToken={discoveryRefresh}
-            onItemPress={(item: any) => {
-              const match = libraryByTmdbId.get(item.id);
-              if (match) navigation.navigate('MovieDetail', { movie: match });
-              else navigation.navigate('DiscoveryDetail', { item, type: 'movie' });
-            }}
+            onItemPress={(item: any) => openTmdbMovie(item)}
             getItemBadge={(item: any) => getTmdbMovieBadge(item)}
           />
         </>

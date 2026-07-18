@@ -51,9 +51,9 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
     return [];
   }, [item, type]);
 
-  // Initialize all seasons as monitored
+  // Initialize all seasons as monitored, resetting when the sheet targets a new item
   useEffect(() => {
-    if (seasons.length > 0 && seasonMonitored.size === 0) {
+    if (seasons.length > 0) {
       const map = new Map<number, boolean>();
       seasons.forEach(s => map.set(s.seasonNumber, true));
       setSeasonMonitored(map);

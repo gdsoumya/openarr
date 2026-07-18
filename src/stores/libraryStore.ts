@@ -71,22 +71,25 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     // Publish what we have immediately; resolve stragglers via /find
     set({ shows: map });
 
-    for (const s of unresolved) {
+    const resolutions = await Promise.all(unresolved.map(async (s) => {
       try {
         const found = await tmdb.findByExternalId(String(s.tvdbId), 'tvdb_id');
-        const tmdbId = found.tv_results[0]?.id;
-        if (!tmdbId) continue;
-        idMap[String(s.tvdbId)] = tmdbId;
-        idMapDirty = true;
-        map.set(tmdbId, {
-          arrId: s.id, tmdbId, tvdbId: s.tvdbId, title: s.title, monitored: s.monitored,
-          percentOfEpisodes: s.statistics?.percentOfEpisodes,
-          hasFile: (s.statistics?.episodeFileCount ?? 0) > 0,
-          downloadProgress: progressByArrId?.get(s.id),
-        });
+        return { series: s, tmdbId: found.tv_results[0]?.id };
       } catch {
         // TMDB unreachable/unconfigured — badges degrade gracefully
+        return { series: s, tmdbId: undefined };
       }
+    }));
+    for (const { series: s, tmdbId } of resolutions) {
+      if (!tmdbId) continue;
+      idMap[String(s.tvdbId)] = tmdbId;
+      idMapDirty = true;
+      map.set(tmdbId, {
+        arrId: s.id, tmdbId, tvdbId: s.tvdbId, title: s.title, monitored: s.monitored,
+        percentOfEpisodes: s.statistics?.percentOfEpisodes,
+        hasFile: (s.statistics?.episodeFileCount ?? 0) > 0,
+        downloadProgress: progressByArrId?.get(s.id),
+      });
     }
     if (idMapDirty) appStorage.setJSON(ID_MAP_KEY, idMap);
     if (unresolved.length) set({ shows: new Map(map) });

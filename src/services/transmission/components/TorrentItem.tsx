@@ -4,12 +4,7 @@ import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { ProgressBar } from '../../../core/components/ProgressBar';
 import { Badge } from '../../../core/components/Badge';
 import { Torrent, TorrentStatus } from '../types';
-
-function formatSpeed(bytes: number): string {
-  if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB/s`;
-  if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB/s`;
-  return `${bytes} B/s`;
-}
+import { formatSpeed } from '../../../core/utils/format';
 
 function formatEta(seconds: number): string {
   if (seconds < 0) return '∞';

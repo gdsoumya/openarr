@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { colors, spacing, typography } from '../../../core/theme/tokens';
 import { EpisodeItem } from './EpisodeItem';
@@ -7,7 +7,16 @@ import { Episode, Season } from '../types';
 interface SeasonSectionProps { season: Season; episodes: Episode[]; onEpisodePress: (ep: Episode) => void; onSeasonMenu?: () => void; episodeQueueMap?: Map<number, number>; }
 
 export function SeasonSection({ season, episodes, onEpisodePress, onSeasonMenu, episodeQueueMap }: SeasonSectionProps) {
-  const [expanded, setExpanded] = useState(season.seasonNumber === Math.max(...episodes.map(e => e.seasonNumber)));
+  const [expanded, setExpanded] = useState(false);
+  const autoExpanded = useRef(false);
+
+  // Episodes load async — expand the latest season once they arrive
+  useEffect(() => {
+    if (!autoExpanded.current && episodes.length > 0) {
+      autoExpanded.current = true;
+      if (season.seasonNumber === Math.max(...episodes.map(e => e.seasonNumber))) setExpanded(true);
+    }
+  }, [episodes, season.seasonNumber]);
   const seasonEps = episodes.filter(e => e.seasonNumber === season.seasonNumber);
   const fileCount = seasonEps.filter(e => e.hasFile).length;
 

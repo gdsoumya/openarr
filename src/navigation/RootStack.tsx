@@ -5,6 +5,7 @@ import { DashboardScreen } from '../screens/DashboardScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { ServerSetupScreen } from '../screens/ServerSetupScreen';
 import { ServiceConfigScreen } from '../screens/ServiceConfigScreen';
+import { useDownloadMonitor } from '../core/notifications/useDownloadMonitor';
 import { colors } from '../core/theme/tokens';
 
 const Stack = createNativeStackNavigator();
@@ -12,6 +13,7 @@ const Stack = createNativeStackNavigator();
 // Home/dashboard lives above the tabs so it's one tap away from any screen
 // (via the DashboardButton in each tab's header) without costing a tab slot.
 export function RootStack() {
+  useDownloadMonitor();
   return (
     <Stack.Navigator
       screenOptions={{

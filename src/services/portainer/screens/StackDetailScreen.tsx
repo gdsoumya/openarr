@@ -35,7 +35,8 @@ export function StackDetailScreen() {
       adapter.getContainers(endpointId).catch(() => [] as DockerContainer[]),
     ]);
     setStack(stacks.find((s) => s.Id === stackId) ?? null);
-    setMembers(containers.filter((c) => c.Labels['com.docker.compose.project'] === name));
+    // Compose lowercases project names, so compare case-insensitively
+    setMembers(containers.filter((c) => c.Labels['com.docker.compose.project']?.toLowerCase() === name.toLowerCase()));
   }, [adapter, stackId, endpointId, name]);
 
   usePolling(fetch, 10000, !!adapter);

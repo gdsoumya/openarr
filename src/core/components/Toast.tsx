@@ -21,7 +21,7 @@ export function Toast({ message, type = 'info', visible, onHide, duration = 3000
       }, duration);
       return () => clearTimeout(timer);
     }
-  }, [visible]);
+  }, [visible, message, type]);
 
   if (!visible) return null;
 

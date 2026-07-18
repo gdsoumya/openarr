@@ -26,7 +26,7 @@ export function DiscoverBrowseScreen() {
   const { mediaType, title, filters: initialFilters, feed: feedParam } = route.params as {
     mediaType: 'movie' | 'tv'; title: string; filters?: DiscoverFilters; feed?: DiscoverFeed;
   };
-  const feed: DiscoverFeed = feedParam ?? { kind: 'discover' };
+  const feed: DiscoverFeed = useMemo(() => feedParam ?? { kind: 'discover' }, [feedParam]);
   const getBadge = useLibraryStore((s) => s.getBadge);
 
   const [filters, setFilters] = useState<DiscoverFilters>(initialFilters ?? { sortBy: 'popularity.desc' });
@@ -40,8 +40,9 @@ export function DiscoverBrowseScreen() {
   const loadingRef = useRef(false);
 
   const fetchPage = useCallback(async (pageNum: number): Promise<PagedResponse<MediaItem>> => {
+    // List-only endpoints don't report totals; assume another page exists until one comes back empty
     const asPaged = async (results: MediaItem[]): Promise<PagedResponse<MediaItem>> =>
-      ({ page: pageNum, results, total_pages: pageNum, total_results: results.length });
+      ({ page: pageNum, results, total_pages: results.length > 0 ? pageNum + 1 : pageNum, total_results: results.length });
 
     switch (feed.kind) {
       case 'trending':
@@ -66,14 +67,23 @@ export function DiscoverBrowseScreen() {
     }
   }, [feed, mediaType, filters]);
 
+  const resetRequestId = useRef(0);
+
   const loadMore = useCallback(async (reset = false) => {
-    if (loadingRef.current) return;
+    if (loadingRef.current) {
+      if (!reset) return;
+      // Invalidate the in-flight fetch so the reset wins
+      resetRequestId.current++;
+      loadingRef.current = false;
+    }
+    const requestId = reset ? ++resetRequestId.current : resetRequestId.current;
     const nextPage = reset ? 1 : page + 1;
     if (!reset && nextPage > totalPages) return;
     loadingRef.current = true;
     if (reset) setState('loading');
     try {
       const result = await fetchPage(nextPage);
+      if (requestId !== resetRequestId.current) return;
       if (reset) seenIds.current = new Set();
       const fresh = (result.results ?? []).filter((r) => {
         if (seenIds.current.has(r.id)) return false;
@@ -85,6 +95,7 @@ export function DiscoverBrowseScreen() {
       setTotalPages(result.total_pages ?? nextPage);
       setState('loaded');
     } catch (e: any) {
+      if (requestId !== resetRequestId.current) return;
       setError(e.message ?? 'Failed to load');
       if (reset) setState('error');
     }

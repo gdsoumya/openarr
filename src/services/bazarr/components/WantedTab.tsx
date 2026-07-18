@@ -14,29 +14,27 @@ export function WantedTab({ adapter }: { adapter: BazarrAdapter }) {
   const navigation = useNavigation<any>();
   const showToast = useToastStore((s) => s.show);
   const [kind, setKind] = useState<'episodes' | 'movies'>('episodes');
-  const [episodes, setEpisodes] = useState<EpisodeSubtitles[]>([]);
-  const [movies, setMovies] = useState<MovieSubtitles[]>([]);
-  const [totals, setTotals] = useState({ episodes: 0, movies: 0 });
+  const [items, setItems] = useState<Array<EpisodeSubtitles | MovieSubtitles>>([]);
+  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [searchingAll, setSearchingAll] = useState(false);
 
+  // Fetch only the active kind — each kind gets its own page sequence
   const load = useCallback(async (nextPage: number, reset = false) => {
     setLoading(true);
     try {
-      const [eps, movs] = await Promise.all([
-        adapter.getWantedEpisodes(nextPage, PAGE_SIZE),
-        adapter.getWantedMovies(nextPage, PAGE_SIZE),
-      ]);
-      setEpisodes((prev) => reset ? eps.records : [...prev, ...eps.records]);
-      setMovies((prev) => reset ? movs.records : [...prev, ...movs.records]);
-      setTotals({ episodes: eps.totalRecords, movies: movs.totalRecords });
+      const result = kind === 'episodes'
+        ? await adapter.getWantedEpisodes(nextPage, PAGE_SIZE)
+        : await adapter.getWantedMovies(nextPage, PAGE_SIZE);
+      setItems((prev) => reset ? result.records : [...prev, ...result.records]);
+      setTotal(result.totalRecords);
       setPage(nextPage);
     } catch (e: any) {
       showToast(`Failed to load wanted: ${e.message}`, 'error');
     }
     setLoading(false);
-  }, [adapter]);
+  }, [adapter, kind]);
 
   useEffect(() => { load(1, true); }, [load]);
 
@@ -52,9 +50,7 @@ export function WantedTab({ adapter }: { adapter: BazarrAdapter }) {
     setSearchingAll(false);
   };
 
-  const total = kind === 'episodes' ? totals.episodes : totals.movies;
-  const data = kind === 'episodes' ? episodes : movies;
-  const hasMore = data.length < total;
+  const hasMore = items.length < total;
 
   return (
     <View style={styles.container}>
@@ -62,7 +58,7 @@ export function WantedTab({ adapter }: { adapter: BazarrAdapter }) {
         {(['episodes', 'movies'] as const).map((k) => (
           <Pressable key={k} style={[styles.segment, kind === k && styles.segmentActive]} onPress={() => setKind(k)}>
             <Text style={[styles.segmentText, kind === k && styles.segmentTextActive]}>
-              {k === 'episodes' ? `Episodes (${totals.episodes})` : `Movies (${totals.movies})`}
+              {k === 'episodes' ? 'Episodes' : 'Movies'}{kind === k && total > 0 ? ` (${total})` : ''}
             </Text>
           </Pressable>
         ))}
@@ -72,7 +68,7 @@ export function WantedTab({ adapter }: { adapter: BazarrAdapter }) {
       </View>
 
       <FlatList
-        data={data as Array<EpisodeSubtitles | MovieSubtitles>}
+        data={items}
         keyExtractor={(item: any) => kind === 'episodes' ? `e${item.sonarrEpisodeId}` : `m${item.radarrId}`}
         contentContainerStyle={{ paddingBottom: 20 }}
         onEndReached={() => { if (hasMore && !loading) load(page + 1); }}

@@ -42,5 +42,4 @@ export class RadarrAdapter extends ArrServiceAdapter {
 
   async searchMovie(movieId: number): Promise<void> { await this.executeCommand('MoviesSearch', { movieIds: [movieId] }); }
   async manualSearchMovie(movieId: number): Promise<any[]> { return this.manualSearch({ movieId }); }
-  getTmdbIds(movies: Movie[]): number[] { return movies.map(m => m.tmdbId); }
 }

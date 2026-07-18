@@ -30,14 +30,14 @@ export function GluetunPanel() {
   const fetch = useCallback(async () => {
     if (!adapter) return;
     try {
-      const status = await adapter.getVpnStatus();
-      setVpnStatus(status);
-      setError('');
-      const [ip, pf, s] = await Promise.all([
+      const [status, ip, pf, s] = await Promise.all([
+        adapter.getVpnStatus(),
         adapter.getPublicIp().catch(() => null),
         adapter.getPortForward().catch(() => null),
         adapter.getVpnSettings().catch(() => null),
       ]);
+      setVpnStatus(status);
+      setError('');
       setPublicIp(ip);
       setPortForward(pf);
       if (s) setSettings(s);

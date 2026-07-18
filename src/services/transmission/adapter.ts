@@ -1,7 +1,7 @@
 import { AxiosInstance } from 'axios';
 import { createTransmissionClient } from '../../core/api/httpClient';
 import { ServiceConfig, ServiceStatus } from '../../core/types/services';
-import { Torrent, SessionStats, TransmissionSession, SortField } from './types';
+import { Torrent, SessionStats, TransmissionSession } from './types';
 
 const TORRENT_FIELDS = [
   'id',
@@ -67,8 +67,10 @@ export class TransmissionAdapter {
     }
   }
 
-  async getTorrents(): Promise<Torrent[]> {
-    const result = await this.rpc<{ torrents: Torrent[] }>('torrent-get', { fields: TORRENT_FIELDS });
+  async getTorrents(ids?: number[]): Promise<Torrent[]> {
+    const args: Record<string, any> = { fields: TORRENT_FIELDS };
+    if (ids) args.ids = ids;
+    const result = await this.rpc<{ torrents: Torrent[] }>('torrent-get', args);
     return result.torrents;
   }
 
@@ -119,14 +121,4 @@ export class TransmissionAdapter {
     return result['size-bytes'];
   }
 
-  sortTorrents(torrents: Torrent[], field: SortField, ascending: boolean): Torrent[] {
-    return [...torrents].sort((a, b) => {
-      const aVal = a[field];
-      const bVal = b[field];
-      if (typeof aVal === 'string') {
-        return ascending ? aVal.localeCompare(bVal as string) : (bVal as string).localeCompare(aVal);
-      }
-      return ascending ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
-    });
-  }
 }

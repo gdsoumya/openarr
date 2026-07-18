@@ -17,6 +17,7 @@ import { usePolling } from '../../../core/hooks/usePolling';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { useToastStore } from '../../../core/hooks/useToast';
 import { DashboardButton } from '../../../core/components/DashboardButton';
+import { formatSpeed } from '../../../core/utils/format';
 
 type FilterId = 'all' | 'downloading' | 'seeding' | 'paused';
 const filterMap: Record<FilterId, (t: Torrent) => boolean> = {
@@ -98,7 +99,6 @@ export function TorrentListScreen() {
   ];
   const totalDown = torrents.reduce((s, t) => s + t.rateDownload, 0);
   const totalUp = torrents.reduce((s, t) => s + t.rateUpload, 0);
-  const fmt = (b: number) => b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB/s` : b >= 1024 ? `${(b / 1024).toFixed(0)} KB/s` : `${b} B/s`;
 
   if (!config) {
     return (
@@ -141,7 +141,7 @@ export function TorrentListScreen() {
         </View>
       )}
 
-      <SpeedBanner downloadSpeed={fmt(totalDown)} uploadSpeed={fmt(totalUp)} thirdStat={{ value: String(torrents.length), label: 'Total' }} />
+      <SpeedBanner downloadSpeed={formatSpeed(totalDown)} uploadSpeed={formatSpeed(totalUp)} thirdStat={{ value: String(torrents.length), label: 'Total' }} />
       <FilterChips chips={chips} activeId={filter} onSelect={(id) => setFilter(id as FilterId)} />
       <FlashList
         data={filtered}

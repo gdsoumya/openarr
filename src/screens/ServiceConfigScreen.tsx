@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography, serviceConfig, ServiceId } from '../core/theme/tokens';
 import { useServerStore } from '../stores/serverStore';
 import { useConnectionStore } from '../stores/connectionStore';
+import { ServiceIcon } from '../core/components/ServiceIcon';
 import { getAdapter, clearAdapters } from '../services/adapterFactory';
 
 type AuthMode = 'apikey' | 'basic' | 'none';
@@ -16,7 +17,7 @@ const SERVICE_META: Record<ServiceId, { defaultPort: string; authMode: AuthMode;
   radarr: { defaultPort: '7878', authMode: 'apikey', authHint: 'Settings → General → API Key' },
   prowlarr: { defaultPort: '9696', authMode: 'apikey', authHint: 'Settings → General → API Key' },
   bazarr: { defaultPort: '6767', authMode: 'apikey', authHint: 'Settings → General → API Key' },
-  portainer: { defaultPort: '9443', authMode: 'apikey', authHint: 'Portainer → My account → Access tokens. Note: self-signed HTTPS certs are rejected by the app — use the HTTP port (9000) or a reverse-proxy route instead.' },
+  portainer: { defaultPort: '9080', authMode: 'apikey', authHint: 'Portainer → My account → Access tokens. Self-signed HTTPS certs are rejected by Android, so use a plain-HTTP endpoint: Portainer\'s HTTP port if enabled, or an HTTP reverse proxy in front of it (e.g. :9080).' },
   gluetun: { defaultPort: '8000', authMode: 'none', authHint: 'Gluetun control server URL — the /api prefix is added automatically.' },
   emby: { defaultPort: '8096', authMode: 'apikey', authHint: 'Emby → Settings → Advanced → API Keys' },
 };
@@ -109,8 +110,8 @@ export function ServiceConfigScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={[styles.headerIcon, { backgroundColor: cfg.color }]}>
-        <Text style={styles.headerIconText}>{cfg.icon}</Text>
+      <View style={styles.headerIcon}>
+        <ServiceIcon serviceId={serviceId} size={56} />
       </View>
       <Text style={styles.headerTitle}>{cfg.label}</Text>
 
@@ -197,12 +198,6 @@ export function ServiceConfigScreen() {
         </>
       )}
 
-      {/* SSL toggle */}
-      <View style={styles.switchRow}>
-        <Text style={styles.switchLabel}>Ignore SSL Certificate Errors</Text>
-        <Switch value={sslIgnoreCert} onValueChange={setSslIgnoreCert} trackColor={{ true: colors.primary, false: 'rgba(255,255,255,0.1)' }} thumbColor="#fff" />
-      </View>
-
       {/* Test + Save */}
       <Pressable style={styles.testButton} onPress={testConnection}>
         <Text style={styles.testButtonText}>{testResult === 'testing' ? 'Testing...' : 'Test Connection'}</Text>
@@ -220,8 +215,7 @@ export function ServiceConfigScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   content: { padding: spacing.xl, paddingBottom: 20 },
-  headerIcon: { width: 56, height: 56, borderRadius: radii.lg, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: spacing.md, marginTop: spacing.md },
-  headerIconText: { color: '#fff', fontSize: 24, fontWeight: '700' },
+  headerIcon: { alignSelf: 'center', marginBottom: spacing.md, marginTop: spacing.md },
   headerTitle: { ...typography.h2, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.lg },
   label: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.xs, marginTop: spacing.lg },
   hint: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.sm, fontStyle: 'italic' },
