@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Modal, FlatList } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../core/theme/tokens';
@@ -70,6 +70,14 @@ export function DiscoverFiltersScreen() {
   const [genres, setGenres] = useState<TMDBGenre[]>([]);
   const [providers, setProviders] = useState<WatchProvider[]>([]);
   const [draft, setDraft] = useState<DiscoverFilters>(filters);
+  const [yearPicker, setYearPicker] = useState<'from' | 'to' | null>(null);
+
+  const pickYear = (year?: number) => {
+    setDraft((d) => yearPicker === 'from'
+      ? { ...d, yearFrom: year, yearTo: year && d.yearTo && d.yearTo < year ? undefined : d.yearTo }
+      : { ...d, yearTo: year, yearFrom: year && d.yearFrom && d.yearFrom > year ? undefined : d.yearFrom });
+    setYearPicker(null);
+  };
 
   useEffect(() => {
     tmdb.getGenres(mediaType).then(setGenres).catch(() => {});
@@ -144,23 +152,22 @@ export function DiscoverFiltersScreen() {
           </>
         )}
 
-        <Text style={styles.sectionTitle}>{mediaType === 'movie' ? 'Release Year' : 'First Aired'} — From</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.yearScroll}>
-          <Chip label="Any" active={!draft.yearFrom} onPress={() => setDraft((d) => ({ ...d, yearFrom: undefined }))} />
-          {YEARS.map((y) => (
-            <Chip key={y} label={String(y)} active={draft.yearFrom === y}
-              onPress={() => setDraft((d) => ({ ...d, yearFrom: y, yearTo: d.yearTo && d.yearTo < y ? undefined : d.yearTo }))} />
-          ))}
-        </ScrollView>
-
-        <Text style={styles.sectionTitle}>{mediaType === 'movie' ? 'Release Year' : 'First Aired'} — To</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.yearScroll}>
-          <Chip label="Any" active={!draft.yearTo} onPress={() => setDraft((d) => ({ ...d, yearTo: undefined }))} />
-          {YEARS.map((y) => (
-            <Chip key={y} label={String(y)} active={draft.yearTo === y}
-              onPress={() => setDraft((d) => ({ ...d, yearTo: y, yearFrom: d.yearFrom && d.yearFrom > y ? undefined : d.yearFrom }))} />
-          ))}
-        </ScrollView>
+        <Text style={styles.sectionTitle}>{mediaType === 'movie' ? 'Release Year' : 'First Aired'}</Text>
+        <View style={styles.yearRow}>
+          <Pressable style={styles.yearField} onPress={() => setYearPicker('from')}>
+            <Text style={styles.yearFieldLabel}>From</Text>
+            <Text style={[styles.yearFieldValue, draft.yearFrom && { color: colors.primary }]}>
+              {draft.yearFrom ?? 'Any'}
+            </Text>
+          </Pressable>
+          <Text style={styles.yearDash}>—</Text>
+          <Pressable style={styles.yearField} onPress={() => setYearPicker('to')}>
+            <Text style={styles.yearFieldLabel}>To</Text>
+            <Text style={[styles.yearFieldValue, draft.yearTo && { color: colors.primary }]}>
+              {draft.yearTo ?? 'Any'}
+            </Text>
+          </Pressable>
+        </View>
 
         {mediaType === 'movie' && (
           <>
@@ -213,6 +220,29 @@ export function DiscoverFiltersScreen() {
         )}
       </ScrollView>
 
+      <Modal visible={yearPicker !== null} transparent animationType="fade" onRequestClose={() => setYearPicker(null)}>
+        <Pressable style={styles.pickerOverlay} onPress={() => setYearPicker(null)}>
+          <Pressable style={styles.pickerCard} onPress={() => {}}>
+            <Text style={styles.pickerTitle}>{yearPicker === 'from' ? 'From year' : 'To year'}</Text>
+            <FlatList
+              data={['Any', ...YEARS] as Array<'Any' | number>}
+              keyExtractor={(item) => String(item)}
+              style={styles.pickerList}
+              renderItem={({ item }) => {
+                const value = item === 'Any' ? undefined : item;
+                const current = yearPicker === 'from' ? draft.yearFrom : draft.yearTo;
+                const active = current === value;
+                return (
+                  <Pressable style={[styles.pickerRow, active && styles.pickerRowActive]} onPress={() => pickYear(value)}>
+                    <Text style={[styles.pickerRowText, active && { color: colors.primary, fontWeight: '700' }]}>{String(item)}</Text>
+                  </Pressable>
+                );
+              }}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
         <Pressable style={styles.resetBtn} onPress={() => setDraft({ sortBy: 'popularity.desc' })}>
           <Text style={styles.resetBtnText}>Reset</Text>
@@ -234,7 +264,18 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
   chipText: { ...typography.caption, color: colors.textMuted },
   chipTextActive: { color: colors.primary, fontWeight: '600' },
-  yearScroll: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl },
+  yearRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.xl },
+  yearField: { flex: 1, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.md, padding: spacing.md, alignItems: 'center' },
+  yearFieldLabel: { ...typography.micro, color: colors.textMuted },
+  yearFieldValue: { ...typography.bodyBold, color: colors.textSecondary, marginTop: 2 },
+  yearDash: { ...typography.body, color: colors.textMuted },
+  pickerOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: spacing.xxxl },
+  pickerCard: { backgroundColor: colors.surfaceElevated, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.divider, maxHeight: '65%', paddingVertical: spacing.md },
+  pickerTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm },
+  pickerList: { paddingHorizontal: spacing.md },
+  pickerRow: { paddingVertical: spacing.md, borderRadius: radii.md, alignItems: 'center' },
+  pickerRowActive: { backgroundColor: colors.primaryMuted },
+  pickerRowText: { ...typography.body, color: colors.textSecondary },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', gap: spacing.sm, padding: spacing.md, paddingHorizontal: spacing.lg, borderTopWidth: 1, borderTopColor: colors.divider, backgroundColor: colors.surfaceElevated },
   resetBtn: { flex: 1, paddingVertical: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider, alignItems: 'center' },
   resetBtnText: { ...typography.bodyBold, color: colors.textMuted },
