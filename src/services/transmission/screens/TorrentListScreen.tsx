@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, RefreshControl, Alert, Platform, TextInput, Pressable } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl, Platform, TextInput, Pressable, Modal, KeyboardAvoidingView } from 'react-native';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
@@ -68,17 +68,11 @@ export function TorrentListScreen() {
   };
 
   const handleFabPress = () => {
-    if (Platform.OS === 'ios') {
-      Alert.prompt('Add Torrent', 'Paste magnet link or URL', async (text) => {
-        if (text) await handleAddTorrent(text);
-      });
-    } else {
-      setShowAddInput(true);
-      setAddInputText('');
-    }
+    setAddInputText('');
+    setShowAddInput(true);
   };
 
-  const submitAndroidAdd = async () => {
+  const submitAdd = async () => {
     setShowAddInput(false);
     await handleAddTorrent(addInputText);
     setAddInputText('');
@@ -118,29 +112,6 @@ export function TorrentListScreen() {
         <Text style={styles.title}>Torrents</Text>
       </View>
 
-      {showAddInput && (
-        <View style={styles.addInputRow}>
-          <TextInput
-            style={styles.addInput}
-            value={addInputText}
-            onChangeText={setAddInputText}
-            placeholder="Paste magnet link or URL"
-            placeholderTextColor={colors.textMuted}
-            autoFocus
-            autoCorrect={false}
-            autoCapitalize="none"
-            onSubmitEditing={submitAndroidAdd}
-            returnKeyType="done"
-          />
-          <Pressable style={styles.addInputBtn} onPress={submitAndroidAdd}>
-            <Text style={styles.addInputBtnText}>Add</Text>
-          </Pressable>
-          <Pressable style={styles.addInputCancel} onPress={() => setShowAddInput(false)}>
-            <Text style={styles.addInputCancelText}>Cancel</Text>
-          </Pressable>
-        </View>
-      )}
-
       <SpeedBanner downloadSpeed={formatSpeed(totalDown)} uploadSpeed={formatSpeed(totalUp)} thirdStat={{ value: String(torrents.length), label: 'Total' }} />
       <FilterChips chips={chips} activeId={filter} onSelect={(id) => setFilter(id as FilterId)} />
       <FlashList
@@ -167,42 +138,52 @@ export function TorrentListScreen() {
         }
       />
       <FAB onPress={handleFabPress} />
+
+      <Modal visible={showAddInput} transparent animationType="fade" onRequestClose={() => setShowAddInput(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.dialogOverlay}>
+          <View style={styles.dialogCard}>
+            <Text style={styles.dialogTitle}>Add Torrent</Text>
+            <TextInput
+              style={styles.dialogInput}
+              value={addInputText}
+              onChangeText={setAddInputText}
+              placeholder="Paste magnet link or URL"
+              placeholderTextColor={colors.textMuted}
+              autoFocus
+              autoCorrect={false}
+              autoCapitalize="none"
+              onSubmitEditing={submitAdd}
+              returnKeyType="done"
+            />
+            <View style={styles.dialogActions}>
+              <Pressable style={styles.dialogCancel} onPress={() => setShowAddInput(false)}>
+                <Text style={styles.dialogCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable style={[styles.dialogAdd, !addInputText.trim() && { opacity: 0.5 }]} onPress={submitAdd} disabled={!addInputText.trim()}>
+                <Text style={styles.dialogAddText}>Add</Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  dialogOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: spacing.xl },
+  dialogCard: { backgroundColor: colors.surfaceElevated, borderRadius: radii.xl, padding: spacing.xl, borderWidth: 1, borderColor: colors.divider },
+  dialogTitle: { ...typography.h3, color: colors.textPrimary, marginBottom: spacing.lg },
+  dialogInput: { ...typography.body, color: colors.textPrimary, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.md, padding: spacing.md },
+  dialogActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.lg },
+  dialogCancel: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider },
+  dialogCancelText: { ...typography.bodyBold, color: colors.textMuted },
+  dialogAdd: { paddingVertical: 10, paddingHorizontal: 22, borderRadius: radii.md, backgroundColor: colors.primary },
+  dialogAddText: { ...typography.bodyBold, color: '#0f1023' },
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { ...typography.h1, color: colors.textPrimary },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
   emptyText: { ...typography.body, color: colors.textMuted, textAlign: 'center' },
   emptySubtext: { ...typography.caption, color: colors.textMuted, textAlign: 'center', marginTop: 8 },
-  addInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: spacing.xl,
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  addInput: {
-    flex: 1,
-    backgroundColor: colors.surfaceCard,
-    borderWidth: 1,
-    borderColor: colors.divider,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  addInputBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  addInputBtnText: { ...typography.bodyBold, color: '#0f1023' },
-  addInputCancel: { paddingHorizontal: spacing.sm },
-  addInputCancelText: { ...typography.body, color: colors.textMuted },
 });

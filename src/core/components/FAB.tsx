@@ -18,7 +18,7 @@ export function FAB({ onPress, style }: FABProps) {
 
 const styles = StyleSheet.create({
   fab: {
-    position: 'absolute', bottom: 90, right: 20, width: 52, height: 52,
+    position: 'absolute', bottom: 24, right: 20, width: 52, height: 52,
     backgroundColor: colors.primary, borderRadius: radii.xl,
     justifyContent: 'center', alignItems: 'center',
     shadowColor: colors.primary, shadowOffset: { width: 0, height: 8 },
