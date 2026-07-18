@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, BackHandler } from 'react-native';
-import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
+import { View, Text, StyleSheet, Pressable, BackHandler, Dimensions } from 'react-native';
+import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../theme/tokens';
 
 export interface ActionSheetOption {
@@ -20,6 +21,7 @@ interface ActionSheetProps {
 
 export function ActionSheet({ visible, title, subtitle, options, onClose }: ActionSheetProps) {
   const sheetRef = useRef<BottomSheet>(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (visible) {
@@ -39,15 +41,12 @@ export function ActionSheet({ visible, title, subtitle, options, onClose }: Acti
     return () => handler.remove();
   }, [visible, onClose]);
 
-  // Calculate snap point based on content
-  const contentHeight = 80 + options.length * 56 + 56; // header + options + cancel
-  const snapPoint = Math.min(contentHeight, 500);
-
   return (
     <BottomSheet
       ref={sheetRef}
       index={-1}
-      snapPoints={[snapPoint]}
+      enableDynamicSizing
+      maxDynamicContentSize={Dimensions.get('window').height * 0.85}
       enablePanDownToClose
       onClose={onClose}
       backdropComponent={(props) => (
@@ -56,7 +55,7 @@ export function ActionSheet({ visible, title, subtitle, options, onClose }: Acti
       backgroundStyle={styles.background}
       handleIndicatorStyle={styles.handle}
     >
-      <BottomSheetView style={styles.content}>
+      <BottomSheetScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}>
         <Text style={styles.title}>{title}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
 
@@ -78,7 +77,7 @@ export function ActionSheet({ visible, title, subtitle, options, onClose }: Acti
         <Pressable style={styles.cancelButton} onPress={onClose}>
           <Text style={styles.cancelText}>Cancel</Text>
         </Pressable>
-      </BottomSheetView>
+      </BottomSheetScrollView>
     </BottomSheet>
   );
 }
@@ -90,7 +89,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radii.xl,
   },
   handle: { backgroundColor: 'rgba(255,255,255,0.2)', width: 36 },
-  content: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xl },
+  content: { paddingHorizontal: spacing.xl },
   title: { ...typography.h3, color: colors.textPrimary, marginBottom: 2 },
   subtitle: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.lg },
   options: { marginTop: spacing.md },
