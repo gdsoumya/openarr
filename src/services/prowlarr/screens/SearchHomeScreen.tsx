@@ -15,6 +15,7 @@ import { useConnectionStore } from '../../../stores/connectionStore';
 import { getProwlarrAdapter, getTransmissionAdapter } from '../../../services/adapterFactory';
 import { useServerStore } from '../../../stores/serverStore';
 import { useToastStore } from '../../../core/hooks/useToast';
+import { DashboardButton } from '../../../core/components/DashboardButton';
 
 export function SearchHomeScreen() {
   const { alert } = useThemedAlert();
@@ -118,6 +119,8 @@ export function SearchHomeScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.title}>Search</Text>
+        <View style={styles.headerActions}>
+        <DashboardButton />
         {adapter && (
           <Pressable style={styles.syncBtn} onPress={async () => {
             showToast('Testing indexers & syncing...', 'info');
@@ -129,6 +132,7 @@ export function SearchHomeScreen() {
             <Ionicons name="sync" size={20} color={colors.textMuted} />
           </Pressable>
         )}
+        </View>
       </View>
 
       <View style={styles.tabsWrapper}>
@@ -305,6 +309,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
   syncBtn: { padding: spacing.sm },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
   tabsWrapper: { height: 44, borderBottomWidth: 1, borderBottomColor: colors.divider, marginBottom: spacing.sm },
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.xl, height: 44, alignItems: 'center' },
   tab: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg, borderBottomWidth: 2, borderBottomColor: 'transparent' },

@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './src/core/theme/ThemeProvider';
-import { TabNavigator } from './src/navigation/TabNavigator';
+import { RootStack } from './src/navigation/RootStack';
 import { useServerStore } from './src/stores/serverStore';
 import { colors } from './src/core/theme/tokens';
 import { Toast } from './src/core/components/Toast';
@@ -49,7 +49,7 @@ export default function App() {
         >
           <StatusBar barStyle="light-content" backgroundColor={colors.surfaceBase} />
           <ErrorBoundary>
-            <TabNavigator />
+            <RootStack />
           </ErrorBoundary>
           <Toast message={toast.message} type={toast.type} visible={toast.visible} onHide={toast.hide} />
         </NavigationContainer>

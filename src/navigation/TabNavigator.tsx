@@ -2,7 +2,6 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { HomeStack } from './stacks/HomeStack';
 import { TorrentsStack } from './stacks/TorrentsStack';
 import { TVStack } from './stacks/TVStack';
 import { MoviesStack } from './stacks/MoviesStack';
@@ -14,7 +13,6 @@ import { colors, typography } from '../core/theme/tokens';
 const Tab = createBottomTabNavigator();
 
 const tabIconMap: Record<string, { lib: 'mci' | 'ion'; name: string }> = {
-  Home: { lib: 'mci', name: 'view-dashboard' },
   Torrents: { lib: 'mci', name: 'download' },
   TV: { lib: 'mci', name: 'television-classic' },
   Movies: { lib: 'mci', name: 'movie-open' },
@@ -52,7 +50,6 @@ export function TabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Home', { screen: 'Dashboard' }) })} />
       <Tab.Screen name="Torrents" component={TorrentsStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Torrents', { screen: 'TorrentList' }) })} />
       <Tab.Screen name="TV" component={TVStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('TV', { screen: 'TVHome' }) })} />
       <Tab.Screen name="Movies" component={MoviesStack} listeners={({ navigation }) => ({ tabPress: () => navigation.navigate('Movies', { screen: 'MoviesHome' }) })} />

@@ -9,7 +9,7 @@ import { SpeedBanner } from '../core/components/SpeedBanner';
 import { useServerStore } from '../stores/serverStore';
 import { useConnectionStore } from '../stores/connectionStore';
 import { ServiceStatus } from '../core/types/services';
-import { getTransmissionAdapter, getSonarrAdapter, getRadarrAdapter, getProwlarrAdapter, getBazarrAdapter, getPortainerAdapter, getGluetunAdapter } from '../services/adapterFactory';
+import { getTransmissionAdapter, getSonarrAdapter, getRadarrAdapter, getProwlarrAdapter, getBazarrAdapter, getPortainerAdapter, getGluetunAdapter, getEmbyAdapter } from '../services/adapterFactory';
 import { usePolling } from '../core/hooks/usePolling';
 import { checkForCompletedDownloads } from '../core/notifications/downloadMonitor';
 import { useToastStore } from '../core/hooks/useToast';
@@ -63,6 +63,7 @@ export function DashboardScreen() {
           case 'bazarr': adapter = getBazarrAdapter(config, isLocal); break;
           case 'portainer': adapter = getPortainerAdapter(config, isLocal); break;
           case 'gluetun': adapter = getGluetunAdapter(config, isLocal); break;
+          case 'emby': adapter = getEmbyAdapter(config, isLocal); break;
         }
         if (adapter) {
           const status = await adapter.getStatus();
@@ -127,7 +128,7 @@ export function DashboardScreen() {
         <Text style={styles.emptyIcon}>🔧</Text>
         <Text style={styles.emptyTitle}>No Server Configured</Text>
         <Text style={styles.emptyText}>Add a server in Settings to get started.</Text>
-        <Pressable style={styles.setupButton} onPress={() => navigation.navigate('Home', { screen: 'Settings' })}>
+        <Pressable style={styles.setupButton} onPress={() => navigation.navigate('Settings')}>
           <Text style={styles.setupButtonText}>Set Up Server</Text>
         </Pressable>
       </View>
@@ -138,8 +139,13 @@ export function DashboardScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={styles.title}>Dashboard</Text>
-        <Pressable style={styles.headerBtn} onPress={() => navigation.navigate('Home', { screen: 'Settings' })}>
+        <View style={styles.headerLeft}>
+          <Pressable style={styles.headerBtn} hitSlop={8} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={20} color={colors.textMuted} />
+          </Pressable>
+          <Text style={styles.title}>Dashboard</Text>
+        </View>
+        <Pressable style={styles.headerBtn} onPress={() => navigation.navigate('Settings')}>
           <Ionicons name="settings-outline" size={20} color={colors.textMuted} />
         </Pressable>
       </View>
@@ -156,7 +162,7 @@ export function DashboardScreen() {
             summary={status?.summary ?? 'Connecting...'}
             connected={status?.connection.status === 'connected'}
             metric={status?.metric}
-            onPress={() => { const tab = tabMap[svc.serviceId]; if (tab) navigation.navigate(tab); }} />
+            onPress={() => { const tab = tabMap[svc.serviceId]; if (tab) navigation.navigate('Main', { screen: tab }); }} />
         );
       })}
     </ScrollView>
@@ -169,6 +175,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
   headerBtn: { width: 36, height: 36, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   serverPill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginHorizontal: spacing.xl, marginBottom: spacing.lg, backgroundColor: 'rgba(100, 255, 218, 0.08)', borderWidth: 1, borderColor: 'rgba(100, 255, 218, 0.15)', paddingVertical: 4, paddingHorizontal: 12, borderRadius: 20 },
   serverDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary },
   serverText: { ...typography.micro, color: colors.primary, fontWeight: '500' },

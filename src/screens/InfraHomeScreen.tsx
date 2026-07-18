@@ -12,6 +12,7 @@ import { useConnectionStore } from '../stores/connectionStore';
 import { getPortainerAdapter } from '../services/adapterFactory';
 import { GluetunPanel } from '../services/gluetun/components/GluetunPanel';
 import { PortainerEndpoint, PortainerStack } from '../services/portainer/types';
+import { DashboardButton } from '../core/components/DashboardButton';
 
 type InfraTab = 'docker' | 'vpn';
 
@@ -61,6 +62,7 @@ export function InfraHomeScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.title}>Infra</Text>
+        <DashboardButton />
       </View>
 
       <View style={styles.tabsWrapper}>

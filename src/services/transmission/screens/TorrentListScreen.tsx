@@ -16,6 +16,7 @@ import { getTransmissionAdapter } from '../../../services/adapterFactory';
 import { usePolling } from '../../../core/hooks/usePolling';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { useToastStore } from '../../../core/hooks/useToast';
+import { DashboardButton } from '../../../core/components/DashboardButton';
 
 type FilterId = 'all' | 'downloading' | 'seeding' | 'paused';
 const filterMap: Record<FilterId, (t: Torrent) => boolean> = {
@@ -112,7 +113,10 @@ export function TorrentListScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>Torrents</Text></View>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+        <Text style={styles.title}>Torrents</Text>
+        <DashboardButton />
+      </View>
 
       {showAddInput && (
         <View style={styles.addInputRow}>
@@ -169,7 +173,7 @@ export function TorrentListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
+  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { ...typography.h1, color: colors.textPrimary },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
   emptyText: { ...typography.body, color: colors.textMuted, textAlign: 'center' },

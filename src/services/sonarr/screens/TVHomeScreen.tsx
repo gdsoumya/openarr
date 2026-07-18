@@ -20,6 +20,7 @@ import { useDebouncedValue } from '../../../core/hooks/useDebounce';
 import { tmdb, isTmdbConfigured } from '../../tmdb/instance';
 import { useWatchlistStore } from '../../../stores/watchlistStore';
 import { DiscoveryRows } from '../../../screens/discover/DiscoveryRows';
+import { DashboardButton } from '../../../core/components/DashboardButton';
 
 type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
 
@@ -184,6 +185,8 @@ export function TVHomeScreen() {
       }>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.title}>TV Shows</Text>
+        <View style={styles.headerActions}>
+        <DashboardButton />
         {adapter && (
           <Pressable style={styles.syncBtn} onPress={async () => {
             showToast('Syncing RSS feeds...', 'info');
@@ -193,6 +196,7 @@ export function TVHomeScreen() {
             <Ionicons name="sync" size={20} color={colors.textMuted} />
           </Pressable>
         )}
+        </View>
       </View>
       <SearchBar
         placeholder="Search for shows to add..."
@@ -320,6 +324,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { ...typography.h1, color: colors.textPrimary },
   syncBtn: { padding: spacing.sm },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
   notConfigured: { marginHorizontal: spacing.xl, marginBottom: spacing.lg, padding: spacing.lg, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, borderWidth: 1, borderColor: colors.divider },
   notConfiguredText: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
   searchingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },

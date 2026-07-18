@@ -14,6 +14,7 @@ import { LanguageProfile, MovieSubtitles, ProviderInfo, SeriesItem } from '../ty
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getBazarrAdapter } from '../../../services/adapterFactory';
+import { DashboardButton } from '../../../core/components/DashboardButton';
 
 export function SubsHomeScreen() {
   const { alert } = useThemedAlert();
@@ -90,7 +91,10 @@ export function SubsHomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}><Text style={styles.title}>Subtitles</Text></View>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+        <Text style={styles.title}>Subtitles</Text>
+        <DashboardButton />
+      </View>
 
       <View style={styles.tabsWrapper}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
@@ -204,7 +208,7 @@ export function SubsHomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
   tabContent: { flex: 1 },
-  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
+  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { ...typography.h1, color: colors.textPrimary },
   tabsWrapper: { height: 44, borderBottomWidth: 1, borderBottomColor: colors.divider, marginBottom: spacing.sm },
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.xl, height: 44, alignItems: 'center' },
