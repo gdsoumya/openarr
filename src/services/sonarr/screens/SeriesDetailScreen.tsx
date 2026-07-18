@@ -11,11 +11,12 @@ import { ManualSearchSheet } from '../../shared-arr/components/ManualSearchSheet
 import { CachedImage } from '../../../core/components/CachedImage';
 import { ActionSheet, ActionSheetOption } from '../../../core/components/ActionSheet';
 import { Series, Episode, Season } from '../types';
-import { Release } from '../../shared-arr/types';
+import { useReleaseSearch } from '../../shared-arr/hooks';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getSonarrAdapter, getBazarrAdapter } from '../../../services/adapterFactory';
 import { useServerStore } from '../../../stores/serverStore';
+import { useToastStore } from '../../../core/hooks/useToast';
 import { RatingsBar } from '../../../core/components/RatingsBar';
 import { MediaInfo } from '../../../core/components/MediaInfo';
 import { OMDBRatings } from '../../omdb/client';
@@ -32,8 +33,7 @@ export function SeriesDetailScreen() {
   const [loadingEpisodes, setLoadingEpisodes] = useState(true);
   const [episodeQueueMap, setEpisodeQueueMap] = useState<Map<number, number>>(new Map()); // episodeId → progress %
   const [activeTab, setActiveTab] = useState('seasons');
-  const [manualSearchReleases, setManualSearchReleases] = useState<Release[]>([]);
-  const [showManualSearch, setShowManualSearch] = useState(false);
+  const releaseSearch = useReleaseSearch();
   const [refreshing, setRefreshing] = useState(false);
   const [omdbRatings, setOmdbRatings] = useState<OMDBRatings | null>(null);
   const [ratingsLoading, setRatingsLoading] = useState(false);
@@ -50,6 +50,7 @@ export function SeriesDetailScreen() {
 
   const sonarrConfig = useServiceConfig('sonarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
+  const showToast = useToastStore((s) => s.show);
 
   const adapter = useMemo(
     () => (sonarrConfig ? getSonarrAdapter(sonarrConfig, isLocal) : null),
@@ -145,18 +146,12 @@ export function SeriesDetailScreen() {
       options.push({
         label: 'Search Better Quality',
         icon: '🔍',
-        onPress: async () => {
+        onPress: () => {
           if (!adapter) return;
-          setShowManualSearch(true);
-          setManualSearchReleases([]);
-          try {
-            const releases = await adapter.manualSearchEpisode(episode.id);
-            setManualSearchReleases(releases);
-            if (releases.length === 0) {
-              alert('No Results', 'No releases found. Check that indexers are configured in Sonarr (Settings → Indexers).');
-              setShowManualSearch(false);
-            }
-          } catch (e: any) { alert('Search Failed', e.message); setShowManualSearch(false); }
+          releaseSearch.run(
+            { type: 'episode', label: `S${String(episode.seasonNumber).padStart(2, '0')}E${String(episode.episodeNumber).padStart(2, '0')} · ${episode.title}` },
+            () => adapter.manualSearchEpisode(episode.id),
+          );
         },
       });
       options.push({
@@ -200,18 +195,12 @@ export function SeriesDetailScreen() {
       options.push({
         label: 'Manual Search',
         icon: '📋',
-        onPress: async () => {
+        onPress: () => {
           if (!adapter) return;
-          setShowManualSearch(true);
-          setManualSearchReleases([]);
-          try {
-            const releases = await adapter.manualSearchEpisode(episode.id);
-            setManualSearchReleases(releases);
-            if (releases.length === 0) {
-              alert('No Results', 'No releases found. Check that indexers are configured in Sonarr (Settings → Indexers) or that Prowlarr is synced.');
-              setShowManualSearch(false);
-            }
-          } catch (e: any) { alert('Search Failed', e.message); setShowManualSearch(false); }
+          releaseSearch.run(
+            { type: 'episode', label: `S${String(episode.seasonNumber).padStart(2, '0')}E${String(episode.episodeNumber).padStart(2, '0')} · ${episode.title}` },
+            () => adapter.manualSearchEpisode(episode.id),
+          );
         },
       });
     }
@@ -255,18 +244,12 @@ export function SeriesDetailScreen() {
         {
           label: 'Manual Search Season',
           icon: '📋',
-          onPress: async () => {
+          onPress: () => {
             if (!adapter) return;
-            setShowManualSearch(true);
-            setManualSearchReleases([]);
-            try {
-              const releases = await adapter.manualSearchSeason(series.id, season.seasonNumber);
-              setManualSearchReleases(releases);
-              if (releases.length === 0) {
-                alert('No Results', `No releases found for Season ${season.seasonNumber}. Check indexer configuration.`);
-                setShowManualSearch(false);
-              }
-            } catch (e: any) { alert('Search Failed', e.message); setShowManualSearch(false); }
+            releaseSearch.run(
+              { type: 'season', label: `Season ${season.seasonNumber} · ${series.title}` },
+              () => adapter.manualSearchSeason(series.id, season.seasonNumber),
+            );
           },
         },
         {
@@ -490,17 +473,21 @@ export function SeriesDetailScreen() {
       </View>
     </View>
     <ManualSearchSheet
-      visible={showManualSearch}
-      releases={manualSearchReleases}
+      visible={releaseSearch.visible}
+      status={releaseSearch.status}
+      error={releaseSearch.error}
+      releases={releaseSearch.releases}
+      context={releaseSearch.context}
       onGrab={async (release) => {
         if (!adapter) return;
         try {
           await adapter.grabRelease(release.guid, release.indexerId);
-          alert('Success', 'Release grabbed');
-          setShowManualSearch(false);
+          showToast('Release grabbed', 'success');
+          releaseSearch.dismiss();
         } catch (e: any) { alert('Error', e.message); }
       }}
-      onDismiss={() => setShowManualSearch(false)}
+      onRetry={releaseSearch.retry}
+      onDismiss={releaseSearch.dismiss}
     />
     <ActionSheet
       visible={actionSheet.visible}

@@ -1,55 +1,66 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, FlatList, ScrollView } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal, ScrollView } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
+import { EmptyState } from '../../../core/components/EmptyState';
+import { ErrorState } from '../../../core/components/ErrorState';
 import { Release } from '../types';
+import { ReleaseSearchContext, ReleaseSearchStatus } from '../hooks';
+import {
+  defaultReleaseFilters, filterReleases, formatReleaseAge, formatSize,
+  normalizeIndexerFlags, ReleaseFilters, ReleaseSortKey, sortReleases,
+} from '../releaseUtils';
+import { ReleaseRow } from './ReleaseRow';
 
 interface ManualSearchSheetProps {
   visible: boolean;
+  status: ReleaseSearchStatus;
+  error?: string;
   releases: Release[];
+  context?: ReleaseSearchContext;
   onGrab: (release: Release) => void;
+  onRetry: () => void;
   onDismiss: () => void;
 }
 
-type SortBy = 'seeders' | 'age' | 'size' | 'quality';
+const PROTOCOL_LABELS = { all: 'All', torrent: 'Torrent', usenet: 'Usenet' } as const;
+const TIER_CYCLE = ['all', '2160p', '1080p', '720p', 'sd'] as const;
 
-function formatSize(bytes: number): string {
-  if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(1)} GB`;
-  return `${(bytes / 1048576).toFixed(0)} MB`;
-}
-
-export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: ManualSearchSheetProps) {
+export function ManualSearchSheet({ visible, status, error, releases, context, onGrab, onRetry, onDismiss }: ManualSearchSheetProps) {
   const { alert } = useThemedAlert();
   const insets = useSafeAreaInsets();
-  const [sortBy, setSortBy] = useState<SortBy | null>(null);
-  const [hideRejected, setHideRejected] = useState(false);
-  const isLoading = visible && releases.length === 0;
+  const [sortBy, setSortBy] = useState<ReleaseSortKey | null>('quality');
+  const [filters, setFilters] = useState<ReleaseFilters>(defaultReleaseFilters);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      setSortBy('quality');
+      setFilters(defaultReleaseFilters);
+      setExpandedKey(null);
+    }
+  }, [visible]);
 
   const rejectedCount = useMemo(() => releases.filter(r => r.rejected).length, [releases]);
+  const hasSeasonPacks = context?.type === 'season' || releases.some(r => r.fullSeason);
+  const hasCfScores = useMemo(() => releases.some(r => (r.customFormatScore ?? 0) !== 0), [releases]);
 
-  const sortedReleases = useMemo(() => {
-    if (releases.length === 0) return [];
-    let filtered = hideRejected ? releases.filter(r => !r.rejected) : releases;
-    if (!sortBy) return filtered;
-    const sorted = [...filtered];
-    switch (sortBy) {
-      case 'seeders': sorted.sort((a, b) => (b.seeders ?? 0) - (a.seeders ?? 0)); break;
-      case 'age': sorted.sort((a, b) => a.age - b.age); break;
-      case 'size': sorted.sort((a, b) => b.size - a.size); break;
-      case 'quality': sorted.sort((a, b) => (b.quality?.quality?.name ?? '').localeCompare(a.quality?.quality?.name ?? '')); break;
-    }
-    sorted.sort((a, b) => (a.rejected ? 1 : 0) - (b.rejected ? 1 : 0));
-    return sorted;
-  }, [releases, sortBy]);
+  const visibleReleases = useMemo(
+    () => sortReleases(filterReleases(releases, filters), sortBy),
+    [releases, sortBy, filters],
+  );
 
   const confirmGrab = (item: Release) => {
     const info = [
       item.quality?.quality?.name,
+      (item.customFormatScore ?? 0) !== 0 ? `CF ${item.customFormatScore! > 0 ? '+' : ''}${item.customFormatScore}` : null,
       formatSize(item.size),
       item.indexer,
       item.seeders !== undefined ? `${item.seeders} seeders` : null,
-      `${item.age}d old`,
+      formatReleaseAge(item),
+      ...normalizeIndexerFlags(item.indexerFlags),
     ].filter(Boolean).join(' · ');
 
     alert(
@@ -62,98 +73,125 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
     );
   };
 
-  const sortChips: Array<{ id: SortBy; label: string }> = [
+  const sortChips: Array<{ id: ReleaseSortKey; label: string }> = [
+    ...(hasCfScores ? [{ id: 'cfScore' as const, label: 'CF Score' }] : []),
+    { id: 'quality', label: 'Quality' },
     { id: 'seeders', label: 'Seeders' },
     { id: 'age', label: 'Newest' },
     { id: 'size', label: 'Largest' },
-    { id: 'quality', label: 'Quality' },
   ];
+
+  const cycleProtocol = () => setFilters(f => ({
+    ...f,
+    protocol: f.protocol === 'all' ? 'torrent' : f.protocol === 'torrent' ? 'usenet' : 'all',
+  }));
+  const cycleTier = () => setFilters(f => ({
+    ...f,
+    qualityTier: TIER_CYCLE[(TIER_CYCLE.indexOf(f.qualityTier) + 1) % TIER_CYCLE.length],
+  }));
+
+  const subtitle = status === 'loading'
+    ? 'Searching indexers...'
+    : status === 'error'
+      ? 'Search failed'
+      : `${visibleReleases.length}${visibleReleases.length !== releases.length ? ` of ${releases.length}` : ''} releases${rejectedCount > 0 ? ` · ${rejectedCount} rejected` : ''}`;
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onDismiss}>
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Manual Search</Text>
-            <Text style={styles.subtitle}>
-              {isLoading ? 'Searching indexers...' : `${sortedReleases.length} releases${rejectedCount > 0 ? ` · ${rejectedCount} rejected` : ''}`}
-            </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title} numberOfLines={1}>{context?.label ?? 'Manual Search'}</Text>
+            <Text style={styles.subtitle}>{subtitle}</Text>
           </View>
           <Pressable style={styles.closeBtn} onPress={onDismiss}>
             <Text style={styles.closeBtnText}>Close</Text>
           </Pressable>
         </View>
 
-        {/* Sort chips */}
-        {!isLoading && releases.length > 0 && (
-          <View style={styles.sortWrapper}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={styles.sortRow}>
-              <Text style={styles.sortLabel}>Sort:</Text>
+        {status === 'success' && releases.length > 0 && (
+          <View style={styles.chipsWrapper}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={styles.chipRow}>
+              <Text style={styles.chipLabel}>Sort:</Text>
               {sortChips.map((chip) => (
                 <Pressable
                   key={chip.id}
-                  style={[styles.sortChip, sortBy === chip.id && styles.sortChipActive]}
+                  style={[styles.chip, sortBy === chip.id && styles.chipActive]}
                   onPress={() => setSortBy(prev => prev === chip.id ? null : chip.id)}
                 >
-                  <Text style={[styles.sortChipText, sortBy === chip.id && styles.sortChipTextActive]}>
-                    {chip.label}
-                  </Text>
+                  <Text style={[styles.chipText, sortBy === chip.id && styles.chipTextActive]}>{chip.label}</Text>
                 </Pressable>
               ))}
+            </ScrollView>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={styles.chipRow}>
+              <Text style={styles.chipLabel}>Filter:</Text>
+              <Pressable style={[styles.chip, filters.protocol !== 'all' && styles.chipActive]} onPress={cycleProtocol}>
+                <Text style={[styles.chipText, filters.protocol !== 'all' && styles.chipTextActive]}>{PROTOCOL_LABELS[filters.protocol]}</Text>
+              </Pressable>
+              <Pressable style={[styles.chip, filters.qualityTier !== 'all' && styles.chipActive]} onPress={cycleTier}>
+                <Text style={[styles.chipText, filters.qualityTier !== 'all' && styles.chipTextActive]}>
+                  {filters.qualityTier === 'all' ? 'Any Quality' : filters.qualityTier.toUpperCase()}
+                </Text>
+              </Pressable>
               {rejectedCount > 0 && (
-                <Pressable
-                  style={[styles.sortChip, hideRejected && styles.sortChipActive]}
-                  onPress={() => setHideRejected(prev => !prev)}
-                >
-                  <Text style={[styles.sortChipText, hideRejected && styles.sortChipTextActive]}>
-                    {hideRejected ? '✓ Hidden' : 'Hide Rejected'}
-                  </Text>
+                <Pressable style={[styles.chip, filters.approvedOnly && styles.chipActive]} onPress={() => setFilters(f => ({ ...f, approvedOnly: !f.approvedOnly }))}>
+                  <Text style={[styles.chipText, filters.approvedOnly && styles.chipTextActive]}>Approved Only</Text>
+                </Pressable>
+              )}
+              {hasSeasonPacks && (
+                <Pressable style={[styles.chip, filters.seasonPacksOnly && styles.chipActive]} onPress={() => setFilters(f => ({ ...f, seasonPacksOnly: !f.seasonPacksOnly }))}>
+                  <Text style={[styles.chipText, filters.seasonPacksOnly && styles.chipTextActive]}>Season Packs</Text>
                 </Pressable>
               )}
             </ScrollView>
           </View>
         )}
 
-        {/* Loading */}
-        {isLoading && (
-          <View style={styles.loadingContainer}>
+        {status === 'loading' && (
+          <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>Querying indexers, this may take a moment...</Text>
           </View>
         )}
 
-        {/* Results */}
-        {!isLoading && (
-          <FlatList
-            data={sortedReleases}
-            keyExtractor={(item) => item.guid}
+        {status === 'error' && (
+          <ErrorState message={error ?? 'Search failed'} onRetry={onRetry} />
+        )}
+
+        {status === 'success' && releases.length === 0 && (
+          <EmptyState
+            icon="🔍"
+            title="No releases found"
+            message="No indexer returned results. Check indexer configuration in Sonarr/Radarr, or that Prowlarr is synced."
+          />
+        )}
+
+        {status === 'success' && releases.length > 0 && visibleReleases.length === 0 && (
+          <View style={styles.centerContainer}>
+            <Text style={styles.noMatchText}>No releases match the active filters</Text>
+            <Pressable style={styles.clearBtn} onPress={() => setFilters(defaultReleaseFilters)}>
+              <Text style={styles.clearBtnText}>Clear Filters</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {status === 'success' && visibleReleases.length > 0 && (
+          <FlashList
+            data={visibleReleases}
+            extraData={expandedKey}
+            keyExtractor={(item) => `${item.indexerId}:${item.guid}`}
             contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => (
-              <Pressable style={[styles.item, item.rejected && styles.itemRejected]} onPress={() => confirmGrab(item)}>
-                <View style={styles.itemHeader}>
-                  {!item.rejected && <Text style={styles.check}>✓</Text>}
-                  {item.rejected && <Text style={styles.rejected}>✕</Text>}
-                  <Text style={[styles.itemTitle, item.rejected && styles.itemTitleRejected]} numberOfLines={2}>{item.title}</Text>
-                </View>
-                <View style={styles.itemStats}>
-                  <Text style={[styles.stat, styles.statQuality]}>{item.quality?.quality?.name ?? '?'}</Text>
-                  <Text style={styles.stat}>{formatSize(item.size)}</Text>
-                  <Text style={styles.stat}>{item.indexer}</Text>
-                  {item.seeders !== undefined && (
-                    <Text style={[styles.stat, { color: item.seeders > 0 ? colors.success : colors.error }]}>
-                      S:{item.seeders}
-                    </Text>
-                  )}
-                  {item.leechers !== undefined && <Text style={styles.stat}>L:{item.leechers}</Text>}
-                  <Text style={styles.stat}>{item.age}d</Text>
-                  <Text style={[styles.stat, { color: colors.info }]}>{item.protocol}</Text>
-                </View>
-                {item.rejected && item.rejections && item.rejections.length > 0 && (
-                  <Text style={styles.rejectionText} numberOfLines={1}>{item.rejections[0]}</Text>
-                )}
-              </Pressable>
-            )}
+            renderItem={({ item }) => {
+              const key = `${item.indexerId}:${item.guid}`;
+              return (
+                <ReleaseRow
+                  release={item}
+                  expanded={expandedKey === key}
+                  onToggleExpand={() => setExpandedKey(prev => prev === key ? null : key)}
+                  onGrab={() => confirmGrab(item)}
+                />
+              );
+            }}
           />
         )}
       </View>
@@ -163,30 +201,22 @@ export function ManualSearchSheet({ visible, releases, onGrab, onDismiss }: Manu
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surfaceBase },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.divider, gap: spacing.md },
   title: { ...typography.h3, color: colors.textPrimary },
   subtitle: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   closeBtn: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
   closeBtnText: { ...typography.bodyBold, color: colors.primary },
-  sortWrapper: { height: 44, borderBottomWidth: 1, borderBottomColor: colors.divider },
-  sortRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, height: 44 },
-  sortLabel: { ...typography.micro, color: colors.textMuted },
-  sortChip: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider },
-  sortChipActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
-  sortChipText: { ...typography.micro, color: colors.textMuted },
-  sortChipTextActive: { color: colors.primary, fontWeight: '600' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  chipsWrapper: { borderBottomWidth: 1, borderBottomColor: colors.divider, paddingVertical: spacing.xs },
+  chipRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, height: 36 },
+  chipLabel: { ...typography.micro, color: colors.textMuted, width: 34 },
+  chip: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider },
+  chipActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
+  chipText: { ...typography.micro, color: colors.textMuted },
+  chipTextActive: { color: colors.primary, fontWeight: '600' },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
   loadingText: { ...typography.caption, color: colors.textMuted, marginTop: spacing.lg },
+  noMatchText: { ...typography.body, color: colors.textMuted, marginBottom: spacing.lg },
+  clearBtn: { paddingVertical: 10, paddingHorizontal: 24, borderRadius: radii.md, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder },
+  clearBtnText: { ...typography.bodyBold, color: colors.primary },
   listContent: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md, paddingBottom: 40 },
-  item: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: 'transparent' },
-  itemRejected: { opacity: 0.5, borderColor: 'rgba(233,69,96,0.15)' },
-  itemHeader: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm, alignItems: 'flex-start' },
-  check: { color: colors.success, fontSize: 14, fontWeight: '700', marginTop: 1 },
-  rejected: { color: colors.error, fontSize: 14, fontWeight: '700', marginTop: 1 },
-  itemTitle: { ...typography.caption, fontWeight: '600', color: colors.textPrimary, flex: 1, lineHeight: 17 },
-  itemTitleRejected: { color: colors.textMuted },
-  itemStats: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  stat: { ...typography.micro, color: colors.textMuted },
-  statQuality: { color: colors.primary, fontWeight: '600' },
-  rejectionText: { ...typography.micro, color: colors.error, marginTop: 4, fontStyle: 'italic' },
 });

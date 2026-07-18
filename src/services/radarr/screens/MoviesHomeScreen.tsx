@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ScrollView, View, Text, StyleSheet, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +15,7 @@ import { getRadarrAdapter } from '../../../services/adapterFactory';
 import { useLibraryCache } from '../../../stores/libraryCache';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { useToastStore } from '../../../core/hooks/useToast';
+import { useDebouncedValue } from '../../../core/hooks/useDebounce';
 import { tmdb } from '../../tmdb/instance';
 
 type LoadStatus = 'loading' | 'loaded' | 'error' | 'empty';
@@ -116,9 +117,13 @@ export function MoviesHomeScreen() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const doSearch = useCallback(async () => {
-    const q = searchQuery.trim();
+  const debouncedQuery = useDebouncedValue(searchQuery, 400);
+  const searchRequestId = useRef(0);
+
+  const doSearch = useCallback(async (queryOverride?: string) => {
+    const q = (queryOverride ?? debouncedQuery).trim();
     if (!q) { setRadarrSearchResults([]); setTmdbSearchResults([]); return; }
+    const id = ++searchRequestId.current;
     setSearching(true);
     try {
       // Search both Radarr (if configured) AND TMDB in parallel for best results
@@ -129,13 +134,17 @@ export function MoviesHomeScreen() {
         promises.push(adapter.lookupMovie(q).catch(() => []));
       }
       const [tmdbResult, radarrResult] = await Promise.all(promises);
+      if (id !== searchRequestId.current) return;
       setTmdbSearchResults(tmdbResult.results ?? []);
       setRadarrSearchResults(radarrResult ?? []);
     } catch (e: any) {
       showToast(`Search failed: ${e.message}`, 'error');
     }
-    setSearching(false);
-  }, [searchQuery, adapter]);
+    if (id === searchRequestId.current) setSearching(false);
+  }, [debouncedQuery, adapter]);
+
+  // Search-as-you-type on the debounced query
+  useEffect(() => { doSearch(); }, [doSearch]);
 
   useEffect(() => {
     if (!searchQuery.trim()) { setRadarrSearchResults([]); setTmdbSearchResults([]); }
@@ -188,7 +197,7 @@ export function MoviesHomeScreen() {
         placeholder="Search for movies to add..."
         value={searchQuery}
         onChangeText={setSearchQuery}
-        onSubmit={doSearch}
+        onSubmit={() => doSearch(searchQuery)}
       />
 
       {!config && !isSearchMode && (

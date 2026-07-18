@@ -17,10 +17,25 @@ export interface CalendarItem {
   digitalRelease?: string; hasFile: boolean; monitored: boolean;
 }
 
+export interface ReleaseLanguage { id: number; name: string; }
+export interface ReleaseCustomFormat { id: number; name: string; }
+export interface ReleaseQuality {
+  quality: { id?: number; name: string; source?: string; resolution?: number };
+  revision?: { version: number; real: number; isRepack?: boolean };
+}
+
 export interface Release {
   guid: string; title: string; indexer: string; size: number; age: number; ageHours: number;
-  quality: { quality: { name: string } }; seeders?: number; leechers?: number;
+  ageMinutes?: number; publishDate?: string;
+  quality: ReleaseQuality; qualityWeight?: number;
+  customFormats?: ReleaseCustomFormat[]; customFormatScore?: number;
+  languages?: ReleaseLanguage[];
+  // Sonarr sends a bitmask int, Radarr can send string[] — normalize via releaseUtils
+  indexerFlags?: number | string[];
+  seeders?: number; leechers?: number;
   rejected: boolean; rejections?: string[]; indexerId: number; protocol: string;
+  fullSeason?: boolean; seasonNumber?: number;
+  mappedSeriesId?: number; infoUrl?: string;
 }
 
 export interface AddItemConfig {

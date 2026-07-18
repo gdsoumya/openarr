@@ -10,7 +10,8 @@ import { ManualSearchSheet } from '../../shared-arr/components/ManualSearchSheet
 import { CachedImage } from '../../../core/components/CachedImage';
 import { ActionSheet, ActionSheetOption } from '../../../core/components/ActionSheet';
 import { Movie } from '../types';
-import { Release } from '../../shared-arr/types';
+import { useReleaseSearch } from '../../shared-arr/hooks';
+import { useToastStore } from '../../../core/hooks/useToast';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getRadarrAdapter } from '../../../services/adapterFactory';
@@ -26,8 +27,7 @@ export function MovieDetailScreen() {
   const navigation = useNavigation<any>();
   const [movie, setMovie] = useState<Movie | null>(route.params?.movie ?? null);
   const [activeTab, setActiveTab] = useState('info');
-  const [manualSearchReleases, setManualSearchReleases] = useState<Release[]>([]);
-  const [showManualSearch, setShowManualSearch] = useState(false);
+  const releaseSearch = useReleaseSearch();
   const [refreshing, setRefreshing] = useState(false);
   const [actionSheet, setActionSheet] = useState<{
     visible: boolean;
@@ -43,6 +43,7 @@ export function MovieDetailScreen() {
   const [movieFile, setMovieFile] = useState<any | null>(null);
 
   const { alert } = useThemedAlert();
+  const showToast = useToastStore((s) => s.show);
   const radarrConfig = useServiceConfig('radarr');
   const isLocal = useConnectionStore((s) => s.isLocal);
 
@@ -65,9 +66,11 @@ export function MovieDetailScreen() {
     }
   }, [movie?.imdbId, movie?.tmdbId]);
 
+  const initialMovieId = route.params?.movieId ?? route.params?.movie?.id;
+
   useEffect(() => {
     async function fetchData() {
-      const movieId = route.params?.movieId ?? movie?.id;
+      const movieId = initialMovieId;
       if (!adapter || !movieId) return;
       try {
         const [fresh, queueResult] = await Promise.all([
@@ -87,7 +90,7 @@ export function MovieDetailScreen() {
       }
     }
     fetchData();
-  }, [adapter]);
+  }, [adapter, initialMovieId]);
 
   useEffect(() => {
     if (!adapter || !movie) return;
@@ -110,8 +113,6 @@ export function MovieDetailScreen() {
   }, [adapter, movie]);
 
   // --- Movie actions ---
-  const [searchingManual, setSearchingManual] = useState(false);
-
   async function handleSearch() {
     if (!adapter || !movie) return;
     try {
@@ -122,23 +123,12 @@ export function MovieDetailScreen() {
     }
   }
 
-  async function handleManualSearch() {
+  function handleManualSearch() {
     if (!adapter || !movie) return;
-    setSearchingManual(true);
-    setShowManualSearch(true);
-    setManualSearchReleases([]);
-    try {
-      const releases = await adapter.manualSearchMovie(movie.id);
-      setManualSearchReleases(releases);
-      if (releases.length === 0) {
-        alert('No Results', 'No releases found. Make sure indexers are configured in Radarr (Settings → Indexers) or that Prowlarr is synced.');
-        setShowManualSearch(false);
-      }
-    } catch (e: any) {
-      alert('Search Failed', e.message);
-      setShowManualSearch(false);
-    }
-    setSearchingManual(false);
+    releaseSearch.run(
+      { type: 'movie', label: `${movie.title} (${movie.year})` },
+      () => adapter.manualSearchMovie(movie.id),
+    );
   }
 
   function handleDelete() {
@@ -371,17 +361,21 @@ export function MovieDetailScreen() {
       </View>
     </View>
     <ManualSearchSheet
-      visible={showManualSearch}
-      releases={manualSearchReleases}
+      visible={releaseSearch.visible}
+      status={releaseSearch.status}
+      error={releaseSearch.error}
+      releases={releaseSearch.releases}
+      context={releaseSearch.context}
       onGrab={async (release) => {
         if (!adapter) return;
         try {
           await adapter.grabRelease(release.guid, release.indexerId);
-          alert('Success', 'Release grabbed');
-          setShowManualSearch(false);
+          showToast('Release grabbed', 'success');
+          releaseSearch.dismiss();
         } catch (e: any) { alert('Error', e.message); }
       }}
-      onDismiss={() => setShowManualSearch(false)}
+      onRetry={releaseSearch.retry}
+      onDismiss={releaseSearch.dismiss}
     />
     <ActionSheet
       visible={actionSheet.visible}

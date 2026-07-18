@@ -26,4 +26,10 @@ describe('ProwlarrAdapter', () => {
     const stats = await adapter.getIndexerStats();
     expect(stats[0].numberOfQueries).toBe(50);
   });
+
+  test('grabSearchResult pushes release through Prowlarr', async () => {
+    mockPost.mockResolvedValue({ data: {} });
+    await adapter.grabSearchResult('guid-1', 5);
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/search', { guid: 'guid-1', indexerId: 5 });
+  });
 });

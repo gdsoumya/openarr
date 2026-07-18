@@ -32,6 +32,11 @@ export class ProwlarrAdapter {
     return data;
   }
 
+  // Pushes the release to Prowlarr's configured download client, keeping grab history/tracking
+  async grabSearchResult(guid: string, indexerId: number): Promise<void> {
+    await this.client.post('/api/v1/search', { guid, indexerId });
+  }
+
   async getIndexers(): Promise<Indexer[]> { const { data } = await this.client.get('/api/v1/indexer'); return data; }
   async getIndexerStatuses(): Promise<IndexerStatus[]> { const { data } = await this.client.get('/api/v1/indexerstatus'); return data; }
   async getIndexerStats(): Promise<IndexerStats[]> { const { data } = await this.client.get('/api/v1/indexerstats'); return data.indexers; }

@@ -1,10 +1,14 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, TextInput, ActivityIndicator, FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { FilterChips } from '../../../core/components/FilterChips';
+import { ActionSheet, ActionSheetOption } from '../../../core/components/ActionSheet';
+import { ErrorState } from '../../../core/components/ErrorState';
+import { formatReleaseAge, formatSize, peerHealthColor, ReleaseSortKey, sortReleases } from '../../shared-arr/releaseUtils';
 import { SearchResult, SearchType, Indexer, IndexerStats } from '../types';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
@@ -24,11 +28,15 @@ export function SearchHomeScreen() {
   const [query, setQuery] = useState('');
   const [searchType, setSearchType] = useState<SearchType>('search');
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [searchState, setSearchState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [searchError, setSearchError] = useState('');
+  const [sortBy, setSortBy] = useState<ReleaseSortKey | null>('seeders');
+  const [protocolFilter, setProtocolFilter] = useState<'all' | 'torrent' | 'usenet'>('all');
   const [activeTab, setActiveTab] = useState('search');
   const [indexers, setIndexers] = useState<Indexer[]>([]);
   const [indexerStats, setIndexerStats] = useState<IndexerStats[]>([]);
   const [searchHistory, setSearchHistory] = useState<any[]>([]);
+  const [grabSheet, setGrabSheet] = useState<{ visible: boolean; item?: SearchResult }>({ visible: false });
 
   const typeChips = [
     { id: 'search', label: 'All' }, { id: 'tvsearch', label: 'TV' },
@@ -37,42 +45,62 @@ export function SearchHomeScreen() {
 
   const tabs = ['Search', 'Indexers', 'Stats', 'History'];
 
-  function formatSize(bytes: number): string {
-    if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(1)} GB`;
-    if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(0)} MB`;
-    return `${(bytes / 1024).toFixed(0)} KB`;
-  }
+  const sortChips: Array<{ id: ReleaseSortKey; label: string }> = [
+    { id: 'seeders', label: 'Seeders' }, { id: 'age', label: 'Newest' }, { id: 'size', label: 'Largest' },
+  ];
 
-  function formatAge(hours: number): string {
-    if (hours >= 720) return `${Math.floor(hours / 720)}mo`;
-    if (hours >= 24) return `${Math.floor(hours / 24)}d`;
-    return `${hours}h`;
-  }
+  const visibleResults = useMemo(() => {
+    const filtered = protocolFilter === 'all' ? results : results.filter(r => r.protocol === protocolFilter);
+    return sortReleases(filtered, sortBy);
+  }, [results, sortBy, protocolFilter]);
 
-  const grabResult = async (item: SearchResult) => {
+  const grabViaProwlarr = async (item: SearchResult) => {
+    if (!adapter) return;
+    try {
+      await adapter.grabSearchResult(item.guid, item.indexerId);
+      showToast('Sent to download client via Prowlarr', 'success');
+    } catch (e: any) { alert('Grab Failed', e.message); }
+  };
+
+  const grabViaTransmission = async (item: SearchResult) => {
     if (!item.downloadUrl) { alert('Error', 'No download URL available'); return; }
     if (!txConfig) { alert('Error', 'Transmission not configured'); return; }
     try {
       const tx = getTransmissionAdapter(txConfig, isLocal);
       await tx.addTorrent({ filename: item.downloadUrl });
-      alert('Sent to Transmission', item.title);
+      showToast('Sent to Transmission', 'success');
     } catch (e: any) { alert('Error', e.message); }
   };
+
+  const grabResult = (item: SearchResult) => setGrabSheet({ visible: true, item });
+
+  const grabOptions: ActionSheetOption[] = useMemo(() => {
+    const item = grabSheet.item;
+    if (!item) return [];
+    const options: ActionSheetOption[] = [
+      { label: 'Download via Prowlarr', icon: '⬇️', onPress: () => grabViaProwlarr(item) },
+    ];
+    if (txConfig && item.downloadUrl) {
+      options.push({ label: 'Send directly to Transmission', icon: '🔁', onPress: () => grabViaTransmission(item) });
+    }
+    return options;
+  }, [grabSheet.item, txConfig]);
 
   const doSearch = useCallback(async () => {
     if (!query.trim()) return;
     if (!adapter) { alert('Not Configured', 'Set up Prowlarr in Settings to search indexers.'); return; }
-    setLoading(true);
+    setSearchState('loading');
     setResults([]);
     try {
       const data = await adapter.search({ query: query.trim(), type: searchType });
       setResults(data);
+      setSearchState('success');
     } catch (e: any) {
-      alert('Search Failed', e.response
+      setSearchError(e.response
         ? `HTTP ${e.response.status}: ${e.config?.baseURL || ''}${e.config?.url || ''}`
         : e.message || 'Unknown error');
+      setSearchState('error');
     }
-    setLoading(false);
   }, [adapter, query, searchType]);
 
   useEffect(() => {
@@ -130,14 +158,34 @@ export function SearchHomeScreen() {
               onSubmitEditing={doSearch} />
           </View>
           <FilterChips chips={typeChips} activeId={searchType} onSelect={(id) => setSearchType(id as SearchType)} />
-          {loading && (
+          {searchState === 'success' && results.length > 0 && (
+            <View style={styles.sortWrapper}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sortRow}>
+                <Text style={styles.sortLabel}>Sort:</Text>
+                {sortChips.map((chip) => (
+                  <Pressable key={chip.id} style={[styles.sortChip, sortBy === chip.id && styles.sortChipActive]}
+                    onPress={() => setSortBy(prev => prev === chip.id ? null : chip.id)}>
+                    <Text style={[styles.sortChipText, sortBy === chip.id && styles.sortChipTextActive]}>{chip.label}</Text>
+                  </Pressable>
+                ))}
+                <Pressable style={[styles.sortChip, protocolFilter !== 'all' && styles.sortChipActive]}
+                  onPress={() => setProtocolFilter(prev => prev === 'all' ? 'torrent' : prev === 'torrent' ? 'usenet' : 'all')}>
+                  <Text style={[styles.sortChipText, protocolFilter !== 'all' && styles.sortChipTextActive]}>
+                    {protocolFilter === 'all' ? 'All Protocols' : protocolFilter === 'torrent' ? 'Torrent' : 'Usenet'}
+                  </Text>
+                </Pressable>
+              </ScrollView>
+            </View>
+          )}
+          {searchState === 'loading' && (
             <View style={styles.searchingRow}>
               <ActivityIndicator size="small" color={colors.primary} />
               <Text style={styles.searchingText}>Searching...</Text>
             </View>
           )}
-          {!loading && (
-            <FlatList data={results}
+          {searchState === 'error' && <ErrorState message={searchError} onRetry={doSearch} />}
+          {(searchState === 'idle' || searchState === 'success') && (
+            <FlashList data={visibleResults}
               renderItem={({ item }) => (
                 <Pressable style={styles.resultItem} onPress={() => grabResult(item)}>
                   <View style={styles.resultTop}>
@@ -148,19 +196,25 @@ export function SearchHomeScreen() {
                   </View>
                   <View style={styles.resultStats}>
                     <Text style={styles.resultStat}>{formatSize(item.size)}</Text>
-                    <Text style={styles.resultStat}>{formatAge(item.ageHours)}</Text>
-                    {item.seeders !== undefined && <Text style={[styles.resultStat, { color: colors.success }]}>S:{item.seeders}</Text>}
-                    {item.leechers !== undefined && <Text style={[styles.resultStat, { color: colors.error }]}>L:{item.leechers}</Text>}
+                    <Text style={styles.resultStat}>{formatReleaseAge(item)}</Text>
+                    {item.seeders !== undefined && <Text style={[styles.resultStat, { color: peerHealthColor(item.seeders) }]}>S:{item.seeders}</Text>}
+                    {item.leechers !== undefined && <Text style={styles.resultStat}>L:{item.leechers}</Text>}
                     <Text style={[styles.resultStat, { color: colors.primary }]}>{item.indexer}</Text>
                     <Text style={styles.resultStat}>{item.protocol}</Text>
                   </View>
                 </Pressable>
               )}
-              keyExtractor={(item) => item.guid}
+              keyExtractor={(item) => `${item.indexerId}:${item.guid}`}
               contentContainerStyle={{ paddingBottom: 20 }}
               ListEmptyComponent={
                 <View style={styles.placeholder}>
-                  <Text style={styles.placeholderText}>Enter a search term and press return</Text>
+                  <Text style={styles.placeholderText}>
+                    {searchState === 'idle'
+                      ? 'Enter a search term and press return'
+                      : protocolFilter !== 'all' && results.length > 0
+                        ? 'No results match the protocol filter'
+                        : 'No results found — try a different query or search type'}
+                  </Text>
                 </View>
               }
             />
@@ -235,6 +289,13 @@ export function SearchHomeScreen() {
         />
       )}
       </View>
+      <ActionSheet
+        visible={grabSheet.visible}
+        title="Download Release"
+        subtitle={grabSheet.item?.title}
+        options={grabOptions}
+        onClose={() => setGrabSheet({ visible: false })}
+      />
     </View>
   );
 }
@@ -263,4 +324,11 @@ const styles = StyleSheet.create({
   placeholderText: { ...typography.body, color: colors.textMuted, textAlign: 'center' },
   searchingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
   searchingText: { ...typography.caption, color: colors.textMuted },
+  sortWrapper: { marginBottom: spacing.sm },
+  sortRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl },
+  sortLabel: { ...typography.micro, color: colors.textMuted },
+  sortChip: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider },
+  sortChipActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
+  sortChipText: { ...typography.micro, color: colors.textMuted },
+  sortChipTextActive: { color: colors.primary, fontWeight: '600' },
 });
