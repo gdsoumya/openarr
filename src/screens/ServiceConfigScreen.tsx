@@ -18,6 +18,7 @@ const SERVICE_META: Record<ServiceId, { defaultPort: string; authMode: AuthMode;
   bazarr: { defaultPort: '6767', authMode: 'apikey', authHint: 'Settings → General → API Key' },
   portainer: { defaultPort: '9443', authMode: 'apikey', authHint: 'Portainer → My account → Access tokens. Note: self-signed HTTPS certs are rejected by the app — use the HTTP port (9000) or a reverse-proxy route instead.' },
   gluetun: { defaultPort: '8000', authMode: 'none', authHint: 'Gluetun control server URL — the /api prefix is added automatically.' },
+  emby: { defaultPort: '8096', authMode: 'apikey', authHint: 'Emby → Settings → Advanced → API Keys' },
 };
 
 export function ServiceConfigScreen() {

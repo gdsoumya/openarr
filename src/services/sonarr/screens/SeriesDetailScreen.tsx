@@ -17,6 +17,7 @@ import { useConnectionStore } from '../../../stores/connectionStore';
 import { getSonarrAdapter } from '../../../services/adapterFactory';
 import { useServerStore } from '../../../stores/serverStore';
 import { useToastStore } from '../../../core/hooks/useToast';
+import { openInEmby } from '../../emby/openInEmby';
 import { RatingsBar } from '../../../core/components/RatingsBar';
 import { MediaInfo } from '../../../core/components/MediaInfo';
 import { OMDBRatings } from '../../omdb/client';
@@ -49,6 +50,7 @@ export function SeriesDetailScreen() {
   }>({ visible: false, title: '', options: [] });
 
   const sonarrConfig = useServiceConfig('sonarr');
+  const embyConfig = useServerStore((s) => s.getServiceConfig('emby'));
   const isLocal = useConnectionStore((s) => s.isLocal);
   const showToast = useToastStore((s) => s.show);
 
@@ -445,6 +447,14 @@ export function SeriesDetailScreen() {
       </ScrollView>
 
       <View style={styles.actionBar}>
+        {(series.statistics?.episodeFileCount ?? 0) > 0 && embyConfig && (
+          <Pressable style={styles.actionBtn} onPress={async () => {
+            const err = await openInEmby('Series', { tvdbId: series.tvdbId, imdbId: series.imdbId, tmdbId: series.tmdbId });
+            if (err) showToast(err, 'error');
+          }}>
+            <MaterialCommunityIcons name="play" size={20} color={colors.emby} />
+          </Pressable>
+        )}
         <Pressable style={[styles.actionBtn, styles.actionBtnPrimary]} onPress={handleSearchAll}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <MaterialCommunityIcons name="magnify" size={16} color={colors.primary} />

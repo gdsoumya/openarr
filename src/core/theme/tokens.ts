@@ -12,6 +12,7 @@ export const colors = {
   prowlarr: '#e07b39',
   bazarr: '#a855f7',
   portainer: '#13bef9',
+  emby: '#52b54b',
   gluetun: '#5dd39e',
   success: '#64ffda',
   error: '#e94560',
@@ -60,6 +61,7 @@ export const serviceConfig = {
   prowlarr: { color: colors.prowlarr, label: 'Prowlarr', icon: 'P' },
   bazarr: { color: colors.bazarr, label: 'Bazarr', icon: 'B' },
   portainer: { color: colors.portainer, label: 'Portainer', icon: 'P' },
+  emby: { color: colors.emby, label: 'Emby', icon: 'E' },
   gluetun: { color: colors.gluetun, label: 'Gluetun VPN', icon: 'G' },
 } as const;
 

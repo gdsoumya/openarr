@@ -6,8 +6,9 @@ import { ProwlarrAdapter } from './prowlarr/adapter';
 import { BazarrAdapter } from './bazarr/adapter';
 import { PortainerAdapter } from './portainer/adapter';
 import { GluetunAdapter } from './gluetun/adapter';
+import { EmbyAdapter } from './emby/adapter';
 
-type AnyAdapter = TransmissionAdapter | SonarrAdapter | RadarrAdapter | ProwlarrAdapter | BazarrAdapter | PortainerAdapter | GluetunAdapter;
+type AnyAdapter = TransmissionAdapter | SonarrAdapter | RadarrAdapter | ProwlarrAdapter | BazarrAdapter | PortainerAdapter | GluetunAdapter | EmbyAdapter;
 
 const adapters = new Map<string, AnyAdapter>();
 
@@ -22,6 +23,7 @@ export function getAdapter(config: ServiceConfig, isLocal: boolean): AnyAdapter 
       case 'bazarr': adapters.set(key, new BazarrAdapter(config, isLocal)); break;
       case 'portainer': adapters.set(key, new PortainerAdapter(config, isLocal)); break;
       case 'gluetun': adapters.set(key, new GluetunAdapter(config, isLocal)); break;
+      case 'emby': adapters.set(key, new EmbyAdapter(config, isLocal)); break;
       default: throw new Error(`Unknown service: ${config.serviceId}`);
     }
   }
@@ -54,6 +56,10 @@ export function getPortainerAdapter(config: ServiceConfig, isLocal: boolean): Po
 
 export function getGluetunAdapter(config: ServiceConfig, isLocal: boolean): GluetunAdapter {
   return getAdapter(config, isLocal) as GluetunAdapter;
+}
+
+export function getEmbyAdapter(config: ServiceConfig, isLocal: boolean): EmbyAdapter {
+  return getAdapter(config, isLocal) as EmbyAdapter;
 }
 
 export function clearAdapters(): void {

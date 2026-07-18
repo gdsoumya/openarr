@@ -16,6 +16,7 @@ const serviceIconMap: Record<string, string> = {
   bazarr: 'subtitles-outline',
   portainer: 'docker',
   gluetun: 'shield-lock',
+  emby: 'play-circle-outline',
 };
 
 export function ServiceIcon({ serviceId, size = 44 }: ServiceIconProps) {

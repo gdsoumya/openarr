@@ -12,6 +12,8 @@ import { ActionSheet, ActionSheetOption } from '../../../core/components/ActionS
 import { Movie } from '../types';
 import { useReleaseSearch } from '../../shared-arr/hooks';
 import { useToastStore } from '../../../core/hooks/useToast';
+import { openInEmby } from '../../emby/openInEmby';
+import { useServerStore } from '../../../stores/serverStore';
 import { useServiceConfig } from '../../../core/hooks/useServer';
 import { useConnectionStore } from '../../../stores/connectionStore';
 import { getRadarrAdapter } from '../../../services/adapterFactory';
@@ -45,6 +47,7 @@ export function MovieDetailScreen() {
   const { alert } = useThemedAlert();
   const showToast = useToastStore((s) => s.show);
   const radarrConfig = useServiceConfig('radarr');
+  const embyConfig = useServerStore((s) => s.getServiceConfig('emby'));
   const isLocal = useConnectionStore((s) => s.isLocal);
 
   const adapter = useMemo(
@@ -316,6 +319,14 @@ export function MovieDetailScreen() {
       )}
 
       <View style={styles.actionBar}>
+        {movie.hasFile && embyConfig && (
+          <Pressable style={styles.actionBtn} onPress={async () => {
+            const err = await openInEmby('Movie', { tmdbId: movie.tmdbId, imdbId: movie.imdbId });
+            if (err) showToast(err, 'error');
+          }}>
+            <MaterialCommunityIcons name="play" size={20} color={colors.emby} />
+          </Pressable>
+        )}
         <Pressable style={[styles.actionBtn, styles.actionBtnPrimary]} onPress={() => {
           setActionSheet({
             visible: true,

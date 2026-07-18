@@ -30,6 +30,8 @@ export function createServiceClient(config: ServiceConfig, isLocal: boolean): Ax
       } else if (config.serviceId === 'portainer') {
         // Portainer access tokens require this exact header casing
         req.headers.set('X-API-Key', config.apiKey);
+      } else if (config.serviceId === 'emby') {
+        req.headers.set('X-Emby-Token', config.apiKey);
       } else {
         req.headers.set('X-Api-Key', config.apiKey);
       }
