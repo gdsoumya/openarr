@@ -1,5 +1,7 @@
 export const colors = {
   surfaceBase: '#0f1023',
+  // Matches the top of the AppBackground gradient so native headers blend in
+  surfaceHeader: '#171c40',
   surfaceCard: 'rgba(255,255,255,0.04)',
   surfaceCardBorder: 'rgba(255,255,255,0.05)',
   surfaceElevated: '#16213e',

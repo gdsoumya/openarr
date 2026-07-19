@@ -12,7 +12,7 @@ const Stack = createNativeStackNavigator();
 
 export function MoviesStack() {
   return (
-    <Stack.Navigator screenOptions={{ freezeOnBlur: true, headerStyle: { backgroundColor: colors.surfaceBase }, headerTintColor: colors.textPrimary, headerShadowVisible: false, contentStyle: { backgroundColor: 'transparent' } }}>
+    <Stack.Navigator screenOptions={{ freezeOnBlur: true, headerStyle: { backgroundColor: colors.surfaceHeader }, headerTintColor: colors.textPrimary, headerShadowVisible: false, contentStyle: { backgroundColor: 'transparent' } }}>
       <Stack.Screen name="MoviesHome" component={MoviesHomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="MovieDetail" component={MovieDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="DiscoveryDetail" component={DiscoveryDetailScreen} options={{ headerShown: false }} />

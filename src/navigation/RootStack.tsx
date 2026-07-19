@@ -18,7 +18,7 @@ export function RootStack() {
     <Stack.Navigator
       screenOptions={{
         freezeOnBlur: true,
-        headerStyle: { backgroundColor: colors.surfaceBase },
+        headerStyle: { backgroundColor: colors.surfaceHeader },
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,
         contentStyle: { backgroundColor: 'transparent' },
