@@ -25,6 +25,10 @@ updates:
       - dependency-name: "react-native-worklets"
       - dependency-name: "react-native-mmkv"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-config-expo"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
