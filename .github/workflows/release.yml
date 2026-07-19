@@ -34,7 +34,7 @@ jobs:
           java-version: 17
 
       # Caches gradle wrapper + dependencies; cold RN builds take 30+ min without it
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Install dependencies
         run: npm ci
