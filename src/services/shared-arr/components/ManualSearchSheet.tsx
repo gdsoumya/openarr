@@ -181,7 +181,7 @@ export function ManualSearchSheet({ visible, status, error, releases, context, o
             data={visibleReleases}
             extraData={expandedKey}
             keyExtractor={(item) => `${item.indexerId}:${item.guid}`}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + spacing.xl }]}
             renderItem={({ item }) => {
               const key = `${item.indexerId}:${item.guid}`;
               return (
@@ -219,5 +219,5 @@ const styles = StyleSheet.create({
   noMatchText: { ...typography.body, color: colors.textMuted, marginBottom: spacing.lg },
   clearBtn: { paddingVertical: 10, paddingHorizontal: 24, borderRadius: radii.md, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder },
   clearBtnText: { ...typography.bodyBold, color: colors.primary },
-  listContent: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md, paddingBottom: 40 },
+  listContent: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
 });

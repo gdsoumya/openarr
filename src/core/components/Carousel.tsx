@@ -31,11 +31,11 @@ export function Carousel({
     <View style={styles.section}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.title} numberOfLines={1}>{title}</Text>
           {count !== undefined && count > 0 && <Text style={styles.count}>{count}</Text>}
         </View>
         {onSeeAll && !empty && (
-          <Pressable onPress={onSeeAll}><Text style={styles.seeAll}>{seeAllLabel}</Text></Pressable>
+          <Pressable style={styles.seeAllBtn} onPress={onSeeAll}><Text style={styles.seeAll}>{seeAllLabel}</Text></Pressable>
         )}
       </View>
 
@@ -77,10 +77,12 @@ export function Carousel({
 
 const styles = StyleSheet.create({
   section: { marginBottom: spacing.xxl },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, marginBottom: spacing.md },
-  titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
-  title: { ...typography.h3, color: colors.textPrimary },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, paddingHorizontal: spacing.xl, marginBottom: spacing.md },
+  // Long titles ("Because you added …") ellipsize instead of pushing See All out
+  titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, flex: 1, minWidth: 0 },
+  title: { ...typography.h3, color: colors.textPrimary, flexShrink: 1 },
   count: { ...typography.caption, color: colors.textMuted },
+  seeAllBtn: { flexShrink: 0 },
   seeAll: { ...typography.caption, color: colors.primary, fontWeight: '500' },
   scrollContent: { paddingHorizontal: spacing.xl, gap: spacing.md },
   placeholder: {

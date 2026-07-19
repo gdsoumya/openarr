@@ -99,7 +99,7 @@ export function ServerSetupScreen() {
   const hasConfigured = (svc: SvcConfig) => !!svc.localUrl;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}>
       <Text style={styles.label}>Server Name</Text>
       <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="My Server" placeholderTextColor={colors.textMuted} />
 

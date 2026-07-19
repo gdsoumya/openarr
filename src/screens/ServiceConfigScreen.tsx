@@ -109,7 +109,7 @@ export function ServiceConfigScreen() {
     : `http://192.168.1.100:${meta.defaultPort}`;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}>
       <View style={styles.headerIcon}>
         <ServiceIcon serviceId={serviceId} size={56} />
       </View>

@@ -54,7 +54,7 @@ export function SubtitleSearchSheet({ visible, status, error, title, results, on
           <FlatList
             data={results}
             keyExtractor={(item, idx) => `${item.provider}:${item.subtitle}:${idx}`}
-            contentContainerStyle={{ paddingBottom: 40 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
             renderItem={({ item: sub }) => (
               <Pressable style={styles.item} onPress={() => onDownload(sub)}>
                 <View style={styles.row}>

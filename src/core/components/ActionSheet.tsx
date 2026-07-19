@@ -1,6 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, Pressable, BackHandler, Dimensions } from 'react-native';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../theme/tokens';
 
@@ -22,6 +23,10 @@ interface ActionSheetProps {
 export function ActionSheet({ visible, title, subtitle, options, onClose }: ActionSheetProps) {
   const sheetRef = useRef<BottomSheet>(null);
   const insets = useSafeAreaInsets();
+  // Inside a tab navigator the tab bar already clears the phone nav; only
+  // pad for the system inset when the sheet sits directly above it
+  const tabBarHeight = useContext(BottomTabBarHeightContext) ?? 0;
+  const bottomPad = (tabBarHeight > 0 ? 0 : insets.bottom) + spacing.lg;
 
   useEffect(() => {
     if (visible) {
@@ -55,7 +60,7 @@ export function ActionSheet({ visible, title, subtitle, options, onClose }: Acti
       backgroundStyle={styles.background}
       handleIndicatorStyle={styles.handle}
     >
-      <BottomSheetScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}>
+      <BottomSheetScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomPad }]}>
         <Text style={styles.title}>{title}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
 

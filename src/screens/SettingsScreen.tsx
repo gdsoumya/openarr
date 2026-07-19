@@ -27,7 +27,7 @@ export function SettingsScreen() {
   const [regionDraft, setRegionDraft] = useState(settings.region);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl }]}>
       {/* Servers */}
       <Text style={styles.sectionTitle}>Servers</Text>
       {servers.map((srv) => {
