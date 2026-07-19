@@ -18,8 +18,8 @@ export function ServiceCard({ serviceId, summary, connected, metric, onPress }: 
       <View style={[styles.accent, { backgroundColor: svc.color }]} />
       <ServiceIcon serviceId={serviceId} />
       <View style={styles.info}>
-        <Text style={styles.name}>{svc.label}</Text>
-        <Text style={styles.summary}>{summary}</Text>
+        <Text style={styles.name} numberOfLines={1}>{svc.label}</Text>
+        <Text style={styles.summary} numberOfLines={1}>{summary}</Text>
       </View>
       <View style={styles.right}>
         <Text style={[styles.status, { color: connected ? colors.success : colors.error }]}>
@@ -27,8 +27,13 @@ export function ServiceCard({ serviceId, summary, connected, metric, onPress }: 
         </Text>
         {metric && (
           <>
-            <Text style={styles.metricValue}>{metric.value}</Text>
-            <Text style={styles.metricLabel}>{metric.label}</Text>
+            <Text
+              style={[styles.metricValue, String(metric.value).length > 8 && styles.metricValueSm]}
+              numberOfLines={1}
+            >
+              {metric.value}
+            </Text>
+            {!!metric.label && <Text style={styles.metricLabel} numberOfLines={1}>{metric.label}</Text>}
           </>
         )}
       </View>
@@ -50,5 +55,7 @@ const styles = StyleSheet.create({
   right: { alignItems: 'flex-end' },
   status: { ...typography.micro, fontWeight: '500' },
   metricValue: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, marginTop: 2 },
+  // Long values (IP addresses) drop to a compact size so the card never wraps
+  metricValueSm: { fontSize: 13, marginTop: 4 },
   metricLabel: { ...typography.badge, color: colors.textMuted },
 });

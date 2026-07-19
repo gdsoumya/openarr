@@ -50,8 +50,9 @@ describe('GluetunAdapter', () => {
       return Promise.reject(new Error('unexpected'));
     });
     const status = await adapter.getStatus();
-    expect(status.summary).toBe('Connected — Amsterdam, Netherlands');
+    expect(status.summary).toBe('Connected');
     expect(status.metric?.value).toBe('1.2.3.4');
+    expect(status.metric?.label).toBe('Amsterdam, Netherlands');
   });
 
   test('changeLocation merges selection, preserves other fields, and cycles the VPN in order', async () => {

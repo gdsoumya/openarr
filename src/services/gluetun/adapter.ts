@@ -55,8 +55,8 @@ export class GluetunAdapter {
       return {
         serviceId: 'gluetun',
         connection: { status: 'connected', isLocal: true, lastChecked: Date.now() },
-        summary: ip?.public_ip ? `Connected — ${where || ip.public_ip}` : 'Connecting...',
-        metric: ip?.public_ip ? { value: ip.public_ip, label: 'exit IP' } : undefined,
+        summary: ip?.public_ip ? 'Connected' : 'Connecting...',
+        metric: ip?.public_ip ? { value: ip.public_ip, label: where } : undefined,
       };
     } catch (e: any) {
       return { serviceId: 'gluetun', connection: { status: 'error', isLocal: true, lastChecked: Date.now(), error: e.message }, summary: 'Connection failed' };
