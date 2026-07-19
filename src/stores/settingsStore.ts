@@ -42,7 +42,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   tmdbToken: appStorage.getValue(KEYS.TMDB),
   omdbKey: appStorage.getValue(KEYS.OMDB),
   region: appStorage.getValue(KEYS.REGION) ?? deviceRegion(),
-  backgroundStyle: (appStorage.getValue(KEYS.BACKGROUND) as BackgroundStyle) ?? 'aurora',
+  backgroundStyle: (appStorage.getValue(KEYS.BACKGROUND) as BackgroundStyle) ?? 'posters',
 
   setBackgroundStyle: (style) => {
     appStorage.setValue(KEYS.BACKGROUND, style);

@@ -120,8 +120,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
   },
   handle: { backgroundColor: 'rgba(255,255,255,0.25)', width: 36 },
   content: { paddingHorizontal: spacing.xl },

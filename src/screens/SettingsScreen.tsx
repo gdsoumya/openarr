@@ -75,8 +75,8 @@ export function SettingsScreen() {
       <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Appearance</Text>
       <View style={styles.segmentRow}>
         {([
-          { id: 'aurora', label: 'Aurora Gradient' },
           { id: 'posters', label: 'Poster Wall' },
+          { id: 'aurora', label: 'Aurora Gradient' },
         ] as const).map((opt) => {
           const active = settings.backgroundStyle === opt.id;
           return (
