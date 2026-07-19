@@ -29,6 +29,12 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
+      # Jest toolchain is pinned by jest-expo (SDK-coupled); bumping jest
+      # independently skews jest-runtime against jest-mock and breaks the runner
+      - dependency-name: "jest"
+      - dependency-name: "jest-expo"
+      - dependency-name: "ts-jest"
+      - dependency-name: "@types/jest"
   - package-ecosystem: github-actions
     directory: /
     schedule:
