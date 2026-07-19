@@ -135,7 +135,7 @@ export function DiscoverBrowseScreen() {
   }, [feed, mediaType, filters]);
 
   // Fill each FlashList column evenly so the 3-up grid is centered
-  const gridPosterW = Math.floor((Dimensions.get('window').width - spacing.xl * 2) / 3) - spacing.sm;
+  const gridPosterW = Math.floor((Dimensions.get('window').width - spacing.lg * 2) / 3) - spacing.sm;
 
   const resetRequestId = useRef(0);
   // When rating filters drop every loaded title, keep paginating (bounded)
@@ -247,5 +247,5 @@ const styles = StyleSheet.create({
   resultCount: { ...typography.caption, color: colors.textMuted },
   filterBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.round, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder },
   filterBtnText: { ...typography.caption, color: colors.primary, fontWeight: '600' },
-  gridItem: { marginBottom: spacing.lg, marginRight: spacing.sm },
+  gridItem: { marginBottom: spacing.lg },
 });
