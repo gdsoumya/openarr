@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ServiceId, serviceConfig } from '../theme/tokens';
 
@@ -22,9 +23,17 @@ const serviceIconMap: Record<string, string> = {
 export function ServiceIcon({ serviceId, size = 44 }: ServiceIconProps) {
   const config = serviceConfig[serviceId];
   return (
-    <View style={[styles.icon, { width: size, height: size, borderRadius: size * 0.27, backgroundColor: config.color }]}>
+    <LinearGradient
+      colors={[config.color, `${config.color}99`]}
+      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+      style={[styles.icon, {
+        width: size, height: size, borderRadius: size * 0.27,
+        shadowColor: config.color, shadowOpacity: 0.45, shadowRadius: 8,
+        shadowOffset: { width: 0, height: 3 }, elevation: 5,
+      }]}
+    >
       <MaterialCommunityIcons name={serviceIconMap[serviceId] as any ?? 'server'} size={size * 0.5} color="#fff" />
-    </View>
+    </LinearGradient>
   );
 }
 

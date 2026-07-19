@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator, Linking } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../core/theme/tokens';
 import { Badge } from '../core/components/Badge';
@@ -162,7 +163,11 @@ export function DiscoveryDetailScreen() {
           ) : (
             <View style={styles.backdropFallback} />
           )}
-          <View style={styles.heroOverlay} />
+          <LinearGradient
+            colors={['rgba(15,16,35,0.25)', 'rgba(15,16,35,0.55)', colors.surfaceBase]}
+            locations={[0, 0.65, 1]}
+            style={styles.heroOverlay}
+          />
           <Pressable style={[styles.backButton, { top: insets.top + 8 }]} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={22} color="#fff" />
           </Pressable>

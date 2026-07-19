@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ViewStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography } from '../theme/tokens';
 import { Badge } from './Badge';
 import { ProgressBar } from './ProgressBar';
@@ -31,7 +32,10 @@ export function PosterCard({
   const height = width * 1.5;
 
   return (
-    <Pressable style={[{ width }, style]} onPress={onPress} onLongPress={onLongPress}>
+    <Pressable
+      style={({ pressed }) => [{ width, transform: [{ scale: pressed ? 0.96 : 1 }] }, style]}
+      onPress={onPress} onLongPress={onLongPress}
+    >
       <View style={[styles.poster, { width, height }]}>
         {posterUrl ? (
           <CachedImage uri={posterUrl} style={styles.posterImage as any} />
@@ -47,9 +51,9 @@ export function PosterCard({
           </View>
         )}
         {bottomLabel && (
-          <View style={styles.bottomOverlay}>
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.bottomOverlay}>
             <Text style={styles.bottomLabel}>{bottomLabel}</Text>
-          </View>
+          </LinearGradient>
         )}
         {progress !== undefined && progress < 1 && (
           <View style={styles.progressPosition}>
@@ -64,14 +68,18 @@ export function PosterCard({
 }
 
 const styles = StyleSheet.create({
-  poster: { borderRadius: radii.md, overflow: 'hidden', backgroundColor: colors.surfaceElevated },
+  poster: {
+    borderRadius: radii.md, overflow: 'hidden', backgroundColor: colors.surfaceElevated,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)',
+    elevation: 6, shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
+  },
   posterImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   placeholder: { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surfaceElevated },
   placeholderText: { fontSize: 28, fontWeight: '700', color: 'rgba(255,255,255,0.15)' },
   badgePosition: { position: 'absolute', top: 8, right: 8 },
   ratingBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: radii.sm },
   ratingText: { ...typography.badge, color: colors.radarr },
-  bottomOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 8, paddingBottom: 8, paddingTop: 24, backgroundColor: 'rgba(0,0,0,0.5)' },
+  bottomOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 8, paddingBottom: 8, paddingTop: 24 },
   bottomLabel: { ...typography.badge, color: '#fff' },
   progressPosition: { position: 'absolute', bottom: 0, left: 0, right: 0 },
   title: { ...typography.caption, fontWeight: '600', color: colors.textSecondary, marginTop: spacing.sm, lineHeight: 17 },

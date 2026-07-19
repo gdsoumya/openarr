@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Carousel } from '../../core/components/Carousel';
+import { colors } from '../../core/theme/tokens';
 import { PosterCard } from '../../core/components/PosterCard';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useWatchlistStore } from '../../stores/watchlistStore';
@@ -81,6 +82,7 @@ function Row({ def, mediaType, onItemPress, getItemBadge, refreshToken }: {
   return (
     <Carousel
       title={def.title}
+      accent={mediaType === 'movie' ? colors.radarr : colors.sonarr}
       status={status}
       errorMessage={error}
       onSeeAll={def.browse ? () => navigation.navigate('DiscoverBrowse', {

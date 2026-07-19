@@ -23,6 +23,17 @@ const tabIconMap: Record<string, { lib: 'mci' | 'ion'; name: string }> = {
   Infra: { lib: 'mci', name: 'server' },
 };
 
+// Each tab lights up in its service's color when active, nzb360-style
+const tabAccentMap: Record<string, string> = {
+  Home: colors.primary,
+  Torrents: colors.transmission,
+  TV: colors.sonarr,
+  Movies: colors.radarr,
+  Search: colors.prowlarr,
+  Subs: colors.bazarr,
+  Infra: colors.portainer,
+};
+
 export function TabNavigator() {
   const insets = useSafeAreaInsets();
 
@@ -41,7 +52,7 @@ export function TabNavigator() {
           paddingBottom: Math.max(insets.bottom, 8),
           height: 56 + Math.max(insets.bottom, 8),
         },
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: tabAccentMap[route.name] ?? colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: { ...typography.badge, fontWeight: '600' },
         tabBarIcon: ({ focused, color }) => {

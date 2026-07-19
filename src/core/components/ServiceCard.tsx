@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography, serviceConfig, ServiceId } from '../theme/tokens';
 import { ServiceIcon } from './ServiceIcon';
 
@@ -14,8 +15,16 @@ interface ServiceCardProps {
 export function ServiceCard({ serviceId, summary, connected, metric, onPress }: ServiceCardProps) {
   const svc = serviceConfig[serviceId];
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <View style={[styles.accent, { backgroundColor: svc.color }]} />
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      onPress={onPress}
+    >
+      <LinearGradient
+        colors={[`${svc.color}14`, 'rgba(255,255,255,0.02)']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={[styles.accent, { backgroundColor: svc.color, shadowColor: svc.color, shadowOpacity: 0.8, shadowRadius: 6, shadowOffset: { width: 2, height: 0 } }]} />
       <ServiceIcon serviceId={serviceId} />
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>{svc.label}</Text>
@@ -48,6 +57,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder,
     borderRadius: radii.xl, position: 'relative', overflow: 'hidden',
   },
+  cardPressed: { transform: [{ scale: 0.98 }], borderColor: 'rgba(255,255,255,0.12)' },
   accent: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, borderTopRightRadius: 3, borderBottomRightRadius: 3 },
   info: { flex: 1 },
   name: { ...typography.bodyBold, color: colors.textPrimary },

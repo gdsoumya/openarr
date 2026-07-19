@@ -6,6 +6,7 @@ type CarouselStatus = 'loaded' | 'loading' | 'error' | 'empty';
 
 interface CarouselProps {
   title: string;
+  accent?: string;
   count?: number;
   seeAllLabel?: string;
   onSeeAll?: () => void;
@@ -21,7 +22,7 @@ function hasChildren(children: React.ReactNode): boolean {
 }
 
 export function Carousel({
-  title, count, seeAllLabel = 'See All →', onSeeAll, children,
+  title, accent = colors.primary, count, seeAllLabel = 'See All →', onSeeAll, children,
   status, errorMessage, minHeight = 220,
 }: CarouselProps) {
   const empty = !hasChildren(children);
@@ -31,6 +32,7 @@ export function Carousel({
     <View style={styles.section}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
+          <View style={[styles.accentBar, { backgroundColor: accent, shadowColor: accent }]} />
           <Text style={styles.title} numberOfLines={1}>{title}</Text>
           {count !== undefined && count > 0 && <Text style={styles.count}>{count}</Text>}
         </View>
@@ -79,7 +81,8 @@ const styles = StyleSheet.create({
   section: { marginBottom: spacing.xxl },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, paddingHorizontal: spacing.xl, marginBottom: spacing.md },
   // Long titles ("Because you added …") ellipsize instead of pushing See All out
-  titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, flex: 1, minWidth: 0 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1, minWidth: 0 },
+  accentBar: { width: 3, height: 16, borderRadius: 2, shadowOpacity: 0.8, shadowRadius: 4, shadowOffset: { width: 0, height: 0 } },
   title: { ...typography.h3, color: colors.textPrimary, flexShrink: 1 },
   count: { ...typography.caption, color: colors.textMuted },
   seeAllBtn: { flexShrink: 0 },
