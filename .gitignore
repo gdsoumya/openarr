@@ -19,3 +19,7 @@ android/keystore.properties
 android/app/openarr-release.keystore
 *.keystore
 !android/app/debug.keystore
+
+# Editors / docs
+.vscode/
+docs/superpowers/

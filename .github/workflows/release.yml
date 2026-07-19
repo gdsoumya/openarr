@@ -1,0 +1,70 @@
+name: Release APK
+
+# Builds a signed release APK when a GitHub release is published and attaches
+# it to that release. The app version is taken from the release tag (v1.2.3 or
+# 1.2.3); versionCode is the workflow run number.
+#
+# Required repository secrets:
+#   ANDROID_KEYSTORE_BASE64  base64 of the release keystore
+#   KEYSTORE_STORE_PASSWORD  keystore password
+#   KEYSTORE_KEY_ALIAS       key alias
+#   KEYSTORE_KEY_PASSWORD    key password
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set version from release tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Building version ${VERSION} (code ${GITHUB_RUN_NUMBER})"
+          sed -i "s/versionName \".*\"/versionName \"${VERSION}\"/" android/app/build.gradle
+          sed -i "s/versionCode [0-9]*/versionCode ${GITHUB_RUN_NUMBER}/" android/app/build.gradle
+
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/openarr-release.keystore
+          {
+            echo "storeFile=openarr-release.keystore"
+            echo "storePassword=${STORE_PASSWORD}"
+            echo "keyAlias=${KEY_ALIAS}"
+            echo "keyPassword=${KEY_PASSWORD}"
+          } > android/keystore.properties
+
+      - name: Build release APK
+        run: cd android && ./gradlew assembleRelease --no-daemon
+
+      - name: Attach APK to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          cp android/app/build/outputs/apk/release/app-release.apk "openarr-${VERSION}.apk"
+          gh release upload "$GITHUB_REF_NAME" "openarr-${VERSION}.apk" --clobber
