@@ -109,10 +109,12 @@ export function DashboardScreen() {
           <Ionicons name="settings-outline" size={20} color={colors.textMuted} />
         </Pressable>
       </View>
-      <View style={styles.serverPill}>
+      <Pressable style={styles.serverPill} onPress={() => navigation.navigate('Settings')}>
         <View style={styles.serverDot} />
         <Text style={styles.serverText}>{server.name} · {isLocal ? 'Local' : 'Remote'}</Text>
-      </View>
+        <Ionicons name="swap-horizontal" size={13} color={colors.primary} />
+        <Text style={styles.serverChange}>Change</Text>
+      </Pressable>
       <SpeedBanner downloadSpeed={formatSpeed(downloadSpeed)} uploadSpeed={formatSpeed(uploadSpeed)}
         thirdStat={{ value: freeSpace > 0 ? formatBytes(freeSpace) : '—', label: 'Free Space' }} />
       {enabledServices.map((svc) => {
@@ -125,7 +127,11 @@ export function DashboardScreen() {
             onPress={() => {
               if (svc.serviceId === 'emby') { Linking.openURL(isLocal ? svc.localUrl : svc.remoteUrl); return; }
               const tab = tabMap[svc.serviceId];
-              if (tab) navigation.navigate('Main', { screen: tab });
+              if (tab === 'Infra') {
+                navigation.navigate('Main', { screen: 'Infra', params: { screen: 'InfraHome', params: { tab: svc.serviceId === 'gluetun' ? 'vpn' : 'docker' } } });
+              } else if (tab) {
+                navigation.navigate('Main', { screen: tab });
+              }
             }} />
         );
       })}
@@ -143,6 +149,7 @@ const styles = StyleSheet.create({
   serverPill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginHorizontal: spacing.xl, marginBottom: spacing.lg, backgroundColor: 'rgba(100, 255, 218, 0.08)', borderWidth: 1, borderColor: 'rgba(100, 255, 218, 0.15)', paddingVertical: 4, paddingHorizontal: 12, borderRadius: 20 },
   serverDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary },
   serverText: { ...typography.micro, color: colors.primary, fontWeight: '500' },
+  serverChange: { ...typography.micro, color: colors.primary, fontWeight: '700', textDecorationLine: 'underline' },
   empty: { flex: 1, backgroundColor: colors.surfaceBase, justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
   emptyIcon: { fontSize: 48, marginBottom: spacing.lg },
   emptyTitle: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.sm },

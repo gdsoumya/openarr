@@ -4,12 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '../theme/tokens';
 
-// Consistent home entry point at the left of every tab's top bar
+// Service-health dashboard entry point at the left of every tab's top bar
 export function DashboardButton() {
   const navigation = useNavigation<any>();
   return (
     <Pressable style={styles.btn} hitSlop={8} onPress={() => navigation.navigate('Dashboard')}>
-      <Ionicons name="speedometer-outline" size={20} color={colors.textSecondary} />
+      <Ionicons name="pulse" size={20} color={colors.textSecondary} />
     </Pressable>
   );
 }

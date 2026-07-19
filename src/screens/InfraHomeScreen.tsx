@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../core/theme/tokens';
 import { Badge } from '../core/components/Badge';
@@ -22,6 +22,7 @@ type InfraTab = 'docker' | 'vpn';
 export function InfraHomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const portainerConfig = useServiceConfig('portainer');
   const gluetunConfig = useServiceConfig('gluetun');
   const isLocal = useConnectionStore((s) => s.isLocal);
@@ -31,6 +32,11 @@ export function InfraHomeScreen() {
   );
 
   const [activeTab, setActiveTab] = useState<InfraTab>(portainerConfig || !gluetunConfig ? 'docker' : 'vpn');
+
+  // Dashboard cards deep-link to a specific tab (portainer → docker, gluetun → vpn)
+  React.useEffect(() => {
+    if (route.params?.tab) setActiveTab(route.params.tab);
+  }, [route.params?.tab]);
   const [endpoints, setEndpoints] = useState<PortainerEndpoint[]>([]);
   const [stacks, setStacks] = useState<PortainerStack[]>([]);
   const [refreshing, setRefreshing] = useState(false);
