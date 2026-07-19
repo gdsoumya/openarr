@@ -317,7 +317,7 @@ export function MoviesHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   content: { paddingBottom: 8 },
   header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { ...typography.h1, color: colors.textPrimary },

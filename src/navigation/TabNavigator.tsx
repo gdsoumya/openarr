@@ -44,6 +44,8 @@ export function TabNavigator() {
         // Inactive tabs are frozen so they can't re-render in the background
         freezeOnBlur: true,
         lazy: true,
+        // Leaving a tab resets its stack, so returning always lands on its home screen
+        popToTopOnBlur: true,
         tabBarStyle: {
           backgroundColor: 'rgba(15, 16, 35, 0.95)',
           borderTopColor: colors.divider,

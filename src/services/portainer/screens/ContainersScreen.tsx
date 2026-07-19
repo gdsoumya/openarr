@@ -85,7 +85,7 @@ export function ContainersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase, paddingTop: spacing.md },
+  container: { flex: 1, backgroundColor: 'transparent', paddingTop: spacing.md },
   loading: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: spacing.xxxl },
   row: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
   rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm, marginBottom: 4 },

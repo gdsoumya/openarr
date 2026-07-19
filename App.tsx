@@ -11,6 +11,7 @@ import { Toast } from './src/core/components/Toast';
 import { useToastStore } from './src/core/hooks/useToast';
 import { ThemedAlertProvider } from './src/core/components/ThemedAlert';
 import { ErrorBoundary } from './src/core/components/ErrorBoundary';
+import { AppBackground } from './src/core/components/AppBackground';
 import { startConnectionMonitoring } from './src/core/network/connectionManager';
 
 export default function App() {
@@ -24,7 +25,8 @@ export default function App() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.surfaceBase }}>
+      <AppBackground />
       <SafeAreaProvider>
       <ThemeProvider>
         <ThemedAlertProvider>
@@ -33,7 +35,7 @@ export default function App() {
             dark: true,
             colors: {
               primary: colors.primary,
-              background: colors.surfaceBase,
+              background: 'transparent',
               card: colors.surfaceElevated,
               text: colors.textPrimary,
               border: colors.divider,
@@ -47,7 +49,7 @@ export default function App() {
             },
           }}
         >
-          <StatusBar barStyle="light-content" backgroundColor={colors.surfaceBase} />
+          <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
           <ErrorBoundary>
             <RootStack />
           </ErrorBoundary>

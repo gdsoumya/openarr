@@ -13,7 +13,7 @@ export function SummaryStack() {
         headerStyle: { backgroundColor: colors.surfaceBase },
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.surfaceBase },
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Stack.Screen name="SummaryHome" component={SummaryScreen} options={{ headerShown: false }} />

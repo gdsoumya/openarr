@@ -146,7 +146,7 @@ export function SummaryScreen() {
             title: e.series?.title ?? 'Unknown series',
             subtitle: `S${String(e.seasonNumber).padStart(2, '0')}E${String(e.episodeNumber).padStart(2, '0')}${e.title ? ` · ${e.title}` : ''}`,
             hasFile: e.hasFile,
-            onPress: e.series ? () => navigation.navigate('TV', { screen: 'SeriesDetail', params: { series: e.series } }) : undefined,
+            onPress: e.series ? () => navigation.navigate('TV', { screen: 'SeriesDetail', params: { series: e.series }, initial: false }) : undefined,
           }))));
       })(),
       (async () => {
@@ -170,7 +170,7 @@ export function SummaryScreen() {
             subtitle: m.digitalRelease ? 'Digital release' : 'In cinemas',
             hasFile: false,
             onPress: byId.has(m.id)
-              ? () => navigation.navigate('Movies', { screen: 'MovieDetail', params: { movie: byId.get(m.id) } })
+              ? () => navigation.navigate('Movies', { screen: 'MovieDetail', params: { movie: byId.get(m.id) }, initial: false })
               : undefined,
           }))));
       })(),
@@ -379,7 +379,7 @@ export function SummaryScreen() {
                 posterUrl={e.series?.images?.find((i: any) => i.coverType === 'poster')?.remoteUrl}
                 badge={{ label: 'New', variant: 'inLibrary' }}
                 size="md"
-                onPress={() => e.series && navigation.navigate('TV', { screen: 'SeriesDetail', params: { series: e.series } })}
+                onPress={() => e.series && navigation.navigate('TV', { screen: 'SeriesDetail', params: { series: e.series }, initial: false })}
               />
             ))}
             {unwatchedMovies.map((m) => (
@@ -390,7 +390,7 @@ export function SummaryScreen() {
                 posterUrl={m.images?.find((i) => i.coverType === 'poster')?.remoteUrl}
                 badge={{ label: 'New', variant: 'inLibrary' }}
                 size="md"
-                onPress={() => navigation.navigate('Movies', { screen: 'MovieDetail', params: { movie: m } })}
+                onPress={() => navigation.navigate('Movies', { screen: 'MovieDetail', params: { movie: m }, initial: false })}
               />
             ))}
           </Carousel>
@@ -449,7 +449,7 @@ export function SummaryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.sm },
   serverPill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder, paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.round },
   serverPillText: { ...typography.bodyBold, color: colors.primary },

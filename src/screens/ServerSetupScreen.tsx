@@ -152,7 +152,7 @@ export function ServerSetupScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.xl, paddingBottom: 20 },
   label: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.sm, marginTop: spacing.lg },
   hint: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.md },

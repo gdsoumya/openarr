@@ -18,7 +18,7 @@ export function InfraStack() {
         headerStyle: { backgroundColor: colors.surfaceBase },
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.surfaceBase },
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Stack.Screen name="InfraHome" component={InfraHomeScreen} options={{ headerShown: false }} />

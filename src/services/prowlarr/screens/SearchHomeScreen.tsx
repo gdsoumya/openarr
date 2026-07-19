@@ -306,7 +306,7 @@ export function SearchHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

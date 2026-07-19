@@ -15,7 +15,7 @@ export function SubsStack() {
         headerStyle: { backgroundColor: colors.surfaceBase },
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.surfaceBase },
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Stack.Screen

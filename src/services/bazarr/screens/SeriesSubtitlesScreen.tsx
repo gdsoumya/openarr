@@ -206,8 +206,8 @@ export function SeriesSubtitlesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
-  sectionHeader: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, backgroundColor: colors.surfaceBase, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  sectionHeader: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, backgroundColor: 'transparent', paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },
   row: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md },
   epTitle: { ...typography.caption, fontWeight: '600', color: colors.textPrimary },
   epNum: { color: colors.textMuted },

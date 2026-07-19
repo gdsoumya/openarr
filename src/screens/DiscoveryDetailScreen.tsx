@@ -317,7 +317,7 @@ export function DiscoveryDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   loading: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 100 },
   heroContainer: { height: 220, position: 'relative' },
   backdrop: { width: '100%', height: 220 },

@@ -128,7 +128,7 @@ export function StackDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.xl },
   title: { ...typography.h2, color: colors.textPrimary },
   subtitle: { ...typography.caption, color: colors.textMuted, marginTop: 2 },

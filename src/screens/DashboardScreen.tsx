@@ -146,7 +146,7 @@ export function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   content: { paddingBottom: 20 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   serverMeta: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   serverChangeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder },
   serverChangeText: { ...typography.micro, color: colors.primary, fontWeight: '700' },
-  empty: { flex: 1, backgroundColor: colors.surfaceBase, justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
+  empty: { flex: 1, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
   emptyIcon: { fontSize: 48, marginBottom: spacing.lg },
   emptyTitle: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.sm },
   emptyText: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginBottom: spacing.xl },

@@ -101,8 +101,8 @@ export function PersonScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
-  center: { flex: 1, backgroundColor: colors.surfaceBase, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  center: { flex: 1, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', gap: spacing.lg, padding: spacing.xl, alignItems: 'center' },
   photo: { width: 100, height: 100, borderRadius: radii.round },
   photoFallback: { backgroundColor: colors.surfaceElevated, justifyContent: 'center', alignItems: 'center' },

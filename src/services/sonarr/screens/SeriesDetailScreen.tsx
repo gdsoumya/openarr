@@ -8,6 +8,7 @@ import { MetadataPills } from '../../../core/components/MetadataPills';
 import { SeasonSection } from '../components/SeasonSection';
 import { LoadingSpinner } from '../../../core/components/LoadingSpinner';
 import { ManualSearchSheet } from '../../shared-arr/components/ManualSearchSheet';
+import { LinearGradient } from 'expo-linear-gradient';
 import { CachedImage } from '../../../core/components/CachedImage';
 import { ActionSheet, ActionSheetOption } from '../../../core/components/ActionSheet';
 import { Series, Episode, Season } from '../types';
@@ -349,7 +350,11 @@ export function SeriesDetailScreen() {
           ) : (
             <View style={styles.heroBg} />
           )}
-          <View style={styles.heroOverlay} />
+          <LinearGradient
+            colors={['rgba(15,16,35,0.25)', 'rgba(15,16,35,0.55)', '#0f1023']}
+            locations={[0, 0.65, 1]}
+            style={styles.heroOverlay}
+          />
           <View style={styles.heroContent}>
             {posterUrl ? (
               <CachedImage uri={posterUrl} style={styles.poster} />
@@ -511,13 +516,13 @@ export function SeriesDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   scroll: { flex: 1 },
   loading: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 100 },
   hero: { height: 200, position: 'relative' },
   heroBg: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.surfaceElevated },
   heroBgImage: { width: '100%', height: '100%', position: 'absolute' },
-  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 16, 35, 0.6)' },
+  heroOverlay: StyleSheet.absoluteFillObject,
   heroContent: { position: 'absolute', bottom: 16, left: spacing.xl, right: spacing.xl, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md },
   poster: { width: 80, height: 120, borderRadius: radii.md, overflow: 'hidden' },
   posterFallback: { width: 80, height: 120, borderRadius: radii.md, justifyContent: 'center', alignItems: 'center' },

@@ -7,6 +7,7 @@ import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { MetadataPills } from '../../../core/components/MetadataPills';
 import { ProgressBar } from '../../../core/components/ProgressBar';
 import { ManualSearchSheet } from '../../shared-arr/components/ManualSearchSheet';
+import { LinearGradient } from 'expo-linear-gradient';
 import { CachedImage } from '../../../core/components/CachedImage';
 import { ActionSheet, ActionSheetOption } from '../../../core/components/ActionSheet';
 import { Movie } from '../types';
@@ -202,7 +203,11 @@ export function MovieDetailScreen() {
           ) : (
             <View style={styles.heroBg} />
           )}
-          <View style={styles.heroOverlay} />
+          <LinearGradient
+            colors={['rgba(15,16,35,0.25)', 'rgba(15,16,35,0.55)', '#0f1023']}
+            locations={[0, 0.65, 1]}
+            style={styles.heroOverlay}
+          />
           <View style={styles.heroContent}>
             {posterUrl ? (
               <CachedImage uri={posterUrl} style={styles.poster} />
@@ -363,7 +368,7 @@ export function MovieDetailScreen() {
                 } catch (e: any) { alert('Error', e.message); }
               }},
               { label: 'Search Subtitles', icon: '💬', onPress: () => {
-                navigation.navigate('Subs', { screen: 'SubsMovieDetail', params: { radarrId: movie.id, title: movie.title } });
+                navigation.navigate('Subs', { screen: 'SubsMovieDetail', params: { radarrId: movie.id, title: movie.title }, initial: false });
               }},
               { label: 'Open in IMDb', icon: '🎬', onPress: () => { if (movie.imdbId) Linking.openURL(`https://www.imdb.com/title/${movie.imdbId}`); }},
               { label: 'Delete Movie', icon: '🗑', onPress: () => handleDelete(), destructive: true },
@@ -403,13 +408,13 @@ export function MovieDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   scroll: { flex: 1 },
   loading: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 100 },
   hero: { height: 200, position: 'relative' },
   heroBg: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.surfaceElevated },
   heroBgImage: { width: '100%', height: '100%', position: 'absolute' },
-  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 16, 35, 0.6)' },
+  heroOverlay: StyleSheet.absoluteFillObject,
   heroContent: { position: 'absolute', bottom: 16, left: spacing.xl, right: spacing.xl, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md },
   poster: { width: 80, height: 120, borderRadius: radii.md, overflow: 'hidden' },
   posterFallback: { width: 80, height: 120, borderRadius: radii.md, justifyContent: 'center', alignItems: 'center' },

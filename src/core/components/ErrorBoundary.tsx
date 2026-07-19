@@ -34,7 +34,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase, justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
+  container: { flex: 1, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
   icon: { fontSize: 48, marginBottom: spacing.lg },
   title: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.sm },
   message: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginBottom: spacing.xl },

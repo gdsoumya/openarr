@@ -254,7 +254,7 @@ export function DiscoverFiltersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   sectionTitle: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, paddingHorizontal: spacing.xl, marginTop: spacing.xl, marginBottom: spacing.sm },
   sectionHint: { ...typography.micro, color: colors.textMuted, paddingHorizontal: spacing.xl, marginTop: -spacing.xs, marginBottom: spacing.sm, fontStyle: 'italic' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, paddingHorizontal: spacing.xl },

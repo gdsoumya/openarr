@@ -12,7 +12,7 @@ const Stack = createNativeStackNavigator();
 
 export function TVStack() {
   return (
-    <Stack.Navigator screenOptions={{ freezeOnBlur: true, headerStyle: { backgroundColor: colors.surfaceBase }, headerTintColor: colors.textPrimary, headerShadowVisible: false, contentStyle: { backgroundColor: colors.surfaceBase } }}>
+    <Stack.Navigator screenOptions={{ freezeOnBlur: true, headerStyle: { backgroundColor: colors.surfaceBase }, headerTintColor: colors.textPrimary, headerShadowVisible: false, contentStyle: { backgroundColor: 'transparent' } }}>
       <Stack.Screen name="TVHome" component={TVHomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SeriesDetail" component={SeriesDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="DiscoveryDetail" component={DiscoveryDetailScreen} options={{ headerShown: false }} />

@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   dialogCancelText: { ...typography.bodyBold, color: colors.textMuted },
   dialogAdd: { paddingVertical: 10, paddingHorizontal: 22, borderRadius: radii.md, backgroundColor: colors.primary },
   dialogAddText: { ...typography.bodyBold, color: '#0f1023' },
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { ...typography.h1, color: colors.textPrimary },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },

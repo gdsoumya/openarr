@@ -159,7 +159,7 @@ export function ContainerDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   loading: { ...typography.body, color: colors.textMuted, textAlign: 'center', marginTop: 100 },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.xl },
   title: { ...typography.h2, color: colors.textPrimary },

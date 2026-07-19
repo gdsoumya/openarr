@@ -155,8 +155,8 @@ export function LocationPickerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase, paddingTop: spacing.md },
-  center: { flex: 1, backgroundColor: colors.surfaceBase, justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
+  container: { flex: 1, backgroundColor: 'transparent', paddingTop: spacing.md },
+  center: { flex: 1, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
   reconnectText: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
   providerText: { ...typography.caption, color: colors.textMuted, paddingHorizontal: spacing.xl, marginBottom: spacing.md },
   countryHeader: { backgroundColor: colors.surfaceElevated, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },

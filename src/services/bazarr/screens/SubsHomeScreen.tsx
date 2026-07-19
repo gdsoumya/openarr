@@ -206,7 +206,7 @@ export function SubsHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   tabContent: { flex: 1 },
   header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { ...typography.h1, color: colors.textPrimary },

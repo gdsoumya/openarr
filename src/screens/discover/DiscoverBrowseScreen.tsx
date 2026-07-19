@@ -221,7 +221,7 @@ export function DiscoverBrowseScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   toolbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
   resultCount: { ...typography.caption, color: colors.textMuted },

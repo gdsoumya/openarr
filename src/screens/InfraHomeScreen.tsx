@@ -196,7 +196,7 @@ export function InfraHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary },
   tabsWrapper: { height: 44, borderBottomWidth: 1, borderBottomColor: colors.divider },

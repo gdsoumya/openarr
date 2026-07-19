@@ -21,7 +21,7 @@ export function RootStack() {
         headerStyle: { backgroundColor: colors.surfaceBase },
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.surfaceBase },
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Stack.Screen name="Main" component={TabNavigator} options={{ headerShown: false }} />

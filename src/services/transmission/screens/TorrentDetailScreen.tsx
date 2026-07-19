@@ -134,7 +134,7 @@ export function TorrentDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceBase },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
   name: { ...typography.h3, color: colors.textPrimary, paddingHorizontal: spacing.xl, marginBottom: spacing.lg },
   progressBar: { marginHorizontal: spacing.xl, marginBottom: spacing.xl },

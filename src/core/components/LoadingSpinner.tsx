@@ -14,6 +14,6 @@ export function LoadingSpinner({ message = 'Loading...' }: LoadingSpinnerProps) 
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surfaceBase },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
   message: { ...typography.caption, color: colors.textMuted, marginTop: spacing.md },
 });
