@@ -7,13 +7,14 @@ import { DiscoverBrowseScreen } from '../../screens/discover/DiscoverBrowseScree
 import { PersonScreen } from '../../screens/discover/PersonScreen';
 import { DiscoverFiltersScreen } from '../../screens/discover/DiscoverFiltersScreen';
 import { colors } from '../../core/theme/tokens';
-import { screenWithBackground } from '../../core/components/AppBackground';
+import { screenWithBackground, headerFade } from '../../core/components/AppBackground';
 
 const Stack = createNativeStackNavigator();
 
 export function MoviesStack() {
   return (
-    <Stack.Navigator screenLayout={screenWithBackground} screenOptions={{ freezeOnBlur: true, headerStyle: { backgroundColor: colors.surfaceHeader }, headerTintColor: colors.textPrimary, headerShadowVisible: false, contentStyle: { backgroundColor: 'transparent' } }}>
+    <Stack.Navigator screenLayout={screenWithBackground} screenOptions={{ freezeOnBlur: true, headerTransparent: true,
+        headerBackground: headerFade, headerTintColor: colors.textPrimary, headerShadowVisible: false, contentStyle: { backgroundColor: 'transparent' } }}>
       <Stack.Screen name="MoviesHome" component={MoviesHomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="MovieDetail" component={MovieDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="DiscoveryDetail" component={DiscoveryDetailScreen} options={{ headerShown: false }} />

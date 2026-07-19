@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemedAlert } from '../core/components/ThemedAlert';
 import { useNavigation } from '@react-navigation/native';
 import { exportBackup } from '../core/storage/backup';
+import * as Application from 'expo-application';
 import { updateConnectionState } from '../core/network/connectionManager';
 import { colors, spacing, radii, typography } from '../core/theme/tokens';
 import { useServerStore } from '../stores/serverStore';
@@ -30,7 +31,7 @@ export function SettingsScreen() {
   const [regionDraft, setRegionDraft] = useState(settings.region);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl }]}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.xl }]}>
       {/* Servers */}
       <Text style={styles.sectionTitle}>Servers</Text>
       {servers.map((srv) => {
@@ -207,11 +208,11 @@ export function SettingsScreen() {
         </View>
         <View style={styles.rowContent}>
           <Text style={styles.rowTitle}>OpenArr</Text>
-          <Text style={styles.rowSub}>Version 0.1.0 · Free & Open Source</Text>
+          <Text style={styles.rowSub}>Version {Application.nativeApplicationVersion ?? '0.1.0'} · Free & Open Source</Text>
         </View>
       </View>
 
-      <Pressable style={styles.row} onPress={() => Linking.openURL('https://github.com/openarr/openarr')}>
+      <Pressable style={styles.row} onPress={() => Linking.openURL('https://github.com/gdsoumya/openarr')}>
         <View style={styles.rowIcon}>
           <Ionicons name="logo-github" size={20} color={colors.textMuted} />
         </View>
@@ -228,7 +229,7 @@ export function SettingsScreen() {
         </View>
         <View style={styles.rowContent}>
           <Text style={styles.rowTitle}>Credits</Text>
-          <Text style={styles.rowSub}>Powered by Sonarr, Radarr, Prowlarr, Bazarr, Transmission, TMDB</Text>
+          <Text style={styles.rowSub}>Powered by Sonarr, Radarr, Prowlarr, Bazarr, Transmission, Portainer, Gluetun and Emby · Metadata from TMDB & OMDB</Text>
         </View>
       </View>
 

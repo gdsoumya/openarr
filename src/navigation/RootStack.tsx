@@ -7,7 +7,7 @@ import { ServerSetupScreen } from '../screens/ServerSetupScreen';
 import { ServiceConfigScreen } from '../screens/ServiceConfigScreen';
 import { useDownloadMonitor } from '../core/notifications/useDownloadMonitor';
 import { colors } from '../core/theme/tokens';
-import { screenWithBackground } from '../core/components/AppBackground';
+import { screenWithBackground, headerFade } from '../core/components/AppBackground';
 
 const Stack = createNativeStackNavigator();
 
@@ -19,7 +19,8 @@ export function RootStack() {
     <Stack.Navigator screenLayout={screenWithBackground}
       screenOptions={{
         freezeOnBlur: true,
-        headerStyle: { backgroundColor: colors.surfaceHeader },
+        headerTransparent: true,
+        headerBackground: headerFade,
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,
         contentStyle: { backgroundColor: 'transparent' },

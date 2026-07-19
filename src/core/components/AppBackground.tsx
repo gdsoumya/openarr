@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { PosterWallBackground } from './PosterWallBackground';
 
@@ -41,12 +42,34 @@ const WALL_SCREENS = new Set([
 // screenLayout wrapper: gives every stack screen an opaque layer with the
 // gradient inside it, so screens never see through to the one below during
 // native-stack transitions.
-export function screenWithBackground({ children, route }: { children: React.ReactElement; route?: { name?: string } }) {
+// Headers are transparent (see stack screenOptions) so the background flows
+// behind them; content pads down by the header height to compensate.
+function ScreenBackgroundLayout({ children, route, options }: {
+  children: React.ReactElement; route?: { name?: string }; options?: { headerShown?: boolean };
+}) {
+  const headerShown = options?.headerShown !== false;
+  const headerHeight = useHeaderHeight();
   return (
     <View style={styles.screen}>
       <AppBackground wallEligible={!!route?.name && WALL_SCREENS.has(route.name)} />
-      {children}
+      <View style={{ flex: 1, paddingTop: headerShown ? headerHeight : 0 }}>{children}</View>
     </View>
+  );
+}
+
+export function screenWithBackground(props: any) {
+  return <ScreenBackgroundLayout {...props} />;
+}
+
+// Soft fade behind transparent native headers — keeps titles legible while
+// the page background shows through underneath
+export function headerFade() {
+  return (
+    <LinearGradient
+      colors={['rgba(10,11,24,0.92)', 'rgba(10,11,24,0.55)', 'rgba(10,11,24,0)']}
+      locations={[0, 0.7, 1]}
+      style={StyleSheet.absoluteFill}
+    />
   );
 }
 
