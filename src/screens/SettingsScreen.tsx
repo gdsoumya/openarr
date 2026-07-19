@@ -37,22 +37,17 @@ export function SettingsScreen() {
         return (
           <Pressable key={srv.id} style={[styles.row, isActive && styles.rowActive]}
             onPress={() => navigation.navigate('ServerSetup', { serverId: srv.id })}>
-            <View style={styles.rowIcon}>
-              <MaterialCommunityIcons name="server" size={20} color={isActive ? colors.primary : colors.textMuted} />
-            </View>
+            <Pressable style={styles.rowIcon} hitSlop={8} onPress={() => { if (!isActive) { setActiveServer(srv.id); clearAdapters(); } }}>
+              <Ionicons name={isActive ? 'radio-button-on' : 'radio-button-off'} size={22} color={isActive ? colors.primary : colors.textMuted} />
+            </Pressable>
             <View style={styles.rowContent}>
               <View style={styles.rowHeader}>
                 <Text style={styles.rowTitle}>{srv.name}</Text>
                 {isActive && <View style={styles.activeBadge}><Text style={styles.activeBadgeText}>Active</Text></View>}
               </View>
               <Text style={styles.rowSub}>
-                {configuredCount}/{enabledCount} services · {isActive ? (isLocal ? 'Local' : 'Remote') : 'Tap to edit'}
+                {configuredCount}/{enabledCount} services{isActive ? ` · ${isLocal ? 'Local' : 'Remote'}` : ' · tap circle to activate'}
               </Text>
-              {!isActive && (
-                <Pressable style={styles.activateBtn} onPress={() => { setActiveServer(srv.id); clearAdapters(); }}>
-                  <Text style={styles.activateBtnText}>Set Active</Text>
-                </Pressable>
-              )}
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </Pressable>

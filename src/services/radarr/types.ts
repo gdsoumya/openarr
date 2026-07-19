@@ -10,7 +10,7 @@ export interface Movie {
 }
 
 export interface MovieFile {
-  id: number; movieId: number; path: string; size: number;
+  id: number; movieId: number; path: string; size: number; dateAdded?: string;
   quality: { quality: { name: string; resolution: number } };
   mediaInfo?: { videoCodec: string; audioCodec: string; audioChannels: number; resolution: string; videoDynamicRangeType: string };
   languages: Array<{ name: string }>;

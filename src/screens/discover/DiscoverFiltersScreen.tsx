@@ -154,14 +154,14 @@ export function DiscoverFiltersScreen() {
         <View style={styles.yearRow}>
           <Pressable style={styles.yearField} onPress={() => setYearPicker('from')}>
             <Text style={styles.yearFieldLabel}>From</Text>
-            <Text style={[styles.yearFieldValue, draft.yearFrom && { color: colors.primary }]}>
+            <Text style={[styles.yearFieldValue, draft.yearFrom ? { color: colors.primary } : null]}>
               {draft.yearFrom ?? 'Any'}
             </Text>
           </Pressable>
           <Text style={styles.yearDash}>—</Text>
           <Pressable style={styles.yearField} onPress={() => setYearPicker('to')}>
             <Text style={styles.yearFieldLabel}>To</Text>
-            <Text style={[styles.yearFieldValue, draft.yearTo && { color: colors.primary }]}>
+            <Text style={[styles.yearFieldValue, draft.yearTo ? { color: colors.primary } : null]}>
               {draft.yearTo ?? 'Any'}
             </Text>
           </Pressable>

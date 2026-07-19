@@ -41,8 +41,8 @@ export abstract class ArrServiceAdapter {
     return data;
   }
 
-  async getCalendar(start: string, end: string): Promise<CalendarItem[]> {
-    const { data } = await this.client.get('/api/v3/calendar', { params: { start, end } });
+  async getCalendar(start: string, end: string, extraParams?: Record<string, any>): Promise<CalendarItem[]> {
+    const { data } = await this.client.get('/api/v3/calendar', { params: { start, end, ...extraParams } });
     return data;
   }
 

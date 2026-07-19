@@ -9,7 +9,7 @@ export function DashboardButton() {
   const navigation = useNavigation<any>();
   return (
     <Pressable style={styles.btn} hitSlop={8} onPress={() => navigation.navigate('Dashboard')}>
-      <Ionicons name="home-outline" size={20} color={colors.textSecondary} />
+      <Ionicons name="speedometer-outline" size={20} color={colors.textSecondary} />
     </Pressable>
   );
 }
