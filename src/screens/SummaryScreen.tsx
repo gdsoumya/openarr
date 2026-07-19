@@ -61,6 +61,9 @@ export function SummaryScreen() {
   const [readyMovies, setReadyMovies] = useState<Movie[]>([]);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  // While a drag is actively scrolling the schedule card, the page stays put;
+  // releasing and dragging again at the card's edge scrolls the page instead
+  const [pageScrollEnabled, setPageScrollEnabled] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [showServerPicker, setShowServerPicker] = useState(false);
 
@@ -263,6 +266,7 @@ export function SummaryScreen() {
   return (
     <View style={styles.container}>
       <ScrollView
+        scrollEnabled={pageScrollEnabled}
         contentContainerStyle={{ paddingBottom: 20 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
@@ -407,7 +411,14 @@ export function SummaryScreen() {
         )}
         {groupedSchedule.length > 0 && (
           <View style={styles.scheduleCard}>
-            <ScrollView nestedScrollEnabled showsVerticalScrollIndicator contentContainerStyle={styles.scheduleScrollContent}>
+            <ScrollView
+              nestedScrollEnabled
+              showsVerticalScrollIndicator
+              contentContainerStyle={styles.scheduleScrollContent}
+              onScrollBeginDrag={() => setPageScrollEnabled(false)}
+              onScrollEndDrag={() => setPageScrollEnabled(true)}
+              onMomentumScrollEnd={() => setPageScrollEnabled(true)}
+            >
               {groupedSchedule.map((group) => (
                 <View key={group.label}>
                   <View style={styles.dayHeader}>
