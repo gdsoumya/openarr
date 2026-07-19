@@ -19,7 +19,7 @@
     "@shopify/flash-list": "^2.3.1",
     "axios": "^1.14.0",
     "expo": "~55.0.9",
-    "expo-application": "~55.0.17",
+    "expo-application": "~57.0.2",
     "expo-constants": "~55.0.9",
     "expo-dev-client": "~55.0.19",
     "expo-device": "~55.0.10",
