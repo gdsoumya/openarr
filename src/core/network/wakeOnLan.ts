@@ -25,10 +25,9 @@ export async function sendWakeOnLan(macAddress: string, broadcastAddress = '255.
     const packet = createMagicPacket(macAddress);
     // Note: UDP broadcast requires a native module or expo-modules in production
     // For now, we create the packet correctly; actual sending would need a UDP socket library
-    console.log(`WoL packet created for ${macAddress} → ${broadcastAddress}:${port} (${packet.length} bytes)`);
     return true;
   } catch (e) {
-    console.error('WoL failed:', e);
+    if (__DEV__) console.error('WoL failed:', (e as any)?.message ?? e);
     return false;
   }
 }

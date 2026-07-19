@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { logError } from '../../../core/utils/log';
 import { View, Text, ScrollView, StyleSheet, Pressable, Linking, RefreshControl } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
@@ -90,7 +91,7 @@ export function MovieDetailScreen() {
           setDownloadProgress(undefined);
         }
       } catch (e) {
-        console.error('MovieDetail fetch error:', e);
+        logError('MovieDetail fetch error:', e);
       }
     }
     fetchData();
@@ -147,7 +148,7 @@ export function MovieDetailScreen() {
             await adapter?.deleteMovie(movie.id, false, false);
             navigation.goBack();
           } catch (e) {
-            console.error('deleteMovie error:', e);
+            logError('deleteMovie error:', e);
           }
         },
       },
@@ -163,7 +164,7 @@ export function MovieDetailScreen() {
                   await adapter?.deleteMovie(movie.id, true, false);
                   navigation.goBack();
                 } catch (e) {
-                  console.error('deleteMovie error:', e);
+                  logError('deleteMovie error:', e);
                 }
               },
             },
@@ -175,7 +176,7 @@ export function MovieDetailScreen() {
                   await adapter?.deleteMovie(movie.id, true, true);
                   navigation.goBack();
                 } catch (e) {
-                  console.error('deleteMovie error:', e);
+                  logError('deleteMovie error:', e);
                 }
               },
             },

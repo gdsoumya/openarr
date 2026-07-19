@@ -129,6 +129,11 @@ export function ServiceConfigScreen() {
       />
 
       <Text style={styles.label}>Remote URL (optional — falls back to local)</Text>
+      {remoteUrl.trim().startsWith('http://') && (
+        <Text style={styles.httpWarning}>
+          ⚠ Unencrypted HTTP — your API key and passwords are visible to anyone on the network path. Use https:// for remote access.
+        </Text>
+      )}
       <TextInput
         style={styles.input}
         value={remoteUrl}
@@ -213,6 +218,7 @@ export function ServiceConfigScreen() {
 }
 
 const styles = StyleSheet.create({
+  httpWarning: { fontSize: 12, color: colors.warning, marginBottom: 6, lineHeight: 16 },
   container: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.xl, paddingBottom: 20 },
   headerIcon: { alignSelf: 'center', marginBottom: spacing.md, marginTop: spacing.md },

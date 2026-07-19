@@ -33,6 +33,9 @@ function loadIdMap(): Record<string, number> {
   return appStorage.getJSON<Record<string, number>>(ID_MAP_KEY) ?? {};
 }
 
+// Guards against an older setShows run publishing after a newer one
+let showsSeq = 0;
+
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   movies: new Map(),
   shows: new Map(),
@@ -50,6 +53,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   },
 
   setShows: async (series, progressByArrId) => {
+    const seq = ++showsSeq;
     const idMap = loadIdMap();
     let idMapDirty = false;
     const map = new Map<number, LibraryEntry>();
@@ -69,6 +73,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       }
     }
     // Publish what we have immediately; resolve stragglers via /find
+    if (seq !== showsSeq) return;
     set({ shows: map });
 
     const resolutions = await Promise.all(unresolved.map(async (s) => {
@@ -92,7 +97,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       });
     }
     if (idMapDirty) appStorage.setJSON(ID_MAP_KEY, idMap);
-    if (unresolved.length) set({ shows: new Map(map) });
+    if (unresolved.length && seq === showsSeq) set({ shows: new Map(map) });
   },
 
   getEntry: (type, tmdbId) => {

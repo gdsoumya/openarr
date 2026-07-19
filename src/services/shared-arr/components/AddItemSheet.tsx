@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { logError } from '../../../core/utils/log';
 import { View, Text, StyleSheet, Pressable, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -80,7 +81,7 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
         if (p.length > 0) setSelectedProfile(p[0].id);
         if (f.length > 0) setSelectedFolder(f[0].path);
       }
-    } catch (e) { console.error('Failed to load options:', e); }
+    } catch (e) { logError('Failed to load options:', e); }
   };
 
   const toggleSeason = (seasonNum: number) => {

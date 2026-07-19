@@ -89,13 +89,18 @@ export class EmbyAdapter {
     return data.Items ?? [];
   }
 
-  // Episodes use their series poster; api_key travels as a param since image
-  // requests bypass the axios client
+  // Episodes use their series poster. The token travels as a header (see
+  // imageHeaders) — an api_key query param would land in proxy logs and the
+  // image disk cache.
   posterUrl(item: EmbyMediaItem): string | undefined {
     const imageItemId = item.Type === 'Episode' && item.SeriesId ? item.SeriesId : item.Id;
     const tag = item.Type === 'Episode' && item.SeriesId ? item.SeriesPrimaryImageTag : item.ImageTags?.Primary;
     if (!tag) return undefined;
-    return `${this.baseUrl}/emby/Items/${imageItemId}/Images/Primary?maxHeight=450&tag=${tag}&api_key=${this.apiKey}`;
+    return `${this.baseUrl}/emby/Items/${imageItemId}/Images/Primary?maxHeight=450&tag=${tag}`;
+  }
+
+  imageHeaders(): Record<string, string> {
+    return { 'X-Emby-Token': this.apiKey };
   }
 
   async testConnection(): Promise<boolean> {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { logError } from '../../../core/utils/log';
 import { View, Text, StyleSheet, Pressable, ScrollView, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
@@ -47,7 +48,7 @@ export function SubsHomeScreen() {
       setProviders(Array.isArray(prov) ? prov : []);
       setProfiles(profs);
     } catch (e) {
-      console.error('Bazarr fetch error:', e);
+      logError('Bazarr fetch error:', e);
     }
     setLoading(false);
   }, [adapter]);

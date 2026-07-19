@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemedAlert } from '../core/components/ThemedAlert';
 import { useNavigation } from '@react-navigation/native';
 import { exportBackup } from '../core/storage/backup';
+import { updateConnectionState } from '../core/network/connectionManager';
 import { colors, spacing, radii, typography } from '../core/theme/tokens';
 import { useServerStore } from '../stores/serverStore';
 import { useConnectionStore } from '../stores/connectionStore';
@@ -18,6 +19,8 @@ export function SettingsScreen() {
   const activeServerId = useServerStore((s) => s.activeServerId);
   const setActiveServer = useServerStore((s) => s.setActiveServer);
   const isLocal = useConnectionStore((s) => s.isLocal);
+  const connectionMode = useConnectionStore((s) => s.mode);
+  const setConnectionMode = useConnectionStore((s) => s.setMode);
   const navigation = useNavigation<any>();
   const { alert } = useThemedAlert();
 
@@ -69,6 +72,28 @@ export function SettingsScreen() {
           <Text style={styles.rowSub}>{isLocal ? 'Using local server URLs' : 'Using remote server URLs'}</Text>
         </View>
         <View style={[styles.statusDot, { backgroundColor: isLocal ? colors.success : colors.info }]} />
+      </View>
+      <Text style={[styles.inputHint, { paddingHorizontal: spacing.xl }]}>Auto treats any Wi-Fi as local — override when on Wi-Fi away from home.</Text>
+      <View style={[styles.segmentRow, { marginTop: spacing.sm }]}>
+        {([
+          { id: 'auto', label: 'Auto' },
+          { id: 'local', label: 'Local' },
+          { id: 'remote', label: 'Remote' },
+        ] as const).map((opt) => {
+          const active = connectionMode === opt.id;
+          return (
+            <Pressable
+              key={opt.id}
+              style={[styles.segment, active && styles.segmentActive]}
+              accessibilityRole="button"
+              accessibilityLabel={`Connection mode ${opt.label}`}
+              accessibilityState={{ selected: active }}
+              onPress={() => { setConnectionMode(opt.id); updateConnectionState(); }}
+            >
+              <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{opt.label}</Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       {/* Appearance */}

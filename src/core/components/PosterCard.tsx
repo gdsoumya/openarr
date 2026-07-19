@@ -13,6 +13,7 @@ interface PosterCardProps {
   title: string;
   subtitle?: string;
   posterUrl?: string;
+  posterHeaders?: Record<string, string>;
   placeholderText?: string;
   size?: PosterSize;
   badge?: { label: string; variant: 'downloading' | 'completed' | 'missing' | 'monitored' | 'inLibrary' };
@@ -25,7 +26,7 @@ interface PosterCardProps {
 }
 
 export function PosterCard({
-  title, subtitle, posterUrl, placeholderText, size = 'lg',
+  title, subtitle, posterUrl, posterHeaders, placeholderText, size = 'lg',
   badge, progress, bottomLabel, rating, onPress, onLongPress, style,
 }: PosterCardProps) {
   const width = posterWidths[size];
@@ -38,7 +39,7 @@ export function PosterCard({
     >
       <View style={[styles.poster, { width, height }]}>
         {posterUrl ? (
-          <CachedImage uri={posterUrl} style={styles.posterImage as any} />
+          <CachedImage uri={posterUrl} headers={posterHeaders} style={styles.posterImage as any} />
         ) : (
           <View style={[styles.placeholder, { width, height }]}>
             <Text style={styles.placeholderText}>{placeholderText ?? title.slice(0, 3)}</Text>

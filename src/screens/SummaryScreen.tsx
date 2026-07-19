@@ -341,6 +341,7 @@ export function SummaryScreen() {
                 title={item.Type === 'Episode' ? item.SeriesName ?? item.Name : item.Name}
                 subtitle={episodeLabel(item)}
                 posterUrl={embyAdapter.posterUrl(item)}
+                posterHeaders={embyAdapter.imageHeaders()}
                 progress={(item.UserData?.PlayedPercentage ?? 0) / 100}
                 size="md"
                 onPress={() => openEmbyItem(item)}
@@ -357,6 +358,7 @@ export function SummaryScreen() {
                 title={item.SeriesName ?? item.Name}
                 subtitle={episodeLabel(item)}
                 posterUrl={embyAdapter.posterUrl(item)}
+                posterHeaders={embyAdapter.imageHeaders()}
                 size="md"
                 onPress={() => openEmbyItem(item)}
               />
@@ -372,6 +374,7 @@ export function SummaryScreen() {
                 title={item.Type === 'Episode' ? item.SeriesName ?? item.Name : item.Name}
                 subtitle={latestLabel(item)}
                 posterUrl={embyAdapter.posterUrl(item)}
+                posterHeaders={embyAdapter.imageHeaders()}
                 badge={{ label: 'New', variant: 'inLibrary' }}
                 size="md"
                 onPress={() => openEmbyItem(item)}
@@ -388,6 +391,7 @@ export function SummaryScreen() {
                 title={item.Name}
                 subtitle={item.ProductionYear ? String(item.ProductionYear) : undefined}
                 posterUrl={embyAdapter.posterUrl(item)}
+                posterHeaders={embyAdapter.imageHeaders()}
                 badge={{ label: 'New', variant: 'inLibrary' }}
                 size="md"
                 onPress={() => openEmbyItem(item)}

@@ -4,6 +4,9 @@ import { useServerStore } from '../../stores/serverStore';
 import { clearAdapters } from '../../services/adapterFactory';
 
 export async function detectConnectionType(): Promise<boolean> {
+  const mode = useConnectionStore.getState().mode;
+  if (mode === 'local') return true;
+  if (mode === 'remote') return false;
   try {
     const networkState = await Network.getNetworkStateAsync();
     if (!networkState.isConnected) return false;

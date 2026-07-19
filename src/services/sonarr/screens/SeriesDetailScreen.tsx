@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { logError } from '../../../core/utils/log';
 import { View, Text, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
@@ -103,7 +104,7 @@ export function SeriesDetailScreen() {
         }
         setEpisodeQueueMap(qm);
       } catch (e) {
-        console.error('SeriesDetail fetch error:', e);
+        logError('SeriesDetail fetch error:', e);
       }
       setLoadingEpisodes(false);
     }
@@ -278,7 +279,7 @@ export function SeriesDetailScreen() {
                       if (fileIds.length > 0) await adapter?.bulkDeleteEpisodeFiles(fileIds);
                       if (episodeIds.length > 0) await adapter?.bulkSetEpisodesMonitored(episodeIds, false);
                     } catch (e) {
-                      console.error('Season cleanup error:', e);
+                      logError('Season cleanup error:', e);
                     }
                   },
                 },
@@ -313,7 +314,7 @@ export function SeriesDetailScreen() {
             await adapter?.deleteSeries(series.id, false);
             navigation.goBack();
           } catch (e) {
-            console.error('deleteSeries error:', e);
+            logError('deleteSeries error:', e);
           }
         },
       },
@@ -325,7 +326,7 @@ export function SeriesDetailScreen() {
             await adapter?.deleteSeries(series.id, true);
             navigation.goBack();
           } catch (e) {
-            console.error('deleteSeries error:', e);
+            logError('deleteSeries error:', e);
           }
         },
       },

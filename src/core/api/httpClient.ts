@@ -23,10 +23,9 @@ export function createServiceClient(config: ServiceConfig, isLocal: boolean): Ax
   if (config.apiKey) {
     client.interceptors.request.use((req: InternalAxiosRequestConfig) => {
       if (config.serviceId === 'bazarr') {
-        // Bazarr: use query param (header can be blocked by reverse proxies)
-        req.params = { ...req.params, apikey: config.apiKey };
-        req.headers.set('X-API-KEY', config.apiKey);
+        // Header-only: an apikey query param would leak into proxy access logs
         // Do NOT add trailing slash — it causes SPA catch-all to return HTML
+        req.headers.set('X-API-KEY', config.apiKey);
       } else if (config.serviceId === 'portainer') {
         // Portainer access tokens require this exact header casing
         req.headers.set('X-API-Key', config.apiKey);
