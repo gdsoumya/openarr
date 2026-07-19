@@ -16,6 +16,7 @@ interface PosterCardProps {
   posterHeaders?: Record<string, string>;
   placeholderText?: string;
   size?: PosterSize;
+  width?: number;
   badge?: { label: string; variant: 'downloading' | 'completed' | 'missing' | 'monitored' | 'inLibrary' };
   progress?: number;
   bottomLabel?: string;
@@ -27,9 +28,9 @@ interface PosterCardProps {
 
 export function PosterCard({
   title, subtitle, posterUrl, posterHeaders, placeholderText, size = 'lg',
-  badge, progress, bottomLabel, rating, onPress, onLongPress, style,
+  width: widthOverride, badge, progress, bottomLabel, rating, onPress, onLongPress, style,
 }: PosterCardProps) {
-  const width = posterWidths[size];
+  const width = widthOverride ?? posterWidths[size];
   const height = width * 1.5;
 
   return (

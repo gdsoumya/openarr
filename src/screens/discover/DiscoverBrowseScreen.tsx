@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../core/theme/tokens';
@@ -134,6 +134,9 @@ export function DiscoverBrowseScreen() {
     }
   }, [feed, mediaType, filters]);
 
+  // Fill each FlashList column evenly so the 3-up grid is centered
+  const gridPosterW = Math.floor((Dimensions.get('window').width - spacing.xl * 2) / 3) - spacing.sm;
+
   const resetRequestId = useRef(0);
   // When rating filters drop every loaded title, keep paginating (bounded)
   // so qualifying titles from later pages can still surface
@@ -224,6 +227,7 @@ export function DiscoverBrowseScreen() {
               posterUrl={posterUrl(item.poster_path)}
               rating={item.vote_average || undefined}
               size="sm"
+              width={gridPosterW}
               badge={getBadge(mediaType, item.id)}
               onPress={() => navigation.push('DiscoveryDetail', { item, type: mediaType })}
               style={styles.gridItem}

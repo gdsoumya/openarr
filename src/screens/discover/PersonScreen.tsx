@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator, Dimensions } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../core/theme/tokens';
 import { CachedImage } from '../../core/components/CachedImage';
@@ -10,6 +10,7 @@ import { tmdb } from '../../services/tmdb/instance';
 import { posterUrl, profileUrl, TMDBPerson, TMDBPersonCredit } from '../../services/tmdb/types';
 
 export function PersonScreen() {
+  const gridPosterW = Math.floor((Dimensions.get('window').width - spacing.xl * 2) / 3) - spacing.sm;
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { personId } = route.params as { personId: number };
@@ -90,6 +91,7 @@ export function PersonScreen() {
             posterUrl={posterUrl(c.poster_path)}
             rating={c.vote_average || undefined}
             size="sm"
+            width={gridPosterW}
             badge={getBadge(c.media_type, c.id)}
             onPress={() => navigation.push('DiscoveryDetail', { item: { ...c, poster_path: c.poster_path }, type: c.media_type })}
             style={styles.gridItem}
