@@ -52,6 +52,8 @@ export function SummaryScreen() {
   const serviceStatuses = useStatusStore((s) => s.statuses);
   const refreshStatuses = useStatusStore((s) => s.refresh);
   const [resumeItems, setResumeItems] = useState<EmbyMediaItem[]>([]);
+  const [latestShows, setLatestShows] = useState<EmbyMediaItem[]>([]);
+  const [latestMovies, setLatestMovies] = useState<EmbyMediaItem[]>([]);
   const [nextUp, setNextUp] = useState<EmbyMediaItem[]>([]);
   const [playedEpisodeKeys, setPlayedEpisodeKeys] = useState<Set<string>>(new Set());
   const [playedMovieTmdbIds, setPlayedMovieTmdbIds] = useState<Set<number>>(new Set());
@@ -84,6 +86,7 @@ export function SummaryScreen() {
     // so switching servers never shows the previous server's data
     if (!embyConfig) {
       setResumeItems([]); setNextUp([]);
+      setLatestShows([]); setLatestMovies([]);
       setPlayedEpisodeKeys(new Set()); setPlayedMovieTmdbIds(new Set());
     }
     if (!sonarrConfig) {
@@ -99,13 +102,17 @@ export function SummaryScreen() {
       (async () => {
         if (!embyConfig) return;
         const emby = getEmbyAdapter(embyConfig, isLocal);
-        const [resume, next, played] = await Promise.all([
+        const [resume, next, freshShows, freshMovies, played] = await Promise.all([
           emby.getResumeItems().catch(() => []),
           emby.getNextUp().catch(() => []),
+          emby.getLatestUnplayed('Episode').catch(() => []),
+          emby.getLatestUnplayed('Movie').catch(() => []),
           emby.getRecentlyPlayed(100).catch(() => []),
         ]);
         setResumeItems(resume);
         setNextUp(next);
+        setLatestShows(freshShows);
+        setLatestMovies(freshMovies);
         // Watched-state cross-reference: episodes keyed by series|season|episode, movies by tmdb id
         const epKeys = new Set<string>();
         const movieIds = new Set<number>();
@@ -242,6 +249,12 @@ export function SummaryScreen() {
     { label: 'Manage Servers', icon: '⚙️', onPress: () => navigation.navigate('Settings') },
   ];
 
+  const latestLabel = (item: EmbyMediaItem) => {
+    const unplayed = item.UserData?.UnplayedItemCount;
+    if (item.Type === 'Series' && unplayed) return `${unplayed} new episode${unplayed > 1 ? 's' : ''}`;
+    return episodeLabel(item);
+  };
+
   const episodeLabel = (item: EmbyMediaItem) =>
     item.Type === 'Episode' && item.ParentIndexNumber != null && item.IndexNumber != null
       ? `S${String(item.ParentIndexNumber).padStart(2, '0')}E${String(item.IndexNumber).padStart(2, '0')}`
@@ -324,7 +337,39 @@ export function SummaryScreen() {
           </Carousel>
         )}
 
-        {(unwatchedEpisodes.length > 0 || unwatchedMovies.length > 0) && (
+        {latestShows.length > 0 && embyAdapter && (
+          <Carousel title="Latest TV Shows" accent={colors.sonarr} status="loaded">
+            {latestShows.map((item) => (
+              <PosterCard
+                key={item.Id}
+                title={item.Type === 'Episode' ? item.SeriesName ?? item.Name : item.Name}
+                subtitle={latestLabel(item)}
+                posterUrl={embyAdapter.posterUrl(item)}
+                badge={{ label: 'New', variant: 'inLibrary' }}
+                size="md"
+                onPress={() => openEmbyItem(item)}
+              />
+            ))}
+          </Carousel>
+        )}
+
+        {latestMovies.length > 0 && embyAdapter && (
+          <Carousel title="Latest Movies" accent={colors.radarr} status="loaded">
+            {latestMovies.map((item) => (
+              <PosterCard
+                key={item.Id}
+                title={item.Name}
+                subtitle={item.ProductionYear ? String(item.ProductionYear) : undefined}
+                posterUrl={embyAdapter.posterUrl(item)}
+                badge={{ label: 'New', variant: 'inLibrary' }}
+                size="md"
+                onPress={() => openEmbyItem(item)}
+              />
+            ))}
+          </Carousel>
+        )}
+
+        {!embyAdapter && (unwatchedEpisodes.length > 0 || unwatchedMovies.length > 0) && (
           <Carousel title="New & Ready to Watch" status="loaded">
             {unwatchedEpisodes.map((e: any) => (
               <PosterCard
@@ -352,28 +397,44 @@ export function SummaryScreen() {
         )}
 
         {(configOf('sonarr') || configOf('radarr')) && (
-          <Text style={styles.scheduleTitle}>Coming Up</Text>
+          <View style={styles.scheduleHeader}>
+            <View style={styles.scheduleAccent} />
+            <Text style={styles.scheduleTitle}>Coming Up</Text>
+          </View>
         )}
         {(configOf('sonarr') || configOf('radarr')) && groupedSchedule.length === 0 && loaded && (
           <Text style={styles.scheduleEmpty}>Nothing scheduled in the next two weeks.</Text>
         )}
-        {groupedSchedule.map((group) => (
-          <View key={group.label}>
-            <Text style={styles.dayLabel}>{group.label}</Text>
-            {group.entries.map((entry) => (
-              <Pressable key={entry.key} style={styles.scheduleRow} onPress={entry.onPress} disabled={!entry.onPress}>
-                <View style={[styles.scheduleDot, { backgroundColor: entry.hasFile ? colors.success : colors.info }]} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.scheduleItemTitle} numberOfLines={1}>{entry.title}</Text>
-                  <Text style={styles.scheduleItemSub} numberOfLines={1}>{entry.subtitle}</Text>
+        {groupedSchedule.length > 0 && (
+          <View style={styles.scheduleCard}>
+            <ScrollView nestedScrollEnabled showsVerticalScrollIndicator contentContainerStyle={styles.scheduleScrollContent}>
+              {groupedSchedule.map((group) => (
+                <View key={group.label}>
+                  <View style={styles.dayHeader}>
+                    <Text style={styles.dayLabel}>{group.label}</Text>
+                    <View style={styles.dayLine} />
+                  </View>
+                  {group.entries.map((entry) => (
+                    <Pressable
+                      key={entry.key}
+                      style={({ pressed }) => [styles.scheduleRow, pressed && entry.onPress ? { opacity: 0.6 } : null]}
+                      onPress={entry.onPress} disabled={!entry.onPress}
+                    >
+                      <Text style={styles.scheduleTime}>
+                        {entry.date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                      <View style={[styles.scheduleDot, { backgroundColor: entry.hasFile ? colors.success : colors.info }]} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.scheduleItemTitle} numberOfLines={1}>{entry.title}</Text>
+                        <Text style={styles.scheduleItemSub} numberOfLines={1}>{entry.subtitle}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
                 </View>
-                <Text style={styles.scheduleTime}>
-                  {entry.date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              </Pressable>
-            ))}
+              ))}
+            </ScrollView>
           </View>
-        ))}
+        )}
       </ScrollView>
 
       <ActionSheet
@@ -401,14 +462,21 @@ const styles = StyleSheet.create({
   emptyServerText: { ...typography.body, color: colors.textMuted, marginBottom: spacing.lg },
   setupBtn: { paddingVertical: 10, paddingHorizontal: 24, borderRadius: radii.md, backgroundColor: colors.primary },
   setupBtnText: { ...typography.bodyBold, color: '#0f1023' },
-  scheduleTitle: { ...typography.h3, color: colors.textPrimary, paddingHorizontal: spacing.xl, marginTop: spacing.md, marginBottom: spacing.sm },
+  scheduleHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, marginTop: spacing.md, marginBottom: spacing.sm },
+  scheduleAccent: { width: 3, height: 16, borderRadius: 2, backgroundColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.8, shadowRadius: 4, shadowOffset: { width: 0, height: 0 } },
+  scheduleTitle: { ...typography.h3, color: colors.textPrimary },
   scheduleEmpty: { ...typography.caption, color: colors.textMuted, paddingHorizontal: spacing.xl },
-  dayLabel: { ...typography.micro, color: colors.primary, textTransform: 'uppercase', letterSpacing: 1, paddingHorizontal: spacing.xl, marginTop: spacing.md, marginBottom: spacing.xs },
-  scheduleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginHorizontal: spacing.xl, marginBottom: spacing.xs, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.md, padding: spacing.md },
+  // Agenda card: fixed height, scrolls internally so the page stays short
+  scheduleCard: { marginHorizontal: spacing.xl, maxHeight: 340, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.xl, overflow: 'hidden' },
+  scheduleScrollContent: { padding: spacing.lg, paddingTop: spacing.sm },
+  dayHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.md, marginBottom: spacing.xs },
+  dayLabel: { ...typography.micro, color: colors.primary, textTransform: 'uppercase', letterSpacing: 1 },
+  dayLine: { flex: 1, height: 1, backgroundColor: colors.divider },
+  scheduleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
   scheduleDot: { width: 8, height: 8, borderRadius: 4 },
   scheduleItemTitle: { ...typography.caption, fontWeight: '600', color: colors.textPrimary },
   scheduleItemSub: { ...typography.micro, color: colors.textMuted, marginTop: 2 },
-  scheduleTime: { ...typography.micro, color: colors.textMuted },
+  scheduleTime: { ...typography.micro, color: colors.textMuted, width: 42, fontVariant: ['tabular-nums'] },
   serviceNote: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginHorizontal: spacing.xl, marginBottom: spacing.md, padding: spacing.md, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.md },
   serviceNoteText: { ...typography.micro, color: colors.textMuted, flex: 1 },
 });

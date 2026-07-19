@@ -16,7 +16,7 @@ export interface EmbyMediaItem {
   ImageTags?: { Primary?: string };
   SeriesPrimaryImageTag?: string;
   ProductionYear?: number;
-  UserData?: { PlayedPercentage?: number; Played?: boolean };
+  UserData?: { PlayedPercentage?: number; Played?: boolean; UnplayedItemCount?: number };
   ProviderIds?: Record<string, string>;
 }
 
@@ -60,6 +60,20 @@ export class EmbyAdapter {
     if (!userId) return [];
     const { data } = await this.client.get('/Shows/NextUp', { params: { UserId: userId, Limit: limit } });
     return data.Items ?? [];
+  }
+
+  // Emby home-style "Latest" rows: newest unplayed items, episodes grouped
+  // under their series. Response is a bare array (no Items wrapper).
+  async getLatestUnplayed(type: 'Episode' | 'Movie', limit = 12): Promise<EmbyMediaItem[]> {
+    const userId = await this.getUserId();
+    if (!userId) return [];
+    const { data } = await this.client.get(`/Users/${userId}/Items/Latest`, {
+      params: {
+        IncludeItemTypes: type, Limit: limit, IsPlayed: false,
+        GroupItems: true, Fields: 'ProviderIds',
+      },
+    });
+    return data ?? [];
   }
 
   // Recently watched items — used to filter "ready to watch" lists elsewhere
