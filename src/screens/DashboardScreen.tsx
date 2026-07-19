@@ -5,7 +5,6 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography, ServiceId } from '../core/theme/tokens';
 import { ServiceCard } from '../core/components/ServiceCard';
-import { SpeedBanner } from '../core/components/SpeedBanner';
 import { useServerStore } from '../stores/serverStore';
 import { useConnectionStore } from '../stores/connectionStore';
 import { ServiceStatus } from '../core/types/services';
@@ -109,21 +108,32 @@ export function DashboardScreen() {
           <Ionicons name="settings-outline" size={20} color={colors.textMuted} />
         </Pressable>
       </View>
-      <Pressable style={styles.serverPill} onPress={() => navigation.navigate('Settings')}>
-        <View style={styles.serverDot} />
-        <Text style={styles.serverText}>{server.name} · {isLocal ? 'Local' : 'Remote'}</Text>
-        <Ionicons name="swap-horizontal" size={13} color={colors.primary} />
-        <Text style={styles.serverChange}>Change</Text>
+      <Pressable style={styles.serverCard} onPress={() => navigation.navigate('Settings')}>
+        <View style={styles.serverIcon}>
+          <Ionicons name="server-outline" size={22} color={colors.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.serverName}>{server.name}</Text>
+          <Text style={styles.serverMeta}>
+            {isLocal ? 'Local network' : 'Remote access'} · {enabledServices.length} services enabled
+          </Text>
+        </View>
+        <View style={styles.serverChangeBtn}>
+          <Ionicons name="swap-horizontal" size={14} color={colors.primary} />
+          <Text style={styles.serverChangeText}>Change</Text>
+        </View>
       </Pressable>
-      <SpeedBanner downloadSpeed={formatSpeed(downloadSpeed)} uploadSpeed={formatSpeed(uploadSpeed)}
-        thirdStat={{ value: freeSpace > 0 ? formatBytes(freeSpace) : '—', label: 'Free Space' }} />
       {enabledServices.map((svc) => {
         const status = statuses[svc.serviceId];
+        const isTx = svc.serviceId === 'transmission';
+        const txConnected = isTx && status?.connection.status === 'connected';
         return (
           <ServiceCard key={svc.serviceId} serviceId={svc.serviceId}
-            summary={status?.summary ?? 'Connecting...'}
+            summary={txConnected
+              ? `↓ ${formatSpeed(downloadSpeed)} · ↑ ${formatSpeed(uploadSpeed)}`
+              : status?.summary ?? 'Connecting...'}
             connected={status?.connection.status === 'connected'}
-            metric={status?.metric}
+            metric={txConnected && freeSpace > 0 ? { value: formatBytes(freeSpace), label: 'free' } : status?.metric}
             onPress={() => {
               if (svc.serviceId === 'emby') { Linking.openURL(isLocal ? svc.localUrl : svc.remoteUrl); return; }
               const tab = tabMap[svc.serviceId];
@@ -146,10 +156,12 @@ const styles = StyleSheet.create({
   title: { ...typography.h1, color: colors.textPrimary },
   headerBtn: { width: 36, height: 36, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  serverPill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginHorizontal: spacing.xl, marginBottom: spacing.lg, backgroundColor: 'rgba(100, 255, 218, 0.08)', borderWidth: 1, borderColor: 'rgba(100, 255, 218, 0.15)', paddingVertical: 4, paddingHorizontal: 12, borderRadius: 20 },
-  serverDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary },
-  serverText: { ...typography.micro, color: colors.primary, fontWeight: '500' },
-  serverChange: { ...typography.micro, color: colors.primary, fontWeight: '700', textDecorationLine: 'underline' },
+  serverCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginHorizontal: spacing.xl, marginBottom: spacing.lg, backgroundColor: 'rgba(100, 255, 218, 0.06)', borderWidth: 1, borderColor: 'rgba(100, 255, 218, 0.15)', borderRadius: 14, padding: spacing.lg },
+  serverIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(100, 255, 218, 0.1)', justifyContent: 'center', alignItems: 'center' },
+  serverName: { ...typography.h3, color: colors.textPrimary },
+  serverMeta: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  serverChangeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder },
+  serverChangeText: { ...typography.micro, color: colors.primary, fontWeight: '700' },
   empty: { flex: 1, backgroundColor: colors.surfaceBase, justifyContent: 'center', alignItems: 'center', padding: spacing.xxxl },
   emptyIcon: { fontSize: 48, marginBottom: spacing.lg },
   emptyTitle: { ...typography.h2, color: colors.textPrimary, marginBottom: spacing.sm },
