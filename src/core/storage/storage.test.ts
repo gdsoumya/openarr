@@ -2,13 +2,15 @@ import { AppStorage } from './storage';
 
 jest.mock('react-native-mmkv', () => ({
   createMMKV: jest.fn().mockImplementation(() => {
-    const store = new Map<string, string>();
+    const store = new Map<string, any>();
     return {
-      set: (key: string, value: string) => store.set(key, value),
+      set: (key: string, value: string | boolean) => store.set(key, value),
       getString: (key: string) => store.get(key),
+      getBoolean: (key: string) => store.get(key),
       delete: (key: string) => store.delete(key),
       contains: (key: string) => store.has(key),
       getAllKeys: () => [...store.keys()],
+      recrypt: () => {},
     };
   }),
 }));

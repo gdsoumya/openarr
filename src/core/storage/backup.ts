@@ -19,17 +19,23 @@ export function createBackup(): BackupData {
   };
 }
 
+// The export contains every API key and password in plaintext — write it to
+// the cache dir and remove it once the share sheet is done so no copy lingers
 export async function exportBackup(): Promise<void> {
   const data = createBackup();
   const json = JSON.stringify(data, null, 2);
-  const path = `${FileSystem.documentDirectory}openarr-backup.json`;
+  const path = `${FileSystem.cacheDirectory}openarr-backup.json`;
   await FileSystem.writeAsStringAsync(path, json);
 
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(path, {
-      mimeType: 'application/json',
-      dialogTitle: 'Export OpenArr Backup',
-    });
+  try {
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(path, {
+        mimeType: 'application/json',
+        dialogTitle: 'Export OpenArr Backup',
+      });
+    }
+  } finally {
+    await FileSystem.deleteAsync(path, { idempotent: true }).catch(() => {});
   }
 }
 

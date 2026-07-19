@@ -105,7 +105,6 @@ export function SettingsScreen() {
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
-          secureTextEntry
         />
       </View>
       <View style={styles.inputRow}>
@@ -120,7 +119,6 @@ export function SettingsScreen() {
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
-          secureTextEntry
         />
       </View>
       <View style={styles.inputRow}>
@@ -142,7 +140,7 @@ export function SettingsScreen() {
       {/* Data */}
       <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Data</Text>
       <Pressable style={styles.row} onPress={() => {
-        alert('Backup & Restore', 'Export your server configurations to a file, or restore from a previous backup.', [
+        alert('Backup & Restore', 'The export contains your API keys and passwords in plaintext — store it somewhere safe.', [
           { text: 'Export Backup', onPress: () => exportBackup() },
           { text: 'Cancel', style: 'cancel' },
         ]);
@@ -232,8 +230,6 @@ const styles = StyleSheet.create({
   rowSub: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   activeBadge: { backgroundColor: colors.primaryMuted, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, borderWidth: 1, borderColor: colors.primaryBorder },
   activeBadgeText: { ...typography.badge, color: colors.primary },
-  activateBtn: { marginTop: spacing.sm, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: colors.divider },
-  activateBtnText: { ...typography.micro, color: colors.textMuted },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   addButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder, borderRadius: radii.lg, padding: spacing.lg, marginTop: spacing.sm },
   addButtonText: { ...typography.bodyBold, color: colors.primary },

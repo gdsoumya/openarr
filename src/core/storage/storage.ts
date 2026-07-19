@@ -1,6 +1,16 @@
 import { createMMKV } from 'react-native-mmkv';
 import type { MMKV } from 'react-native-mmkv';
+import * as Application from 'expo-application';
 import { ServerConfig } from '../types/services';
+
+const LEGACY_KEY = 'openarr-enc-key';
+
+// Per-device encryption key instead of a constant committed in source; the
+// meta store records whether the credential store has been recrypted yet.
+function deviceKey(): string {
+  const androidId = Application.getAndroidId?.() ?? '';
+  return androidId ? `openarr-${androidId}` : LEGACY_KEY;
+}
 
 const KEYS = {
   SERVERS: 'openarr.servers',
@@ -11,7 +21,19 @@ export class AppStorage {
   private mmkv: MMKV;
 
   constructor() {
-    this.mmkv = createMMKV({ id: 'openarr-storage', encryptionKey: 'openarr-enc-key' });
+    const meta = createMMKV({ id: 'openarr-meta' });
+    const key = deviceKey();
+    if (meta.getBoolean('encMigrated') && key !== LEGACY_KEY) {
+      this.mmkv = createMMKV({ id: 'openarr-storage', encryptionKey: key });
+    } else {
+      this.mmkv = createMMKV({ id: 'openarr-storage', encryptionKey: LEGACY_KEY });
+      if (key !== LEGACY_KEY) {
+        try {
+          this.mmkv.recrypt(key);
+          meta.set('encMigrated', true);
+        } catch {}
+      }
+    }
   }
 
   getServers(): ServerConfig[] {
