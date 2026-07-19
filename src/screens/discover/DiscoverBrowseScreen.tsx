@@ -65,7 +65,7 @@ export function DiscoverBrowseScreen() {
       }
       pending.forEach((i) => inFlightIds.current.delete(i.id));
       if (cancelled || collected.size === 0) return;
-      // One state publish per run — a single re-sort instead of one per chunk
+      // One state publish per run, a single re-sort instead of one per chunk
       setExternalRatings((prev) => {
         const next = new Map(prev);
         collected.forEach((ratings, id) => next.set(id, ratings));

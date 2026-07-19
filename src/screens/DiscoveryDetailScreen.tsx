@@ -45,7 +45,7 @@ export function DiscoveryDetailScreen() {
   const [trailer, setTrailer] = useState<TMDBVideo | null>(null);
   const [collection, setCollection] = useState<TMDBCollection | null>(null);
 
-  // Resolve TMDB ID — different sources provide IDs differently:
+  // Resolve TMDB ID, different sources provide IDs differently:
   // - TMDB search results: item.id IS the TMDB ID
   // - Radarr lookup: item.tmdbId IS the TMDB ID
   // - Sonarr lookup: item.tvdbId is TVDB, need to search TMDB by title
@@ -61,18 +61,18 @@ export function DiscoveryDetailScreen() {
     } else {
       // For TV: TMDB items have id (TMDB ID), Sonarr items have tvdbId (NOT TMDB ID)
       if (item.poster_path) {
-        // This is a TMDB item — id is TMDB ID
+        // This is a TMDB item, id is TMDB ID
         resolvedTmdbId = item.id;
       } else if (item.imdbId) {
-        // Sonarr item with IMDB ID — exact lookup via TMDB /find
+        // Sonarr item with IMDB ID, exact lookup via TMDB /find
         const found = await tmdb.findByExternalId(item.imdbId, 'imdb_id').catch(() => ({ tv_results: [], movie_results: [] }));
         resolvedTmdbId = found.tv_results[0]?.id;
       } else if (item.tvdbId) {
-        // Sonarr item with TVDB ID — exact lookup via TMDB /find
+        // Sonarr item with TVDB ID, exact lookup via TMDB /find
         const found = await tmdb.findByExternalId(String(item.tvdbId), 'tvdb_id').catch(() => ({ tv_results: [], movie_results: [] }));
         resolvedTmdbId = found.tv_results[0]?.id;
       }
-      // No fuzzy search fallback — if we can't get an exact match, render with Sonarr data only
+      // No fuzzy search fallback, if we can't get an exact match, render with Sonarr data only
     }
 
     if (!cancelled.value) setResolvedId(resolvedTmdbId);
@@ -158,7 +158,7 @@ export function DiscoveryDetailScreen() {
   return (
     <>
       <ScrollView style={styles.container}>
-        {/* Hero — backdrop or solid fallback */}
+        {/* Hero, backdrop or solid fallback */}
         <View style={styles.heroContainer}>
           {backdrop ? (
             <CachedImage uri={backdrop} style={styles.backdrop as any} />

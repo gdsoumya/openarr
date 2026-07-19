@@ -51,7 +51,7 @@ export class GluetunAdapter {
           summary: 'VPN stopped',
         };
       }
-      // Exit IP changes only on reconnect — cache it briefly to halve status calls
+      // Exit IP changes only on reconnect, cache it briefly to halve status calls
       let ip = this.ipCache && Date.now() - this.ipCache.at < 60000 ? this.ipCache.ip : null;
       if (!ip) {
         ip = await this.getPublicIp().catch(() => null);
@@ -89,7 +89,7 @@ export class GluetunAdapter {
   async getUpdaterStatus(): Promise<UpdaterStatus> { const { data } = await this.client.get(`${await this.api()}/updater/status`); return data; }
   async triggerUpdater(): Promise<void> { await this.client.put(`${await this.api()}/updater/status`, { status: 'running' }); }
 
-  // Saving the selection alone does not re-dial — gluetun keeps the current
+  // Saving the selection alone does not re-dial, gluetun keeps the current
   // tunnel until the VPN loop restarts, so cycle it after the settings PUT.
   // Callers should poll getPublicIp() afterwards (~2 min typical to settle).
   async changeLocation(countries: string[], cities: string[]): Promise<void> {

@@ -27,7 +27,7 @@ export function ServerSetupScreen() {
   const [homeSSIDs, setHomeSSIDs] = useState(existingServer?.homeSSIDs.join(', ') ?? '');
 
   // Servers saved by older app versions may lack entries for newly added
-  // services — append disabled defaults without touching existing entries.
+  // services, append disabled defaults without touching existing entries.
   const withAllServices = (svcs: SvcConfig[]): SvcConfig[] => {
     const missing = (Object.keys(serviceConfig) as ServiceId[])
       .filter((id) => !svcs.some((s) => s.serviceId === id))
@@ -58,7 +58,7 @@ export function ServerSetupScreen() {
       updateServer(server);
     } else {
       addServer(server);
-      // Only claim the active slot when no working server exists — otherwise
+      // Only claim the active slot when no working server exists, otherwise
       // exploring "Add Server" would silently switch the whole app over
       if (!useServerStore.getState().getActiveServer()) setActiveServer(serverId);
     }

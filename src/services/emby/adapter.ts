@@ -76,7 +76,7 @@ export class EmbyAdapter {
     return data ?? [];
   }
 
-  // Recently watched items — used to filter "ready to watch" lists elsewhere
+  // Recently watched items, used to filter "ready to watch" lists elsewhere
   async getRecentlyPlayed(limit = 300): Promise<EmbyMediaItem[]> {
     const userId = await this.getUserId();
     if (!userId) return [];
@@ -90,7 +90,7 @@ export class EmbyAdapter {
   }
 
   // Episodes use their series poster. The token travels as a header (see
-  // imageHeaders) — an api_key query param would land in proxy logs and the
+  // imageHeaders), an api_key query param would land in proxy logs and the
   // image disk cache.
   posterUrl(item: EmbyMediaItem): string | undefined {
     const imageItemId = item.Type === 'Episode' && item.SeriesId ? item.SeriesId : item.Id;

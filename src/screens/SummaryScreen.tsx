@@ -70,7 +70,7 @@ export function SummaryScreen() {
   const enabledServices = useMemo(() => server?.services.filter((s) => s.enabled) ?? [], [server]);
   const configOf = useCallback((id: ServiceId) => enabledServices.find((s) => s.serviceId === id), [enabledServices]);
 
-  // Cumulative health — shared TTL'd store, coalesced with the Dashboard's poll
+  // Cumulative health, shared TTL'd store, coalesced with the Dashboard's poll
   const fetchHealth = useCallback(async () => {
     if (!server) return;
     await refreshStatuses(enabledServices, isLocal);
@@ -198,7 +198,7 @@ export function SummaryScreen() {
 
   usePolling(fetchContent, 900000, !!server);
 
-  // Immediate reload when the active server changes — don't wait out the timer.
+  // Immediate reload when the active server changes, don't wait out the timer.
   // Skips the mount run since usePolling already fetches immediately.
   const prevServerId = React.useRef(server?.id);
   React.useEffect(() => {
@@ -243,7 +243,7 @@ export function SummaryScreen() {
   const totalChecked = Object.keys(serviceStatuses).length;
   const allUp = totalChecked > 0 && downServices.length === 0;
 
-  // If the schedule card disappears mid-drag its end callbacks never fire —
+  // If the schedule card disappears mid-drag its end callbacks never fire , 
   // never leave the page lock stuck
   React.useEffect(() => {
     if (schedule.length === 0) setPageScrollEnabled(true);
@@ -322,14 +322,14 @@ export function SummaryScreen() {
         {server && !configOf('emby') && (
           <View style={styles.serviceNote}>
             <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.serviceNoteText}>Emby not connected — Continue Watching and watched-state filtering unavailable.</Text>
+            <Text style={styles.serviceNoteText}>Emby not connected, Continue Watching and watched-state filtering unavailable.</Text>
           </View>
         )}
 
         {server && !configOf('sonarr') && !configOf('radarr') && (
           <View style={styles.serviceNote}>
             <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.serviceNoteText}>Sonarr/Radarr not connected — new releases and schedule unavailable.</Text>
+            <Text style={styles.serviceNoteText}>Sonarr/Radarr not connected, new releases and schedule unavailable.</Text>
           </View>
         )}
 

@@ -12,7 +12,7 @@ export interface PublicIp {
 
 export interface PortForward { port: number; }
 
-// Settings must round-trip whole on PUT — keep unknown fields via index signatures
+// Settings must round-trip whole on PUT, keep unknown fields via index signatures
 export interface ServerSelection {
   countries?: string[] | null;
   regions?: string[] | null;

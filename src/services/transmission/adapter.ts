@@ -3,7 +3,7 @@ import { createTransmissionClient } from '../../core/api/httpClient';
 import { ServiceConfig, ServiceStatus } from '../../core/types/services';
 import { Torrent, SessionStats, TransmissionSession } from './types';
 
-// Slim set for the list view — files/fileStats/magnetLink only load in detail
+// Slim set for the list view, files/fileStats/magnetLink only load in detail
 const LIST_FIELDS = [
   'id', 'name', 'status', 'percentDone', 'rateDownload', 'rateUpload', 'eta',
   'totalSize', 'uploadRatio', 'peersConnected', 'labels', 'queuePosition',

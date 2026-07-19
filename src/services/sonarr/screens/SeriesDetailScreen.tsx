@@ -65,7 +65,7 @@ export function SeriesDetailScreen() {
   useEffect(() => {
     if (series) {
       setRatingsLoading(true);
-      // For TV, we don't have tmdbId directly — search TMDB to get it
+      // For TV, we don't have tmdbId directly, search TMDB to get it
       const getTmdbId = async (): Promise<number | undefined> => {
         const result = await tmdb.searchTV(series.title, 1).catch(() => ({ results: [] }));
         return result.results?.[0]?.id;
@@ -146,7 +146,7 @@ export function SeriesDetailScreen() {
     const options: ActionSheetOption[] = [];
 
     if (episode.hasFile) {
-      // Downloaded — offer search for better quality and delete
+      // Downloaded, offer search for better quality and delete
       options.push({
         label: 'Search Better Quality',
         icon: '🔍',
@@ -184,7 +184,7 @@ export function SeriesDetailScreen() {
         },
       });
     } else if (isAired) {
-      // Missing — offer search
+      // Missing, offer search
       options.push({
         label: 'Auto Search',
         icon: '🔍',

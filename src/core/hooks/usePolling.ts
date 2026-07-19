@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 
-// Polls only while the owning screen is focused — unfocused tabs stay quiet
+// Polls only while the owning screen is focused, unfocused tabs stay quiet
 // instead of stacking background request loops.
 export function usePolling(callback: () => Promise<void>, intervalMs: number, enabled = true) {
   const savedCallback = useRef(callback);

@@ -23,7 +23,7 @@ const tabIconMap: Record<string, { lib: 'mci' | 'ion'; name: string }> = {
   Infra: { lib: 'mci', name: 'server' },
 };
 
-// Each tab lights up in its service's color when active, nzb360-style
+// Each tab lights up in its service's color when active
 const tabAccentMap: Record<string, string> = {
   Home: colors.primary,
   Torrents: colors.transmission,

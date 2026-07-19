@@ -81,7 +81,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         const found = await tmdb.findByExternalId(String(s.tvdbId), 'tvdb_id');
         return { series: s, tmdbId: found.tv_results[0]?.id };
       } catch {
-        // TMDB unreachable/unconfigured — badges degrade gracefully
+        // TMDB unreachable/unconfigured, badges degrade gracefully
         return { series: s, tmdbId: undefined };
       }
     }));

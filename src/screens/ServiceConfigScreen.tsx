@@ -18,7 +18,7 @@ const SERVICE_META: Record<ServiceId, { defaultPort: string; authMode: AuthMode;
   prowlarr: { defaultPort: '9696', authMode: 'apikey', authHint: 'Settings → General → API Key' },
   bazarr: { defaultPort: '6767', authMode: 'apikey', authHint: 'Settings → General → API Key' },
   portainer: { defaultPort: '9000', authMode: 'apikey', authHint: 'Portainer → My account → Access tokens. If your HTTPS uses a self-signed cert, use the HTTP port (default: 9000) or a reverse proxy instead.' },
-  gluetun: { defaultPort: '8000', authMode: 'none', authHint: 'Gluetun control server URL — the /api prefix is added automatically.' },
+  gluetun: { defaultPort: '8000', authMode: 'none', authHint: 'Gluetun control server URL. The /api prefix is added automatically.' },
   emby: { defaultPort: '8096', authMode: 'apikey', authHint: 'Emby → Settings → Advanced → API Keys' },
 };
 
@@ -75,7 +75,7 @@ export function ServiceConfigScreen() {
       const adapter = getAdapter(svcConfig, isLocal);
       const ok = await adapter.testConnection();
       setTestResult(ok ? 'success' : 'fail');
-      if (!ok) setTestError('Connection returned false — check URL and credentials');
+      if (!ok) setTestError('Connection returned false. Check the URL and credentials.');
     } catch (e: any) {
       setTestResult('fail');
       const url = e.config?.baseURL
@@ -94,7 +94,7 @@ export function ServiceConfigScreen() {
       return;
     }
 
-    // Upsert — servers saved by older versions may lack an entry for this service
+    // Upsert, servers saved by older versions may lack an entry for this service
     const updatedServices = server.services.some((s) => s.serviceId === serviceId)
       ? server.services.map((s) => (s.serviceId === serviceId ? svcConfig : s))
       : [...server.services, svcConfig];
@@ -128,10 +128,10 @@ export function ServiceConfigScreen() {
         keyboardType="url"
       />
 
-      <Text style={styles.label}>Remote URL (optional — falls back to local)</Text>
+      <Text style={styles.label}>Remote URL (optional, falls back to local)</Text>
       {remoteUrl.trim().startsWith('http://') && (
         <Text style={styles.httpWarning}>
-          ⚠ Unencrypted HTTP — your API key and passwords are visible to anyone on the network path. Use https:// for remote access.
+          ⚠ Unencrypted HTTP: your API key and passwords are visible to anyone on the network path. Use https:// for remote access.
         </Text>
       )}
       <TextInput
@@ -145,7 +145,7 @@ export function ServiceConfigScreen() {
         keyboardType="url"
       />
 
-      {/* Auth — API key, username/password, or none depending on service */}
+      {/* Auth, API key, username/password, or none depending on service */}
       {meta.authMode === 'none' ? (
         <Text style={styles.hint}>{meta.authHint}</Text>
       ) : usesApiKey ? (

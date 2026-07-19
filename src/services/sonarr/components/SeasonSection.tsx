@@ -10,7 +10,7 @@ export function SeasonSection({ season, episodes, onEpisodePress, onSeasonMenu, 
   const [expanded, setExpanded] = useState(false);
   const autoExpanded = useRef(false);
 
-  // Episodes load async — expand the latest season once they arrive
+  // Episodes load async, expand the latest season once they arrive
   useEffect(() => {
     if (!autoExpanded.current && episodes.length > 0) {
       autoExpanded.current = true;

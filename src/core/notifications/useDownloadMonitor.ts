@@ -16,7 +16,7 @@ export function useDownloadMonitor() {
   useEffect(() => {
     if (!sonarrConfig) return;
     let cancelled = false;
-    // First tick after a config/server change only records a baseline —
+    // First tick after a config/server change only records a baseline , 
     // diffing against the previous server's queue would fire false
     // "download complete" notifications for every item on it
     let baselined = false;

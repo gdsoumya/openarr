@@ -74,7 +74,7 @@ export function SettingsScreen() {
         </View>
         <View style={[styles.statusDot, { backgroundColor: isLocal ? colors.success : colors.info }]} />
       </View>
-      <Text style={[styles.inputHint, { paddingHorizontal: spacing.xl }]}>Auto treats any Wi-Fi as local — override when on Wi-Fi away from home.</Text>
+      <Text style={[styles.inputHint, { paddingHorizontal: spacing.xl }]}>Auto treats any Wi-Fi as local. Override it when on Wi-Fi away from home.</Text>
       <View style={[styles.segmentRow, { marginTop: spacing.sm }]}>
         {([
           { id: 'auto', label: 'Auto' },
@@ -166,7 +166,7 @@ export function SettingsScreen() {
       {/* Data */}
       <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Data</Text>
       <Pressable style={styles.row} onPress={() => {
-        alert('Backup & Restore', 'The export contains your API keys and passwords in plaintext — store it somewhere safe.', [
+        alert('Backup & Restore', 'The export contains your API keys and passwords in plaintext. Store it somewhere safe.', [
           { text: 'Export Backup', onPress: () => exportBackup() },
           { text: 'Cancel', style: 'cancel' },
         ]);

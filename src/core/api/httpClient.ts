@@ -24,7 +24,7 @@ export function createServiceClient(config: ServiceConfig, isLocal: boolean): Ax
     client.interceptors.request.use((req: InternalAxiosRequestConfig) => {
       if (config.serviceId === 'bazarr') {
         // Header-only: an apikey query param would leak into proxy access logs
-        // Do NOT add trailing slash — it causes SPA catch-all to return HTML
+        // Do NOT add trailing slash, it causes SPA catch-all to return HTML
         req.headers.set('X-API-KEY', config.apiKey);
       } else if (config.serviceId === 'portainer') {
         // Portainer access tokens require this exact header casing
@@ -86,7 +86,7 @@ export function createTransmissionClient(config: ServiceConfig, isLocal: boolean
         csrfToken = error.response.headers['x-transmission-session-id'];
         if (csrfToken && error.config) {
           error.config.headers['X-Transmission-Session-Id'] = csrfToken;
-          // Re-apply auth for retry — axios doesn't carry defaults.auth on retried configs
+          // Re-apply auth for retry, axios doesn't carry defaults.auth on retried configs
           if (config.username && config.password) {
             const credentials = `${config.username}:${config.password}`;
             const encoded = typeof btoa === 'function'

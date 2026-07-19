@@ -53,7 +53,7 @@ export function TVHomeScreen() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [library, setLibrary] = useState<Series[]>([]);
-  // Search results — Sonarr lookup returns Series[], TMDB returns TMDBShow[]
+  // Search results, Sonarr lookup returns Series[], TMDB returns TMDBShow[]
   const [sonarrSearchResults, setSonarrSearchResults] = useState<Series[]>([]);
   const [tmdbSearchResults, setTmdbSearchResults] = useState<TMDBShow[]>([]);
   const [peopleResults, setPeopleResults] = useState<any[]>([]);
@@ -138,7 +138,7 @@ export function TVHomeScreen() {
     if (!searchQuery.trim()) { setSonarrSearchResults([]); setTmdbSearchResults([]); setPeopleResults([]); }
   }, [searchQuery]);
 
-  // Must be before any early returns — Rules of Hooks
+  // Must be before any early returns, Rules of Hooks
   const libraryByArrId = useMemo(() => {
     const map = new Map<number, Series>();
     library.forEach(s => map.set(s.id, s));
@@ -221,7 +221,7 @@ export function TVHomeScreen() {
             </View>
           )}
 
-          {/* Sonarr lookup results — ready to add directly */}
+          {/* Sonarr lookup results, ready to add directly */}
           {!searching && sonarrSearchResults.length > 0 && (
             <Carousel title="From Sonarr (ready to add)" count={sonarrSearchResults.length} status="loaded">
               {sonarrSearchResults.map((s, idx) => {
@@ -244,7 +244,7 @@ export function TVHomeScreen() {
             </Carousel>
           )}
 
-          {/* TMDB search results — broader discovery */}
+          {/* TMDB search results, broader discovery */}
           {!searching && tmdbSearchResults.length > 0 && (
             <Carousel title="From TMDB" count={tmdbSearchResults.length} status="loaded">
               {tmdbSearchResults.map((s, idx) => (
@@ -274,7 +274,7 @@ export function TVHomeScreen() {
         </>
       )}
 
-      {/* Library — filtered when searching */}
+      {/* Library, filtered when searching */}
       {displayLibrary.length > 0 && (
         <Carousel title={isSearchMode ? 'In Your Library' : 'My Library'} count={displayLibrary.length}
           status={!config ? 'empty' : libraryStatus}>
@@ -288,7 +288,7 @@ export function TVHomeScreen() {
         </Carousel>
       )}
 
-      {/* Discovery rows — hide when searching */}
+      {/* Discovery rows, hide when searching */}
       {!isSearchMode && (
         <>
           {tvWatchlist.length > 0 && (
@@ -303,7 +303,7 @@ export function TVHomeScreen() {
           )}
           {!isTmdbConfigured() && (
             <View style={styles.notConfigured}>
-              <Text style={styles.notConfiguredText}>Discovery is disabled — add a TMDB API token in Settings → Discovery.</Text>
+              <Text style={styles.notConfiguredText}>Discovery is disabled, add a TMDB API token in Settings → Discovery.</Text>
             </View>
           )}
           <Pressable style={styles.discoverEntry}

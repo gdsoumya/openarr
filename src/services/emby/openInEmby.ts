@@ -21,7 +21,7 @@ export async function openInEmby(
   ids: { tmdbId?: number; imdbId?: string; tvdbId?: number },
 ): Promise<string | null> {
   const config = useServerStore.getState().getServiceConfig('emby');
-  if (!config) return 'Emby is not configured — enable it in Settings → Server.';
+  if (!config) return 'Emby is not configured, enable it in Settings → Server.';
   const emby = getEmbyAdapter(config, useConnectionStore.getState().isLocal);
   let item;
   try {

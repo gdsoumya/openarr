@@ -47,7 +47,7 @@ export function SubtitleSearchSheet({ visible, status, error, title, results, on
         {status === 'error' && <ErrorState message={error ?? 'Search failed'} onRetry={onRetry} />}
 
         {status === 'success' && results.length === 0 && (
-          <EmptyState icon="💬" title="No subtitles found" message="No provider returned results — check enabled providers and languages in Bazarr." />
+          <EmptyState icon="💬" title="No subtitles found" message="No provider returned results, check enabled providers and languages in Bazarr." />
         )}
 
         {status === 'success' && results.length > 0 && (

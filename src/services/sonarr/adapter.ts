@@ -9,7 +9,7 @@ export class SonarrAdapter extends ArrServiceAdapter {
 
   async getStatus(): Promise<ServiceStatus> {
     try {
-      // Queue-only check — pulling the whole library for a status count is wasteful
+      // Queue-only check, pulling the whole library for a status count is wasteful
       const queue = await this.getQueue(1, 1);
       const dl = queue.totalRecords;
       return { serviceId: 'sonarr', connection: { status: 'connected', isLocal: true, lastChecked: Date.now() },

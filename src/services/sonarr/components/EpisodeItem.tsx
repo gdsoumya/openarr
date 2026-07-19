@@ -46,7 +46,7 @@ export function EpisodeItem({ episode, subtitles, downloadProgress, onPress }: E
         )}
       </View>
 
-      {/* Status icon — more prominent */}
+      {/* Status icon, more prominent */}
       {isDownloading ? (
         <View style={styles.statusDownloading}>
           <Text style={styles.statusDownloadingText}>↓</Text>
@@ -60,7 +60,7 @@ export function EpisodeItem({ episode, subtitles, downloadProgress, onPress }: E
             styles.statusText,
             episode.hasFile ? styles.statusTextDone : isAired ? styles.statusTextMissing : styles.statusTextUnaired,
           ]}>
-            {episode.hasFile ? '✓' : isAired ? '✕' : '—'}
+            {episode.hasFile ? '✓' : isAired ? '✕' : ', '}
           </Text>
         </View>
       )}
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   progressBar: { flex: 1 },
   progressText: { ...typography.micro, color: colors.primary, fontWeight: '600', width: 32, textAlign: 'right' },
 
-  // Status icons — MORE PROMINENT
+  // Status icons, MORE PROMINENT
   statusIcon: { width: 28, height: 28, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
   statusDone: { backgroundColor: 'rgba(100, 255, 218, 0.25)', borderWidth: 1, borderColor: 'rgba(100, 255, 218, 0.3)' },
   statusMissing: { backgroundColor: 'rgba(233, 69, 96, 0.2)', borderWidth: 1, borderColor: 'rgba(233, 69, 96, 0.3)' },

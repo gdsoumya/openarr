@@ -210,7 +210,7 @@ export function MoviesHomeScreen() {
             </View>
           )}
 
-          {/* Radarr lookup results — ready to add directly */}
+          {/* Radarr lookup results, ready to add directly */}
           {!searching && radarrSearchResults.length > 0 && (
             <Carousel title="From Radarr (ready to add)" count={radarrSearchResults.length} status="loaded">
               {radarrSearchResults.map((m, idx) => {
@@ -233,7 +233,7 @@ export function MoviesHomeScreen() {
             </Carousel>
           )}
 
-          {/* TMDB search results — broader discovery */}
+          {/* TMDB search results, broader discovery */}
           {!searching && tmdbSearchResults.length > 0 && (
             <Carousel title="From TMDB" count={tmdbSearchResults.length} status="loaded">
               {tmdbSearchResults.map((m, idx) => (
@@ -263,7 +263,7 @@ export function MoviesHomeScreen() {
         </>
       )}
 
-      {/* Library — filtered when searching */}
+      {/* Library, filtered when searching */}
       {displayLibrary.length > 0 && (
         <Carousel title={isSearchMode ? 'In Your Library' : 'My Library'} count={displayLibrary.length}
           status={!config ? 'empty' : libraryStatus}>
@@ -277,7 +277,7 @@ export function MoviesHomeScreen() {
         </Carousel>
       )}
 
-      {/* Discovery rows — hide when searching */}
+      {/* Discovery rows, hide when searching */}
       {!isSearchMode && (
         <>
           {movieWatchlist.length > 0 && (
@@ -292,7 +292,7 @@ export function MoviesHomeScreen() {
           )}
           {!isTmdbConfigured() && (
             <View style={styles.notConfigured}>
-              <Text style={styles.notConfiguredText}>Discovery is disabled — add a TMDB API token in Settings → Discovery.</Text>
+              <Text style={styles.notConfiguredText}>Discovery is disabled. Add a TMDB API token in Settings → Discovery.</Text>
             </View>
           )}
           <Pressable style={styles.discoverEntry}

@@ -31,10 +31,10 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
   const [selectedFolder, setSelectedFolder] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
-  // Season monitoring — track which seasons are checked
+  // Season monitoring, track which seasons are checked
   const [seasonMonitored, setSeasonMonitored] = useState<Map<number, boolean>>(new Map());
 
-  // Get seasons from the item — handles both Sonarr (seasonNumber) and TMDB (season_number) formats
+  // Get seasons from the item, handles both Sonarr (seasonNumber) and TMDB (season_number) formats
   const seasons: Array<{ seasonNumber: number }> = useMemo(() => {
     if (type !== 'sonarr') return [];
     const s = item?.seasons;
@@ -132,7 +132,7 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
         } catch {}
 
         if (existingSeries?.id) {
-          // --- Series already exists — UPDATE it (Jellyseerr: merge seasons + re-monitor episodes) ---
+          // --- Series already exists, UPDATE it (Jellyseerr: merge seasons + re-monitor episodes) ---
           existingSeries.monitored = true;
           existingSeries.seasons = (existingSeries.seasons ?? []).map((s: any) => {
             if (selectedSeasonNums.includes(s.seasonNumber)) {
@@ -158,7 +158,7 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
             adapter.searchSeries(existingSeries.id).catch(() => {});
           }
         } else {
-          // --- Brand new series — ADD it ---
+          // --- Brand new series, ADD it ---
           // Build seasons: start all unmonitored, enable selected (Jellyseerr buildSeasonList)
           const allSeasons = (seriesData.seasons ?? []).map((s: any) => ({
             seasonNumber: s.seasonNumber ?? s.season_number,
@@ -206,17 +206,17 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
         } catch {}
 
         if (existingMovie?.id) {
-          // Movie exists — check state
+          // Movie exists, check state
           if (existingMovie.hasFile) {
-            // Already has file — nothing to do
+            // Already has file, nothing to do
             throw new Error('This movie is already downloaded.');
           }
           if (existingMovie.monitored) {
-            // Already monitored — trigger search if requested
+            // Already monitored, trigger search if requested
             if (withSearch) adapter.searchMovie(existingMovie.id).catch(() => {});
             // Not an error, just inform
           } else {
-            // Exists but unmonitored — update to monitored
+            // Exists but unmonitored, update to monitored
             existingMovie.monitored = true;
             await adapter.editMovie(existingMovie);
             if (withSearch) adapter.searchMovie(existingMovie.id).catch(() => {});
@@ -315,7 +315,7 @@ export function AddItemSheet({ visible, type, item, onDismiss, onAdded }: AddIte
         )}
 
         {type === 'sonarr' && seasons.length === 0 && (
-          <Text style={styles.noSeasons}>Season info not available — all seasons will be monitored</Text>
+          <Text style={styles.noSeasons}>Season info not available, all seasons will be monitored</Text>
         )}
 
         <View style={styles.buttonRow}>

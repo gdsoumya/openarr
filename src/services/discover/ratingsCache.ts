@@ -16,7 +16,7 @@ function load(): CacheMap {
   return cache;
 }
 
-// Batch MMKV writes — the map grows unbounded and serializing it per lookup
+// Batch MMKV writes, the map grows unbounded and serializing it per lookup
 // would cost time proportional to historical usage
 const MAX_ENTRIES = 2000;
 
@@ -38,7 +38,7 @@ export function getCachedRatings(type: 'movie' | 'tv', tmdbId: number): External
   return load()[`${type}:${tmdbId}`];
 }
 
-// Resolves IMDB/RT scores via OMDB (one lookup per title ever — persisted).
+// Resolves IMDB/RT scores via OMDB (one lookup per title ever, persisted).
 // Genuine not-found results cache an empty record; "no OMDB key" and network
 // errors are NOT cached so adding a key later works retroactively.
 export async function fetchExternalRatings(

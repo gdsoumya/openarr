@@ -13,7 +13,7 @@ make android-install  # release APK installed via adb
 ```
 
 You need the Android SDK (`ANDROID_HOME`, defaults to `~/Android/Sdk`) and a
-device or emulator. There is no backend — the app talks directly to your own
+device or emulator. There is no backend, the app talks directly to your own
 Sonarr/Radarr/etc. instances, so you'll want at least one of them reachable to
 test against.
 
@@ -25,7 +25,7 @@ make test        # must pass
 make lint
 ```
 
-- Read `CLAUDE.md` first — it documents the architecture and the performance
+- Read `CLAUDE.md` first, it documents the architecture and the performance
   and security rules the codebase follows. PRs that regress them (extra polling
   loops, query-param auth, unbounded caches, per-screen status sweeps) will be
   asked to change.
@@ -38,7 +38,7 @@ make lint
 
 ## Commits & PRs
 
-- Conventional Commits: `type(scope): summary` — e.g. `fix(subs): retry
+- Conventional Commits: `type(scope): summary`, e.g. `fix(subs): retry
   provider search on timeout`. Imperative, lowercase, no trailing period.
 - Keep PRs focused; describe what changed and why in a sentence or two.
 - No AI/tool attribution in commit messages or PR descriptions.
@@ -46,5 +46,5 @@ make lint
 ## Reporting issues
 
 Include the app version (Settings → About), the service and its version, and
-whether the URL is local or remote. Never paste API keys or tokens — redact
+whether the URL is local or remote. Never paste API keys or tokens, redact
 them from logs and screenshots.

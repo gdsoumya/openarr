@@ -1,0 +1,28 @@
+name: Bug report
+description: Something is broken
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Settings → About
+    validations:
+      required: true
+  - type: input
+    id: service
+    attributes:
+      label: Affected service and version
+      placeholder: e.g. Sonarr 4.0.19, or the app itself
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Steps to reproduce, what you expected, what you got. Redact all API keys, tokens and private hostnames.
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection type
+      options: [Local URL, Remote URL, Both]

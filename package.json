@@ -1,5 +1,5 @@
 {
-  "name": "openarr-temp",
+  "name": "openarr",
   "main": "node_modules/expo/AppEntry.js",
   "version": "1.0.0",
   "scripts": {
@@ -51,10 +51,32 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~55.0.1",
     "jest": "^30.3.0",
     "jest-expo": "^55.0.11",
     "ts-jest": "^29.4.6",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "description": "Android app for managing your self-hosted media stack: Sonarr, Radarr, Bazarr, Prowlarr, Transmission, Portainer, Gluetun and Emby, with TMDB discovery",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gdsoumya/openarr.git"
+  },
+  "keywords": [
+    "sonarr",
+    "radarr",
+    "bazarr",
+    "prowlarr",
+    "transmission",
+    "portainer",
+    "gluetun",
+    "emby",
+    "self-hosted",
+    "arr",
+    "react-native",
+    "expo"
+  ]
 }

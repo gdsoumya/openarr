@@ -83,7 +83,7 @@ export function TorrentDetailScreen() {
           { label: 'Progress', value: `${(torrent.percentDone * 100).toFixed(1)}%` },
           { label: 'Download', value: formatSpeed(torrent.rateDownload) },
           { label: 'Upload', value: formatSpeed(torrent.rateUpload) },
-          { label: 'ETA', value: torrent.eta > 0 ? formatEta(torrent.eta) : '—' },
+          { label: 'ETA', value: torrent.eta > 0 ? formatEta(torrent.eta) : ', ' },
           { label: 'Ratio', value: torrent.uploadRatio.toFixed(2) },
           { label: 'Peers', value: String(torrent.peersConnected) },
           { label: 'Size', value: formatSize(torrent.totalSize) },

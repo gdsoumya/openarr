@@ -30,7 +30,7 @@ export interface Release {
   quality: ReleaseQuality; qualityWeight?: number;
   customFormats?: ReleaseCustomFormat[]; customFormatScore?: number;
   languages?: ReleaseLanguage[];
-  // Sonarr sends a bitmask int, Radarr can send string[] — normalize via releaseUtils
+  // Sonarr sends a bitmask int, Radarr can send string[], normalize via releaseUtils
   indexerFlags?: number | string[];
   seeders?: number; leechers?: number;
   rejected: boolean; rejections?: string[]; indexerId: number; protocol: string;

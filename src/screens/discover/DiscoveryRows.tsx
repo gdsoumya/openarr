@@ -27,7 +27,7 @@ interface DiscoveryRowsProps {
   refreshToken?: number;
 }
 
-// Row results barely change hour to hour — cache across remounts, bypass on
+// Row results barely change hour to hour, cache across remounts, bypass on
 // pull-to-refresh (refreshToken bump)
 const ROW_TTL_MS = 6 * 60 * 60 * 1000;
 const rowCache = new Map<string, { items: MediaItem[]; at: number; token?: number }>();
@@ -62,7 +62,7 @@ function Row({ def, mediaType, onItemPress, getItemBadge, refreshToken }: {
     def.fetch()
       .then((data) => {
         if (cancelled) return;
-        // Carousels cap at 12 posters — "See All" has the rest
+        // Carousels cap at 12 posters, "See All" has the rest
         const capped = data.slice(0, 12);
         rowCache.set(cacheKey, { items: capped, at: Date.now(), token: refreshToken });
         setItems(capped);
@@ -70,7 +70,7 @@ function Row({ def, mediaType, onItemPress, getItemBadge, refreshToken }: {
       })
       .catch((e) => {
         if (cancelled) return;
-        setError(e.response?.status === 401 ? 'Invalid TMDB token — set it in Settings' : e.message ?? 'Failed to load');
+        setError(e.response?.status === 401 ? 'Invalid TMDB token, set it in Settings' : e.message ?? 'Failed to load');
         setStatus('error');
       });
     return () => { cancelled = true; };
@@ -113,7 +113,7 @@ function Row({ def, mediaType, onItemPress, getItemBadge, refreshToken }: {
 export function DiscoveryRows({ mediaType, onItemPress, getItemBadge, refreshToken }: DiscoveryRowsProps) {
   const libraryEntries = useLibraryStore((s) => (mediaType === 'movie' ? s.movies : s.shows));
   const watchlist = useWatchlistStore((s) => s.items);
-  // Key on membership content, not Map identity — store publishes new Maps every
+  // Key on membership content, not Map identity, store publishes new Maps every
   // refresh and identity churn would re-roll seeds and refetch all rows
   const libraryKey = useMemo(() => [...libraryEntries.keys()].sort((a, b) => a - b).join(','), [libraryEntries]);
 

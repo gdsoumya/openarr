@@ -218,7 +218,7 @@ export function SearchHomeScreen() {
                       ? 'Enter a search term and press return'
                       : protocolFilter !== 'all' && results.length > 0
                         ? 'No results match the protocol filter'
-                        : 'No results found — try a different query or search type'}
+                        : 'No results found, try a different query or search type'}
                   </Text>
                 </View>
               }

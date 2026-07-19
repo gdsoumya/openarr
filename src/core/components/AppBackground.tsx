@@ -33,7 +33,7 @@ export const AppBackground = React.memo(function AppBackground({ wallEligible = 
 });
 
 // Screens where the poster wall shows; pushed detail/config screens use the
-// cheap gradient — a wall per mounted screen would pile up hundreds of images
+// cheap gradient, a wall per mounted screen would pile up hundreds of images
 const WALL_SCREENS = new Set([
   'SummaryHome', 'TorrentList', 'TVHome', 'MoviesHome', 'SearchHome',
   'SubsHome', 'InfraHome', 'Dashboard',
@@ -61,7 +61,7 @@ export function screenWithBackground(props: any) {
   return <ScreenBackgroundLayout {...props} />;
 }
 
-// Soft fade behind transparent native headers — keeps titles legible while
+// Soft fade behind transparent native headers, keeps titles legible while
 // the page background shows through underneath
 export function headerFade() {
   return (

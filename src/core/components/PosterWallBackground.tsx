@@ -9,7 +9,7 @@ const CACHE_KEY = 'openarr.bgPosters';
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 const FETCH_COUNT = 24;
 
-// One shared load across all mounted walls — each screen wrapper mounts its
+// One shared load across all mounted walls, each screen wrapper mounts its
 // own instance and must not re-read MMKV or re-hit TMDB
 let urlsPromise: Promise<string[]> | null = null;
 
@@ -42,7 +42,7 @@ async function loadPosterUrlsUncached(): Promise<string[]> {
   return urls;
 }
 
-// Dimmed, tilted collage of trending posters under a heavy scrim — the wall
+// Dimmed, tilted collage of trending posters under a heavy scrim, the wall
 // stays atmospheric, never competes with content.
 export const PosterWallBackground = React.memo(function PosterWallBackground() {
   const [urls, setUrls] = useState<string[]>([]);

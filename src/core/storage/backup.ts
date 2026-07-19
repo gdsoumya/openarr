@@ -19,7 +19,7 @@ export function createBackup(): BackupData {
   };
 }
 
-// The export contains every API key and password in plaintext — write it to
+// The export contains every API key and password in plaintext, write it to
 // the cache dir and remove it once the share sheet is done so no copy lingers
 export async function exportBackup(): Promise<void> {
   const data = createBackup();

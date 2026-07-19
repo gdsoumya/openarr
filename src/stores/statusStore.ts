@@ -25,7 +25,7 @@ export const useStatusStore = create<StatusState>((set, get) => ({
 
   refresh: async (services, isLocal, force = false) => {
     const key = keyOf(services, isLocal);
-    // A different server/service-set invalidates everything — never serve or
+    // A different server/service-set invalidates everything, never serve or
     // join a sweep that belongs to the previous server
     if (key !== sweepKey) {
       sweepKey = key;
@@ -43,7 +43,7 @@ export const useStatusStore = create<StatusState>((set, get) => ({
       if (sweepKey !== key) return; // superseded by a server switch mid-flight
       const next: Partial<Record<ServiceId, ServiceStatus>> = {};
       results.forEach((r) => { if (r.status === 'fulfilled') next[r.value.id] = r.value.status; });
-      // Skip the publish when nothing changed — both Home and Dashboard
+      // Skip the publish when nothing changed, both Home and Dashboard
       // subscribe to this object and re-render on identity churn
       const prev = get().statuses;
       const changed = JSON.stringify(prev, (k, v) => (k === 'lastChecked' ? undefined : v))

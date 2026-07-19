@@ -84,7 +84,7 @@ export function ContainerDetailScreen() {
   }
 
   const displayName = name ?? inspect.Name?.replace(/^\//, '') ?? containerId.slice(0, 12);
-  const ports = Object.entries(inspect.NetworkSettings?.Networks ?? {}).map(([net, cfg]) => ({ key: net, value: cfg.IPAddress || '—' }));
+  const ports = Object.entries(inspect.NetworkSettings?.Networks ?? {}).map(([net, cfg]) => ({ key: net, value: cfg.IPAddress || ', ' }));
   const env = (inspect.Config.Env ?? []).map((e) => {
     const idx = e.indexOf('=');
     return { key: e.slice(0, idx), value: e.slice(idx + 1) };
@@ -121,7 +121,7 @@ export function ContainerDetailScreen() {
         )}
 
         <View style={styles.infoCard}>
-          <Text style={styles.infoText}>Started: {inspect.State.StartedAt ? new Date(inspect.State.StartedAt).toLocaleString() : '—'}</Text>
+          <Text style={styles.infoText}>Started: {inspect.State.StartedAt ? new Date(inspect.State.StartedAt).toLocaleString() : ', '}</Text>
           <Text style={styles.infoText}>Restart policy: {inspect.HostConfig.RestartPolicy?.Name || 'none'}</Text>
           {!inspect.State.Running && <Text style={styles.infoText}>Exit code: {inspect.State.ExitCode}</Text>}
         </View>

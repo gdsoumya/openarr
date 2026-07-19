@@ -26,7 +26,7 @@ export function Toast({ message, type = 'info', visible, onHide, duration = 3000
 
   if (!visible) return null;
 
-  // Solid tinted surfaces — toasts must stay readable over any background
+  // Solid tinted surfaces, toasts must stay readable over any background
   const bgColors = { success: '#123830', error: '#3a141f', info: '#10333b' };
   const borderColors = { success: 'rgba(100,255,218,0.45)', error: 'rgba(233,69,96,0.5)', info: 'rgba(63,186,194,0.45)' };
   const textColors = { success: colors.success, error: '#ff9db0', info: '#7fd8de' };

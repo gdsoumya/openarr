@@ -118,7 +118,7 @@ export function GluetunPanel() {
       <View style={styles.card}>
         <View style={styles.cardRow}>
           <MaterialCommunityIcons name="ip-network-outline" size={18} color={colors.primary} />
-          <Text style={styles.cardTitle}>{publicIp?.public_ip || '—'}</Text>
+          <Text style={styles.cardTitle}>{publicIp?.public_ip || ', '}</Text>
           <Pressable onPress={refreshIp} hitSlop={8} disabled={refreshingIp}>
             <MaterialCommunityIcons name="refresh" size={18} color={refreshingIp ? colors.textMuted : colors.primary} />
           </Pressable>

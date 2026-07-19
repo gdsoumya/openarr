@@ -75,7 +75,7 @@ export function LocationPickerScreen() {
     setReconnectMsg(`Switching to ${selected.city}, ${selected.country}...`);
     try {
       await adapter.changeLocation([selected.country.toLowerCase()], [selected.city.toLowerCase()]);
-      setReconnectMsg('Reconnecting VPN — this can take up to 2 minutes...');
+      setReconnectMsg('Reconnecting VPN, this can take up to 2 minutes...');
       // Poll the public IP until the new tunnel settles
       let settled = false;
       for (let i = 0; i < 60; i++) {
@@ -83,12 +83,12 @@ export function LocationPickerScreen() {
         const ip = await adapter.getPublicIp().catch(() => null);
         if (ip?.public_ip) {
           const where = [ip.city, ip.country].filter(Boolean).join(', ');
-          showToast(`Connected — ${ip.public_ip}${where ? ` (${where})` : ''}`, 'success');
+          showToast(`Connected, ${ip.public_ip}${where ? ` (${where})` : ''}`, 'success');
           settled = true;
           break;
         }
       }
-      if (!settled) showToast('VPN restarted; still negotiating — check the VPN tab.', 'info');
+      if (!settled) showToast('VPN restarted; still negotiating, check the VPN tab.', 'info');
       navigation.goBack();
     } catch (e: any) {
       showToast(`Failed to apply selection: ${e.message}`, 'error');

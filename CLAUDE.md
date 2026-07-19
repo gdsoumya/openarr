@@ -1,4 +1,4 @@
-# OpenArr — Development Guide
+# OpenArr Development Guide
 
 > Keep this file in sync with the code. If you change the architecture, build
 > process, polling behavior, storage, or security posture described here,
@@ -18,7 +18,7 @@ Emby, with TMDB-powered discovery.
   service wrapping its REST API. `src/services/adapterFactory.ts` caches
   instances; `clearAdapters()` must be called whenever server config or
   connection mode changes. `src/core/api/httpClient.ts` builds the axios client
-  and owns per-service auth (header names differ per service — see below).
+  and owns per-service auth (header names differ per service (see below)).
 - **State** is zustand stores in `src/stores/`: `serverStore` (server/service
   configs, persisted), `connectionStore` (local/remote + manual mode override),
   `statusStore` (shared TTL'd health sweeps), `libraryStore` (tmdb-keyed
@@ -28,7 +28,7 @@ Emby, with TMDB-powered discovery.
   the legacy static key). Never reintroduce a constant encryption key.
 - **UI system** lives in `src/core/components/` + `src/core/theme/tokens.ts`.
   Backgrounds render per-screen via the `screenLayout` wrapper in
-  `AppBackground.tsx` (opaque layer per screen — prevents see-through during
+  `AppBackground.tsx` (opaque layer per screen, prevents see-through during
   native-stack transitions). Native headers are transparent with a gradient
   fade (`headerFade`).
 
@@ -46,15 +46,15 @@ make lint              # expo lint
 
 Before any commit: `make typecheck` and `make test` must pass. The app version
 is set only in `app.config.ts` (`version:`); the Settings screen reads the
-baked-in version at runtime via `expo-application` — never hardcode it in UI.
+baked-in version at runtime via `expo-application`, never hardcode it in UI.
 
 ## Performance rules
 
-These were earned through profiling — don't regress them:
+These were earned through profiling, don't regress them:
 
 - **Polling is focus-gated and TTL'd.** `usePolling` only ticks while the
   screen is focused. Status checks go through `statusStore.refresh()` (20s TTL,
-  in-flight coalescing, keyed by server) — never add a second per-screen status
+  in-flight coalescing, keyed by server), never add a second per-screen status
   sweep. Heavy content fetches must have their own TTL guard (see
   `SummaryScreen.fetchContent`, 5 min) because `usePolling` fires immediately
   on refocus.
@@ -75,7 +75,7 @@ These were earned through profiling — don't regress them:
   an eviction story.
 - **Server switches must invalidate**: anything cached per-server (statuses,
   adapters, queues, in-flight fetches) must be keyed by server id or guarded by
-  a sequence check — see `statusStore`, `SummaryScreen.fetchSeq`,
+  a sequence check, see `statusStore`, `SummaryScreen.fetchSeq`,
   `useDownloadMonitor` baseline.
 
 ## Security rules
@@ -91,23 +91,21 @@ These were earned through profiling — don't regress them:
   the Android manifest keeps credentials out of device/cloud backups. Backup
   exports are plaintext by design but write to the cache dir and delete after
   sharing.
-- **Logging**: route errors through `logError` (`src/core/utils/log.ts`) —
-  it strips query strings, never prints headers, and is a no-op in release
+- **Logging**: route errors through `logError` (`src/core/utils/log.ts`). It strips query strings, never prints headers, and is a no-op in release
   builds. Do not `console.error` raw axios errors.
 - **Cleartext HTTP** is allowed (self-hosted LAN reality) but the UI warns when
   a remote URL uses `http://`. Don't remove that warning.
 
 ## Service API gotchas
 
-- **Bazarr**: some endpoints wrap payloads in `{ data }`, others are bare —
-  always guard with `data.data ?? data`. Action endpoints take query args with
+- **Bazarr**: some endpoints wrap payloads in `{ data }`, others are bare, so always guard with `data.data ?? data`. Action endpoints take query args with
   string booleans (`"True"`/`"False"`), not JSON bodies.
 - **Gluetun**: the control API lives at `/v1` on current builds and `/api/v1`
-  on older custom builds — the adapter probes once and pins only on a definite
+  on older custom builds, the adapter probes once and pins only on a definite
   404-style answer, never on a network error. Requires the custom fork (see
   README) because stock gluetun has no web UI.
 - **Portainer**: self-signed HTTPS is unusable from RN (no way to skip cert
-  validation) — users must use the HTTP port or a proxy with a valid cert.
+  validation), users must use the HTTP port or a proxy with a valid cert.
 - **Radarr/Sonarr queue**: `includeUnknownSeriesItems` and
   `includeUnknownMovieItems` are service-specific; send both.
 - **Transmission**: CSRF token dance on 409 is handled in the adapter; `/rpc`

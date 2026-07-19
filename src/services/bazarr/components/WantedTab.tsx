@@ -20,7 +20,7 @@ export function WantedTab({ adapter }: { adapter: BazarrAdapter }) {
   const [loading, setLoading] = useState(false);
   const [searchingAll, setSearchingAll] = useState(false);
 
-  // Fetch only the active kind — each kind gets its own page sequence
+  // Fetch only the active kind, each kind gets its own page sequence
   const load = useCallback(async (nextPage: number, reset = false) => {
     setLoading(true);
     try {
@@ -73,7 +73,7 @@ export function WantedTab({ adapter }: { adapter: BazarrAdapter }) {
         contentContainerStyle={{ paddingBottom: 20 }}
         onEndReached={() => { if (hasMore && !loading) load(page + 1); }}
         onEndReachedThreshold={0.4}
-        ListEmptyComponent={loading ? null : <EmptyState icon="✅" title="Nothing wanted" message="No missing subtitles — everything is covered." />}
+        ListEmptyComponent={loading ? null : <EmptyState icon="✅" title="Nothing wanted" message="No missing subtitles, everything is covered." />}
         renderItem={({ item }: any) => (
           <Pressable
             style={styles.row}

@@ -183,7 +183,7 @@ export function InfraHomeScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cardTitle}>Prune Unused Images</Text>
                   <Text style={styles.cardSub}>
-                    {pruning ? 'Pruning — this can take a few minutes...' : 'Delete all images not used by any container'}
+                    {pruning ? 'Pruning, this can take a few minutes...' : 'Delete all images not used by any container'}
                   </Text>
                 </View>
               </View>
