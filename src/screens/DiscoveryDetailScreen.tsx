@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   heroContainer: { height: 220, position: 'relative' },
   backdrop: { width: '100%', height: 220 },
   backdropFallback: { width: '100%', height: 220, backgroundColor: colors.surfaceElevated },
-  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,16,35,0.5)' },
+  heroOverlay: { position: 'absolute' as const, left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(15,16,35,0.5)' },
   backButton: { position: 'absolute', left: spacing.lg, zIndex: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   bookmarkButton: { position: 'absolute', right: spacing.lg, zIndex: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   trailerButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder, borderRadius: radii.md, padding: spacing.md },
