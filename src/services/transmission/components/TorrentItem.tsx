@@ -26,7 +26,7 @@ function getStatusInfo(t: Torrent): { label: string; variant: 'downloading' | 'c
 
 interface TorrentItemProps { torrent: Torrent; onPress: () => void; onLongPress?: () => void; selected?: boolean; }
 
-export function TorrentItem({ torrent, onPress, onLongPress, selected }: TorrentItemProps) {
+function TorrentItemInner({ torrent, onPress, onLongPress, selected }: TorrentItemProps) {
   const si = getStatusInfo(torrent);
   const isDl = torrent.status === TorrentStatus.Downloading;
   const isSeed = torrent.status === TorrentStatus.Seeding;
@@ -57,4 +57,16 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', gap: spacing.lg, flexWrap: 'wrap' },
   stat: { ...typography.micro, color: colors.textMuted },
   statVal: { color: colors.textSecondary, fontWeight: '500' },
+});
+
+// Poll ticks replace the whole torrents array; only re-render rows whose
+// displayed fields actually changed
+export const TorrentItem = React.memo(TorrentItemInner, (prev, next) => {
+  const a = prev.torrent; const b = next.torrent;
+  return prev.selected === next.selected
+    && a.id === b.id && a.name === b.name && a.status === b.status
+    && a.percentDone === b.percentDone && a.rateDownload === b.rateDownload
+    && a.rateUpload === b.rateUpload && a.eta === b.eta
+    && a.uploadRatio === b.uploadRatio && a.peersConnected === b.peersConnected
+    && a.errorString === b.errorString;
 });

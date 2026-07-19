@@ -267,7 +267,7 @@ export function MoviesHomeScreen() {
       {displayLibrary.length > 0 && (
         <Carousel title={isSearchMode ? 'In Your Library' : 'My Library'} count={displayLibrary.length}
           status={!config ? 'empty' : libraryStatus}>
-          {displayLibrary.map((m) => (
+          {displayLibrary.slice(0, 30).map((m) => (
             <PosterCard key={m.id} title={m.title} subtitle={`${m.year} · ${m.genres?.[0] ?? ''}`}
               posterUrl={m.images?.find(i => i.coverType === 'poster')?.remoteUrl}
               badge={getMovieBadge(m, queueMap)}

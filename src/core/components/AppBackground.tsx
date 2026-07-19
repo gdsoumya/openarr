@@ -7,9 +7,9 @@ import { PosterWallBackground } from './PosterWallBackground';
 // App-wide backdrop, style switchable in Settings → Appearance.
 // "aurora": indigo-to-black wash with teal/violet glows.
 // "posters": dimmed trending-poster collage under a heavy scrim.
-export function AppBackground() {
+export const AppBackground = React.memo(function AppBackground({ wallEligible = true }: { wallEligible?: boolean }) {
   const style = useSettingsStore((s) => s.backgroundStyle);
-  if (style === 'posters') return <PosterWallBackground />;
+  if (style === 'posters' && wallEligible) return <PosterWallBackground />;
   return (
     <>
       <LinearGradient
@@ -29,15 +29,22 @@ export function AppBackground() {
       />
     </>
   );
-}
+});
+
+// Screens where the poster wall shows; pushed detail/config screens use the
+// cheap gradient — a wall per mounted screen would pile up hundreds of images
+const WALL_SCREENS = new Set([
+  'SummaryHome', 'TorrentList', 'TVHome', 'MoviesHome', 'SearchHome',
+  'SubsHome', 'InfraHome', 'Dashboard',
+]);
 
 // screenLayout wrapper: gives every stack screen an opaque layer with the
 // gradient inside it, so screens never see through to the one below during
 // native-stack transitions.
-export function screenWithBackground({ children }: { children: React.ReactElement }) {
+export function screenWithBackground({ children, route }: { children: React.ReactElement; route?: { name?: string } }) {
   return (
     <View style={styles.screen}>
-      <AppBackground />
+      <AppBackground wallEligible={!!route?.name && WALL_SCREENS.has(route.name)} />
       {children}
     </View>
   );

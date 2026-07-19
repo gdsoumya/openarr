@@ -278,7 +278,7 @@ export function TVHomeScreen() {
       {displayLibrary.length > 0 && (
         <Carousel title={isSearchMode ? 'In Your Library' : 'My Library'} count={displayLibrary.length}
           status={!config ? 'empty' : libraryStatus}>
-          {displayLibrary.map((s) => (
+          {displayLibrary.slice(0, 30).map((s) => (
             <PosterCard key={s.id} title={s.title} subtitle={`${s.network} · ${s.status === 'continuing' ? 'Airing' : 'Ended'}`}
               posterUrl={s.images?.find(i => i.coverType === 'poster')?.remoteUrl}
               badge={getSeriesBadge(s, queueMap)}

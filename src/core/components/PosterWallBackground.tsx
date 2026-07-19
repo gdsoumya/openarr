@@ -9,7 +9,18 @@ const CACHE_KEY = 'openarr.bgPosters';
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 const FETCH_COUNT = 24;
 
-async function loadPosterUrls(): Promise<string[]> {
+// One shared load across all mounted walls — each screen wrapper mounts its
+// own instance and must not re-read MMKV or re-hit TMDB
+let urlsPromise: Promise<string[]> | null = null;
+
+function loadPosterUrls(): Promise<string[]> {
+  if (!urlsPromise) {
+    urlsPromise = loadPosterUrlsUncached().catch((e) => { urlsPromise = null; throw e; });
+  }
+  return urlsPromise;
+}
+
+async function loadPosterUrlsUncached(): Promise<string[]> {
   try {
     const raw = appStorage.getValue(CACHE_KEY);
     if (raw) {
@@ -33,7 +44,7 @@ async function loadPosterUrls(): Promise<string[]> {
 
 // Dimmed, tilted collage of trending posters under a heavy scrim — the wall
 // stays atmospheric, never competes with content.
-export function PosterWallBackground() {
+export const PosterWallBackground = React.memo(function PosterWallBackground() {
   const [urls, setUrls] = useState<string[]>([]);
 
   useEffect(() => {
@@ -46,8 +57,8 @@ export function PosterWallBackground() {
   const tileW = Math.ceil(width / 4) + 8;
   const tileH = tileW * 1.5;
   // Oversized rotated canvas; repeat posters until the whole area is tiled
-  const wallW = width * 1.7;
-  const wallH = height * 1.7;
+  const wallW = width * 1.35;
+  const wallH = height * 1.35;
   const perRow = Math.ceil(wallW / tileW);
   const rows = Math.ceil(wallH / tileH);
   const tiles: string[] = [];
@@ -57,7 +68,7 @@ export function PosterWallBackground() {
     <>
       <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0d0e1e' }]} />
       {tiles.length > 0 && (
-        <View style={[styles.wall, { width: wallW, height: wallH, left: -width * 0.35, top: -height * 0.3 }]}>
+        <View style={[styles.wall, { width: wallW, height: wallH, left: -width * 0.18, top: -height * 0.15 }]}>
           {tiles.map((u, i) => (
             <CachedImage key={`${u}-${i}`} uri={u} style={{ width: tileW, height: tileH }} />
           ))}
@@ -75,7 +86,7 @@ export function PosterWallBackground() {
       />
     </>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wall: {
