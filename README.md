@@ -10,7 +10,7 @@ Sonarr · Radarr · Bazarr · Prowlarr · Transmission · Portainer · Gluetun �
 
 [![CI](https://github.com/gdsoumya/openarr/actions/workflows/ci.yml/badge.svg)](https://github.com/gdsoumya/openarr/actions/workflows/ci.yml)
 [![Release](https://github.com/gdsoumya/openarr/actions/workflows/release.yml/badge.svg)](https://github.com/gdsoumya/openarr/actions/workflows/release.yml)
-[![Latest release](https://img.shields.io/github/v/release/gdsoumya/openarr?label=release&color=64ffda)](https://github.com/gdsoumya/openarr/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/gdsoumya/openarr?sort=semver&label=release&color=64ffda)](https://github.com/gdsoumya/openarr/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android-3ddc84?logo=android&logoColor=white)](https://github.com/gdsoumya/openarr/releases/latest)
 [![Made with Expo](https://img.shields.io/badge/made%20with-Expo-000020?logo=expo&logoColor=white)](https://expo.dev)
