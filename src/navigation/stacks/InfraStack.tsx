@@ -7,12 +7,13 @@ import { ContainerLogsScreen } from '../../services/portainer/screens/ContainerL
 import { StackDetailScreen } from '../../services/portainer/screens/StackDetailScreen';
 import { LocationPickerScreen } from '../../services/gluetun/screens/LocationPickerScreen';
 import { colors } from '../../core/theme/tokens';
+import { screenWithBackground } from '../../core/components/AppBackground';
 
 const Stack = createNativeStackNavigator();
 
 export function InfraStack() {
   return (
-    <Stack.Navigator
+    <Stack.Navigator screenLayout={screenWithBackground}
       screenOptions={{
         freezeOnBlur: true,
         headerStyle: { backgroundColor: colors.surfaceHeader },

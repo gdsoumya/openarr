@@ -4,12 +4,13 @@ import { SubsHomeScreen } from '../../services/bazarr/screens/SubsHomeScreen';
 import { SeriesSubtitlesScreen } from '../../services/bazarr/screens/SeriesSubtitlesScreen';
 import { MovieSubtitlesScreen } from '../../services/bazarr/screens/MovieSubtitlesScreen';
 import { colors } from '../../core/theme/tokens';
+import { screenWithBackground } from '../../core/components/AppBackground';
 
 const Stack = createNativeStackNavigator();
 
 export function SubsStack() {
   return (
-    <Stack.Navigator
+    <Stack.Navigator screenLayout={screenWithBackground}
       screenOptions={{
         freezeOnBlur: true,
         headerStyle: { backgroundColor: colors.surfaceHeader },

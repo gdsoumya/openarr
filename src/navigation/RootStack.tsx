@@ -7,6 +7,7 @@ import { ServerSetupScreen } from '../screens/ServerSetupScreen';
 import { ServiceConfigScreen } from '../screens/ServiceConfigScreen';
 import { useDownloadMonitor } from '../core/notifications/useDownloadMonitor';
 import { colors } from '../core/theme/tokens';
+import { screenWithBackground } from '../core/components/AppBackground';
 
 const Stack = createNativeStackNavigator();
 
@@ -15,7 +16,7 @@ const Stack = createNativeStackNavigator();
 export function RootStack() {
   useDownloadMonitor();
   return (
-    <Stack.Navigator
+    <Stack.Navigator screenLayout={screenWithBackground}
       screenOptions={{
         freezeOnBlur: true,
         headerStyle: { backgroundColor: colors.surfaceHeader },

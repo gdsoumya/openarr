@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { PosterWallBackground } from './PosterWallBackground';
@@ -30,3 +30,19 @@ export function AppBackground() {
     </>
   );
 }
+
+// screenLayout wrapper: gives every stack screen an opaque layer with the
+// gradient inside it, so screens never see through to the one below during
+// native-stack transitions.
+export function screenWithBackground({ children }: { children: React.ReactElement }) {
+  return (
+    <View style={styles.screen}>
+      <AppBackground />
+      {children}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#0f1023' },
+});
