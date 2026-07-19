@@ -17,6 +17,7 @@ export interface EmbyMediaItem {
   SeriesPrimaryImageTag?: string;
   ProductionYear?: number;
   UserData?: { PlayedPercentage?: number; Played?: boolean };
+  ProviderIds?: Record<string, string>;
 }
 
 export class EmbyAdapter {
@@ -25,6 +26,7 @@ export class EmbyAdapter {
   readonly baseUrl: string;
   private apiKey: string;
   private userId: string | null = null;
+  private userIdPromise: Promise<string | null> | null = null;
 
   constructor(config: ServiceConfig, isLocal: boolean) {
     this.client = createServiceClient(config, isLocal);
@@ -32,12 +34,16 @@ export class EmbyAdapter {
     this.apiKey = config.apiKey ?? '';
   }
 
-  // Watched state is per-user; use the first server user (single-user setups)
-  private async getUserId(): Promise<string | null> {
-    if (this.userId) return this.userId;
-    const { data } = await this.client.get('/Users');
-    this.userId = data?.[0]?.Id ?? null;
-    return this.userId;
+  // Watched state is per-user; use the first server user (single-user setups).
+  // Concurrent callers share one in-flight /Users request.
+  private getUserId(): Promise<string | null> {
+    if (this.userId) return Promise.resolve(this.userId);
+    if (!this.userIdPromise) {
+      this.userIdPromise = this.client.get('/Users')
+        .then(({ data }) => { this.userId = data?.[0]?.Id ?? null; return this.userId; })
+        .finally(() => { this.userIdPromise = null; });
+    }
+    return this.userIdPromise;
   }
 
   async getResumeItems(limit = 12): Promise<EmbyMediaItem[]> {
@@ -56,13 +62,17 @@ export class EmbyAdapter {
     return data.Items ?? [];
   }
 
-  async getLatestUnplayedMovies(limit = 12): Promise<EmbyMediaItem[]> {
+  // Recently watched items — used to filter "ready to watch" lists elsewhere
+  async getRecentlyPlayed(limit = 300): Promise<EmbyMediaItem[]> {
     const userId = await this.getUserId();
     if (!userId) return [];
-    const { data } = await this.client.get(`/Users/${userId}/Items/Latest`, {
-      params: { Limit: limit, IncludeItemTypes: 'Movie', IsPlayed: false },
+    const { data } = await this.client.get(`/Users/${userId}/Items`, {
+      params: {
+        IncludeItemTypes: 'Episode,Movie', Filters: 'IsPlayed', Recursive: true,
+        Limit: limit, SortBy: 'DatePlayed', SortOrder: 'Descending', Fields: 'ProviderIds',
+      },
     });
-    return Array.isArray(data) ? data : data.Items ?? [];
+    return data.Items ?? [];
   }
 
   // Episodes use their series poster; api_key travels as a param since image

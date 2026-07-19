@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, RefreshControl, Linking } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,9 +10,11 @@ import { ActionSheet, ActionSheetOption } from '../core/components/ActionSheet';
 import { usePolling } from '../core/hooks/usePolling';
 import { useServerStore } from '../stores/serverStore';
 import { useConnectionStore } from '../stores/connectionStore';
-import { getAdapter, getSonarrAdapter, getRadarrAdapter, getEmbyAdapter, clearAdapters } from '../services/adapterFactory';
+import { getSonarrAdapter, getRadarrAdapter, getEmbyAdapter, clearAdapters } from '../services/adapterFactory';
+import { useStatusStore } from '../stores/statusStore';
+import { useLibraryStore } from '../stores/libraryStore';
+import { openEmbyRef } from '../services/emby/openInEmby';
 import { EmbyMediaItem } from '../services/emby/adapter';
-import { Series } from '../services/sonarr/types';
 import { Movie } from '../services/radarr/types';
 
 const DAY = 86400000;
@@ -24,6 +26,10 @@ interface ScheduleEntry {
   subtitle: string;
   hasFile: boolean;
   onPress?: () => void;
+}
+
+function mergeSchedule(prev: ScheduleEntry[], prefix: string, entries: ScheduleEntry[]): ScheduleEntry[] {
+  return [...prev.filter((e) => !e.key.startsWith(prefix)), ...entries];
 }
 
 function dayLabel(date: Date): string {
@@ -43,9 +49,12 @@ export function SummaryScreen() {
   const setActiveServer = useServerStore((s) => s.setActiveServer);
   const isLocal = useConnectionStore((s) => s.isLocal);
 
-  const [statuses, setStatuses] = useState<Partial<Record<ServiceId, boolean>>>({});
+  const serviceStatuses = useStatusStore((s) => s.statuses);
+  const refreshStatuses = useStatusStore((s) => s.refresh);
   const [resumeItems, setResumeItems] = useState<EmbyMediaItem[]>([]);
   const [nextUp, setNextUp] = useState<EmbyMediaItem[]>([]);
+  const [playedEpisodeKeys, setPlayedEpisodeKeys] = useState<Set<string>>(new Set());
+  const [playedMovieTmdbIds, setPlayedMovieTmdbIds] = useState<Set<number>>(new Set());
   const [readyEpisodes, setReadyEpisodes] = useState<any[]>([]);
   const [readyMovies, setReadyMovies] = useState<Movie[]>([]);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
@@ -56,17 +65,11 @@ export function SummaryScreen() {
   const enabledServices = useMemo(() => server?.services.filter((s) => s.enabled) ?? [], [server]);
   const configOf = useCallback((id: ServiceId) => enabledServices.find((s) => s.serviceId === id), [enabledServices]);
 
-  // Cumulative health — one light pass over every enabled service
+  // Cumulative health — shared TTL'd store, coalesced with the Dashboard's poll
   const fetchHealth = useCallback(async () => {
     if (!server) return;
-    const results = await Promise.allSettled(enabledServices.map(async (svc) => {
-      const status = await getAdapter(svc, isLocal).getStatus();
-      return { id: svc.serviceId, up: status.connection.status === 'connected' };
-    }));
-    const next: Partial<Record<ServiceId, boolean>> = {};
-    results.forEach((r) => { if (r.status === 'fulfilled') next[r.value.id] = r.value.up; });
-    setStatuses(next);
-  }, [server, enabledServices, isLocal]);
+    await refreshStatuses(enabledServices, isLocal);
+  }, [server, enabledServices, isLocal, refreshStatuses]);
 
   usePolling(fetchHealth, 60000, !!server);
 
@@ -77,16 +80,50 @@ export function SummaryScreen() {
     const embyConfig = configOf('emby');
     const now = new Date();
 
+    // Clear sections owned by services the active server doesn't have,
+    // so switching servers never shows the previous server's data
+    if (!embyConfig) {
+      setResumeItems([]); setNextUp([]);
+      setPlayedEpisodeKeys(new Set()); setPlayedMovieTmdbIds(new Set());
+    }
+    if (!sonarrConfig) {
+      setReadyEpisodes([]);
+      setSchedule((prev) => prev.filter((e) => !e.key.startsWith('ep-')));
+    }
+    if (!radarrConfig) {
+      setReadyMovies([]);
+      setSchedule((prev) => prev.filter((e) => !e.key.startsWith('mv-')));
+    }
+
     await Promise.allSettled([
       (async () => {
         if (!embyConfig) return;
         const emby = getEmbyAdapter(embyConfig, isLocal);
-        const [resume, next] = await Promise.all([
+        const [resume, next, played] = await Promise.all([
           emby.getResumeItems().catch(() => []),
           emby.getNextUp().catch(() => []),
+          emby.getRecentlyPlayed(100).catch(() => []),
         ]);
         setResumeItems(resume);
         setNextUp(next);
+        // Watched-state cross-reference: episodes keyed by series|season|episode, movies by tmdb id
+        const epKeys = new Set<string>();
+        const movieIds = new Set<number>();
+        for (const item of played) {
+          if (item.Type === 'Episode') {
+            // tvdb episode id is exact; title|season|episode covers items without one
+            const tvdbId = item.ProviderIds?.Tvdb;
+            if (tvdbId) epKeys.add(`tvdb:${tvdbId}`);
+            if (item.SeriesName != null && item.ParentIndexNumber != null && item.IndexNumber != null) {
+              epKeys.add(`${item.SeriesName.toLowerCase()}|${item.ParentIndexNumber}|${item.IndexNumber}`);
+            }
+          } else if (item.Type === 'Movie') {
+            const tmdbId = parseInt(item.ProviderIds?.Tmdb ?? '', 10);
+            if (Number.isFinite(tmdbId)) movieIds.add(tmdbId);
+          }
+        }
+        setPlayedEpisodeKeys(epKeys);
+        setPlayedMovieTmdbIds(movieIds);
       })(),
       (async () => {
         if (!sonarrConfig) return;
@@ -96,17 +133,14 @@ export function SummaryScreen() {
           sonarr.getCalendar(now.toISOString(), new Date(now.getTime() + 14 * DAY).toISOString(), { includeSeries: true }),
         ]);
         setReadyEpisodes(past.filter((e: any) => e.hasFile));
-        setSchedule((prev) => [
-          ...prev.filter((e) => !e.key.startsWith('ep-')),
-          ...upcoming.filter((e: any) => e.monitored).map((e: any) => ({
+        setSchedule((prev) => mergeSchedule(prev, 'ep-', upcoming.filter((e: any) => e.monitored).map((e: any) => ({
             key: `ep-${e.id}`,
             date: new Date(e.airDateUtc ?? now),
             title: e.series?.title ?? 'Unknown series',
             subtitle: `S${String(e.seasonNumber).padStart(2, '0')}E${String(e.episodeNumber).padStart(2, '0')}${e.title ? ` · ${e.title}` : ''}`,
             hasFile: e.hasFile,
             onPress: e.series ? () => navigation.navigate('TV', { screen: 'SeriesDetail', params: { series: e.series } }) : undefined,
-          })),
-        ]);
+          }))));
       })(),
       (async () => {
         if (!radarrConfig) return;
@@ -115,15 +149,14 @@ export function SummaryScreen() {
           radarr.getMovies(),
           radarr.getCalendar(now.toISOString(), new Date(now.getTime() + 30 * DAY).toISOString()),
         ]);
+        useLibraryStore.getState().setMovies(movies);
         const cutoff = now.getTime() - 14 * DAY;
         setReadyMovies(movies
           .filter((m) => m.hasFile && m.movieFile?.dateAdded && new Date(m.movieFile.dateAdded).getTime() > cutoff)
           .sort((a, b) => new Date(b.movieFile!.dateAdded!).getTime() - new Date(a.movieFile!.dateAdded!).getTime())
           .slice(0, 12));
         const byId = new Map(movies.map((m) => [m.id, m]));
-        setSchedule((prev) => [
-          ...prev.filter((e) => !e.key.startsWith('mv-')),
-          ...upcoming.filter((m: any) => m.monitored && !m.hasFile).map((m: any) => ({
+        setSchedule((prev) => mergeSchedule(prev, 'mv-', upcoming.filter((m: any) => m.monitored && !m.hasFile).map((m: any) => ({
             key: `mv-${m.id}`,
             date: new Date(m.digitalRelease ?? m.inCinemas ?? now),
             title: m.title,
@@ -132,14 +165,25 @@ export function SummaryScreen() {
             onPress: byId.has(m.id)
               ? () => navigation.navigate('Movies', { screen: 'MovieDetail', params: { movie: byId.get(m.id) } })
               : undefined,
-          })),
-        ]);
+          }))));
       })(),
     ]);
     setLoaded(true);
   }, [server, configOf, isLocal, navigation]);
 
-  usePolling(fetchContent, 300000, !!server);
+  usePolling(fetchContent, 900000, !!server);
+
+  // Immediate reload when the active server changes — don't wait out the timer.
+  // Skips the mount run since usePolling already fetches immediately.
+  const prevServerId = React.useRef(server?.id);
+  React.useEffect(() => {
+    if (server && prevServerId.current !== server.id) {
+      fetchContent();
+      refreshStatuses(enabledServices, isLocal, true);
+    }
+    prevServerId.current = server?.id;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [server?.id]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -147,15 +191,8 @@ export function SummaryScreen() {
     setRefreshing(false);
   }, [fetchContent, fetchHealth]);
 
-  const openEmbyItem = async (item: EmbyMediaItem) => {
-    const embyConfig = configOf('emby');
-    if (!embyConfig) return;
-    const emby = getEmbyAdapter(embyConfig, isLocal);
-    try {
-      await Linking.openURL(`emby://items/${item.ServerId}/${item.Id}`);
-    } catch {
-      await Linking.openURL(`${emby.baseUrl}/web/index.html#!/item?id=${item.Id}&serverId=${item.ServerId}`).catch(() => {});
-    }
+  const openEmbyItem = (item: EmbyMediaItem) => {
+    if (embyAdapter) openEmbyRef(embyAdapter, item).catch(() => {});
   };
 
   const embyAdapter = useMemo(() => {
@@ -163,10 +200,22 @@ export function SummaryScreen() {
     return cfg ? getEmbyAdapter(cfg, isLocal) : null;
   }, [configOf, isLocal]);
 
-  // Health summary
-  const upCount = Object.values(statuses).filter(Boolean).length;
-  const downServices = Object.entries(statuses).filter(([, up]) => !up).map(([id]) => serviceConfig[id as ServiceId]?.label ?? id);
-  const totalChecked = Object.keys(statuses).length;
+  // Hide items the user already watched in Emby (no-op when Emby is unavailable)
+  const unwatchedEpisodes = useMemo(() => readyEpisodes.filter((e: any) =>
+    !(e.tvdbId && playedEpisodeKeys.has(`tvdb:${e.tvdbId}`)) &&
+    !playedEpisodeKeys.has(`${(e.series?.title ?? '').toLowerCase()}|${e.seasonNumber}|${e.episodeNumber}`)),
+  [readyEpisodes, playedEpisodeKeys]);
+
+  const unwatchedMovies = useMemo(() => readyMovies.filter((m) =>
+    !playedMovieTmdbIds.has(m.tmdbId)),
+  [readyMovies, playedMovieTmdbIds]);
+
+  // Health summary from the shared store
+  const upCount = Object.values(serviceStatuses).filter((st) => st?.connection.status === 'connected').length;
+  const downServices = Object.entries(serviceStatuses)
+    .filter(([, st]) => st?.connection.status !== 'connected')
+    .map(([id]) => serviceConfig[id as ServiceId]?.label ?? id);
+  const totalChecked = Object.keys(serviceStatuses).length;
   const allUp = totalChecked > 0 && downServices.length === 0;
 
   // Schedule grouped by day
@@ -230,6 +279,20 @@ export function SummaryScreen() {
           </View>
         )}
 
+        {server && !configOf('emby') && (
+          <View style={styles.serviceNote}>
+            <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+            <Text style={styles.serviceNoteText}>Emby not connected — Continue Watching and watched-state filtering unavailable.</Text>
+          </View>
+        )}
+
+        {server && !configOf('sonarr') && !configOf('radarr') && (
+          <View style={styles.serviceNote}>
+            <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+            <Text style={styles.serviceNoteText}>Sonarr/Radarr not connected — new releases and schedule unavailable.</Text>
+          </View>
+        )}
+
         {resumeItems.length > 0 && embyAdapter && (
           <Carousel title="Continue Watching" status="loaded">
             {resumeItems.map((item) => (
@@ -261,9 +324,9 @@ export function SummaryScreen() {
           </Carousel>
         )}
 
-        {(readyEpisodes.length > 0 || readyMovies.length > 0) && (
+        {(unwatchedEpisodes.length > 0 || unwatchedMovies.length > 0) && (
           <Carousel title="New & Ready to Watch" status="loaded">
-            {readyEpisodes.map((e: any) => (
+            {unwatchedEpisodes.map((e: any) => (
               <PosterCard
                 key={`ep-${e.id}`}
                 title={e.series?.title ?? e.title}
@@ -274,7 +337,7 @@ export function SummaryScreen() {
                 onPress={() => e.series && navigation.navigate('TV', { screen: 'SeriesDetail', params: { series: e.series } })}
               />
             ))}
-            {readyMovies.map((m) => (
+            {unwatchedMovies.map((m) => (
               <PosterCard
                 key={`mv-${m.id}`}
                 title={m.title}
@@ -288,8 +351,10 @@ export function SummaryScreen() {
           </Carousel>
         )}
 
-        <Text style={styles.scheduleTitle}>Coming Up</Text>
-        {groupedSchedule.length === 0 && loaded && (
+        {(configOf('sonarr') || configOf('radarr')) && (
+          <Text style={styles.scheduleTitle}>Coming Up</Text>
+        )}
+        {(configOf('sonarr') || configOf('radarr')) && groupedSchedule.length === 0 && loaded && (
           <Text style={styles.scheduleEmpty}>Nothing scheduled in the next two weeks.</Text>
         )}
         {groupedSchedule.map((group) => (
@@ -344,4 +409,6 @@ const styles = StyleSheet.create({
   scheduleItemTitle: { ...typography.caption, fontWeight: '600', color: colors.textPrimary },
   scheduleItemSub: { ...typography.micro, color: colors.textMuted, marginTop: 2 },
   scheduleTime: { ...typography.micro, color: colors.textMuted },
+  serviceNote: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginHorizontal: spacing.xl, marginBottom: spacing.md, padding: spacing.md, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.md },
+  serviceNoteText: { ...typography.micro, color: colors.textMuted, flex: 1 },
 });

@@ -2,6 +2,16 @@ import { Linking } from 'react-native';
 import { useServerStore } from '../../stores/serverStore';
 import { useConnectionStore } from '../../stores/connectionStore';
 import { getEmbyAdapter } from '../adapterFactory';
+import { EmbyAdapter, EmbyItemRef } from './adapter';
+
+// App deep link first, web item page as fallback
+export async function openEmbyRef(emby: EmbyAdapter, item: EmbyItemRef): Promise<void> {
+  try {
+    await Linking.openURL(`emby://items/${item.ServerId}/${item.Id}`);
+  } catch {
+    await Linking.openURL(emby.itemWebUrl(item)).catch(() => {});
+  }
+}
 
 // Opens the item in the Emby Android app via its emby://items deep link,
 // falling back to the web item page when the app isn't installed.
@@ -20,10 +30,6 @@ export async function openInEmby(
     return `Emby lookup failed: ${e.message}`;
   }
   if (!item) return 'Not found in your Emby library.';
-  try {
-    await Linking.openURL(`emby://items/${item.ServerId}/${item.Id}`);
-  } catch {
-    await Linking.openURL(emby.itemWebUrl(item)).catch(() => {});
-  }
+  await openEmbyRef(emby, item);
   return null;
 }
