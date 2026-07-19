@@ -6,7 +6,10 @@ const KEYS = {
   TMDB: 'openarr.tmdbToken',
   OMDB: 'openarr.omdbKey',
   REGION: 'openarr.region',
+  BACKGROUND: 'openarr.backgroundStyle',
 } as const;
+
+export type BackgroundStyle = 'aurora' | 'posters';
 
 function isPlaceholder(value: string): boolean {
   return value.startsWith('__') && value.endsWith('__');
@@ -26,6 +29,8 @@ interface SettingsState {
   tmdbToken: string | undefined;
   omdbKey: string | undefined;
   region: string;
+  backgroundStyle: BackgroundStyle;
+  setBackgroundStyle: (style: BackgroundStyle) => void;
   setTmdbToken: (token: string | undefined) => void;
   setOmdbKey: (key: string | undefined) => void;
   setRegion: (region: string) => void;
@@ -37,6 +42,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   tmdbToken: appStorage.getValue(KEYS.TMDB),
   omdbKey: appStorage.getValue(KEYS.OMDB),
   region: appStorage.getValue(KEYS.REGION) ?? deviceRegion(),
+  backgroundStyle: (appStorage.getValue(KEYS.BACKGROUND) as BackgroundStyle) ?? 'aurora',
+
+  setBackgroundStyle: (style) => {
+    appStorage.setValue(KEYS.BACKGROUND, style);
+    set({ backgroundStyle: style });
+  },
 
   setTmdbToken: (token) => {
     const trimmed = token?.trim() || undefined;

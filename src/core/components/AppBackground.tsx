@@ -1,10 +1,15 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSettingsStore } from '../../stores/settingsStore';
+import { PosterWallBackground } from './PosterWallBackground';
 
-// App-wide backdrop: indigo-to-black vertical wash with a teal glow top-right
-// and a violet hint bottom-left. Screens render transparent on top of this.
+// App-wide backdrop, style switchable in Settings → Appearance.
+// "aurora": indigo-to-black wash with teal/violet glows.
+// "posters": dimmed trending-poster collage under a heavy scrim.
 export function AppBackground() {
+  const style = useSettingsStore((s) => s.backgroundStyle);
+  if (style === 'posters') return <PosterWallBackground />;
   return (
     <>
       <LinearGradient

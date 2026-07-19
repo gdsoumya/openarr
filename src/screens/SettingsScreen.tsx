@@ -71,6 +71,26 @@ export function SettingsScreen() {
         <View style={[styles.statusDot, { backgroundColor: isLocal ? colors.success : colors.info }]} />
       </View>
 
+      {/* Appearance */}
+      <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Appearance</Text>
+      <View style={styles.segmentRow}>
+        {([
+          { id: 'aurora', label: 'Aurora Gradient' },
+          { id: 'posters', label: 'Poster Wall' },
+        ] as const).map((opt) => {
+          const active = settings.backgroundStyle === opt.id;
+          return (
+            <Pressable
+              key={opt.id}
+              style={[styles.segment, active && styles.segmentActive]}
+              onPress={() => settings.setBackgroundStyle(opt.id)}
+            >
+              <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{opt.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {/* Discovery */}
       <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Discovery</Text>
       <View style={styles.inputRow}>
@@ -195,6 +215,11 @@ export function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  segmentRow: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl },
+  segment: { flex: 1, paddingVertical: 10, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center' },
+  segmentActive: { backgroundColor: colors.primaryMuted, borderColor: 'rgba(100,255,218,0.35)' },
+  segmentText: { ...typography.caption, fontWeight: '500', color: colors.textMuted },
+  segmentTextActive: { color: colors.primary, fontWeight: '600' },
   container: { flex: 1, backgroundColor: 'transparent' },
   content: { paddingHorizontal: spacing.xl, paddingBottom: 20 },
   sectionTitle: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.md, marginTop: spacing.lg },
