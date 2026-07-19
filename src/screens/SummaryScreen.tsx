@@ -488,6 +488,6 @@ const styles = StyleSheet.create({
   scheduleItemTitle: { ...typography.caption, fontWeight: '600', color: colors.textPrimary },
   scheduleItemSub: { ...typography.micro, color: colors.textMuted, marginTop: 2 },
   scheduleTime: { ...typography.micro, color: colors.textMuted, width: 42, fontVariant: ['tabular-nums'] },
-  serviceNote: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginHorizontal: spacing.xl, marginBottom: spacing.md, padding: spacing.md, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.md },
+  serviceNote: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginHorizontal: spacing.xl, marginBottom: spacing.md, padding: spacing.md, backgroundColor: '#181c3c', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.md },
   serviceNoteText: { ...typography.micro, color: colors.textMuted, flex: 1 },
 });

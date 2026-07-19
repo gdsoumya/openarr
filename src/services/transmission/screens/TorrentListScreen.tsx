@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, StyleSheet, RefreshControl, Platform, TextInput, Pressable, Modal, KeyboardAvoidingView } from 'react-native';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { FlashList } from '@shopify/flash-list';
@@ -142,6 +143,7 @@ export function TorrentListScreen() {
       <Modal visible={showAddInput} transparent animationType="fade" onRequestClose={() => setShowAddInput(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.dialogOverlay}>
           <View style={styles.dialogCard}>
+            <LinearGradient colors={['#1c2148', '#131634']} style={StyleSheet.absoluteFill} />
             <Text style={styles.dialogTitle}>Add Torrent</Text>
             <TextInput
               style={styles.dialogInput}
@@ -172,9 +174,9 @@ export function TorrentListScreen() {
 
 const styles = StyleSheet.create({
   dialogOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: spacing.xl },
-  dialogCard: { backgroundColor: colors.surfaceElevated, borderRadius: radii.xl, padding: spacing.xl, borderWidth: 1, borderColor: colors.divider },
+  dialogCard: { overflow: 'hidden', borderRadius: radii.xl, padding: spacing.xl, borderWidth: 1, borderColor: colors.divider },
   dialogTitle: { ...typography.h3, color: colors.textPrimary, marginBottom: spacing.lg },
-  dialogInput: { ...typography.body, color: colors.textPrimary, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.md, padding: spacing.md },
+  dialogInput: { ...typography.body, color: colors.textPrimary, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.md, padding: spacing.md },
   dialogActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.lg },
   dialogCancel: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider },
   dialogCancelText: { ...typography.bodyBold, color: colors.textMuted },

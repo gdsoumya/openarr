@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   container: { paddingHorizontal: spacing.xl },
   header: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md },
   title: { ...typography.bodyBold, color: colors.textPrimary, flex: 1 },
-  badge: { ...typography.micro, color: colors.textMuted, backgroundColor: 'rgba(255,255,255,0.04)', paddingHorizontal: 10, paddingVertical: 2, borderRadius: 10, marginRight: spacing.sm },
+  badge: { ...typography.micro, color: colors.textMuted, backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 10, paddingVertical: 2, borderRadius: 10, marginRight: spacing.sm },
   chevron: { color: colors.textMuted, fontSize: 14 },
   menuBtn: { paddingHorizontal: spacing.sm },
   menuBtnText: { color: colors.textMuted, fontSize: 18, lineHeight: 20 },

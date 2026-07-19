@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, StyleSheet, Pressable, ScrollView, Modal, FlatList } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../core/theme/tokens';
@@ -221,6 +222,7 @@ export function DiscoverFiltersScreen() {
       <Modal visible={yearPicker !== null} transparent animationType="fade" onRequestClose={() => setYearPicker(null)}>
         <Pressable style={styles.pickerOverlay} onPress={() => setYearPicker(null)}>
           <Pressable style={styles.pickerCard} onPress={() => {}}>
+            <LinearGradient colors={['#1c2148', '#131634']} style={StyleSheet.absoluteFill} />
             <Text style={styles.pickerTitle}>{yearPicker === 'from' ? 'From year' : 'To year'}</Text>
             <FlatList
               data={['Any', ...YEARS] as Array<'Any' | number>}
@@ -258,7 +260,7 @@ const styles = StyleSheet.create({
   sectionTitle: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, paddingHorizontal: spacing.xl, marginTop: spacing.xl, marginBottom: spacing.sm },
   sectionHint: { ...typography.micro, color: colors.textMuted, paddingHorizontal: spacing.xl, marginTop: -spacing.xs, marginBottom: spacing.sm, fontStyle: 'italic' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, paddingHorizontal: spacing.xl },
-  chip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider },
+  chip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: colors.divider },
   chipActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
   chipText: { ...typography.caption, color: colors.textMuted },
   chipTextActive: { color: colors.primary, fontWeight: '600' },
@@ -268,7 +270,7 @@ const styles = StyleSheet.create({
   yearFieldValue: { ...typography.bodyBold, color: colors.textSecondary, marginTop: 2 },
   yearDash: { ...typography.body, color: colors.textMuted },
   pickerOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: spacing.xxxl },
-  pickerCard: { backgroundColor: colors.surfaceElevated, borderRadius: radii.xl, borderWidth: 1, borderColor: colors.divider, maxHeight: '65%', paddingVertical: spacing.md },
+  pickerCard: { overflow: 'hidden', borderRadius: radii.xl, borderWidth: 1, borderColor: colors.divider, maxHeight: '65%', paddingVertical: spacing.md },
   pickerTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm },
   pickerList: { paddingHorizontal: spacing.md },
   pickerRow: { paddingVertical: spacing.md, borderRadius: radii.md, alignItems: 'center' },

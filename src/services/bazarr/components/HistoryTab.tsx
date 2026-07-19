@@ -111,7 +111,7 @@ export function HistoryTab({ adapter }: { adapter: BazarrAdapter }) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   toolbar: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl, marginBottom: spacing.md },
-  segment: { paddingVertical: 5, paddingHorizontal: 12, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider },
+  segment: { paddingVertical: 5, paddingHorizontal: 12, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: colors.divider },
   segmentActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
   segmentText: { ...typography.micro, color: colors.textMuted },
   segmentTextActive: { color: colors.primary, fontWeight: '600' },

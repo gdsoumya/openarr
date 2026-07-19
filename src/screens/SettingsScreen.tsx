@@ -216,7 +216,7 @@ export function SettingsScreen() {
 
 const styles = StyleSheet.create({
   segmentRow: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl },
-  segment: { flex: 1, paddingVertical: 10, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center' },
+  segment: { flex: 1, paddingVertical: 10, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider, backgroundColor: 'rgba(255,255,255,0.07)', alignItems: 'center' },
   segmentActive: { backgroundColor: colors.primaryMuted, borderColor: 'rgba(100,255,218,0.35)' },
   segmentText: { ...typography.caption, fontWeight: '500', color: colors.textMuted },
   segmentTextActive: { color: colors.primary, fontWeight: '600' },
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   rowSub: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   activeBadge: { backgroundColor: colors.primaryMuted, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, borderWidth: 1, borderColor: colors.primaryBorder },
   activeBadgeText: { ...typography.badge, color: colors.primary },
-  activateBtn: { marginTop: spacing.sm, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider },
+  activateBtn: { marginTop: spacing.sm, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: colors.divider },
   activateBtnText: { ...typography.micro, color: colors.textMuted },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   addButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: colors.primaryMuted, borderWidth: 1, borderColor: colors.primaryBorder, borderRadius: radii.lg, padding: spacing.lg, marginTop: spacing.sm },
@@ -240,5 +240,5 @@ const styles = StyleSheet.create({
   inputRow: { backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.lg, marginBottom: spacing.sm },
   inputLabel: { ...typography.bodyBold, color: colors.textPrimary },
   inputHint: { ...typography.micro, color: colors.textMuted, marginTop: 2, marginBottom: spacing.sm },
-  input: { ...typography.body, color: colors.textPrimary, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.md, padding: spacing.md },
+  input: { ...typography.body, color: colors.textPrimary, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.md, padding: spacing.md },
 });

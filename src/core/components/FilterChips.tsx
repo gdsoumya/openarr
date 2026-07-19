@@ -27,7 +27,7 @@ export function FilterChips({ chips, activeId, onSelect }: FilterChipsProps) {
 const styles = StyleSheet.create({
   wrapper: { height: 44, marginBottom: spacing.md },
   container: { paddingHorizontal: spacing.xl, gap: spacing.sm, alignItems: 'center', height: 44 },
-  chip: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider, height: 32, justifyContent: 'center' },
+  chip: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: colors.divider, height: 32, justifyContent: 'center' },
   chipActive: {
     backgroundColor: colors.primaryMuted, borderColor: 'rgba(100,255,218,0.35)',
     shadowColor: colors.primary, shadowOpacity: 0.35, shadowRadius: 6, shadowOffset: { width: 0, height: 0 }, elevation: 3,

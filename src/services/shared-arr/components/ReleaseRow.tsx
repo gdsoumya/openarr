@@ -92,7 +92,7 @@ export const ReleaseRow = React.memo(function ReleaseRow({ release, expanded, on
 });
 
 const styles = StyleSheet.create({
-  item: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: 'transparent' },
+  item: { backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: radii.md, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: 'transparent' },
   itemRejected: { opacity: 0.55, borderColor: 'rgba(233,69,96,0.15)' },
   itemHeader: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm, alignItems: 'flex-start' },
   stateIcon: { marginTop: 1 },

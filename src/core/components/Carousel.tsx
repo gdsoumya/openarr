@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xl,
     backgroundColor: 'rgba(255,255,255,0.015)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: radii.lg,
     justifyContent: 'center',
     alignItems: 'center',

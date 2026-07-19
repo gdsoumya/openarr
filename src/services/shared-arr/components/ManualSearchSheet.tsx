@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   chipsWrapper: { borderBottomWidth: 1, borderBottomColor: colors.divider, paddingVertical: spacing.xs },
   chipRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, height: 36 },
   chipLabel: { ...typography.micro, color: colors.textMuted, width: 34 },
-  chip: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider },
+  chip: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: radii.round, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: colors.divider },
   chipActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder },
   chipText: { ...typography.micro, color: colors.textMuted },
   chipTextActive: { color: colors.primary, fontWeight: '600' },

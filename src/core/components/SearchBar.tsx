@@ -21,7 +21,7 @@ export function SearchBar({ placeholder, value, onChangeText, onSubmit }: Search
 }
 
 const styles = StyleSheet.create({
-  container: { marginHorizontal: spacing.xl, marginBottom: spacing.lg, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.lg, paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center' },
+  container: { marginHorizontal: spacing.xl, marginBottom: spacing.lg, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: colors.divider, borderRadius: radii.lg, paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center' },
   icon: { marginRight: spacing.sm },
   input: { ...typography.body, color: colors.textPrimary, paddingVertical: 11, flex: 1 },
   clearBtn: { padding: spacing.xs },

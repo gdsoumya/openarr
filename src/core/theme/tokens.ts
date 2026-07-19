@@ -2,8 +2,8 @@ export const colors = {
   surfaceBase: '#0f1023',
   // Matches the top of the AppBackground gradient so native headers blend in
   surfaceHeader: '#171c40',
-  surfaceCard: 'rgba(255,255,255,0.04)',
-  surfaceCardBorder: 'rgba(255,255,255,0.05)',
+  surfaceCard: 'rgba(21,25,53,0.82)',
+  surfaceCardBorder: 'rgba(255,255,255,0.09)',
   surfaceElevated: '#16213e',
   primary: '#64ffda',
   primaryMuted: 'rgba(100, 255, 218, 0.1)',
@@ -23,7 +23,7 @@ export const colors = {
   textPrimary: '#ffffff',
   textSecondary: '#cdd6f4',
   textMuted: '#8892b0',
-  divider: 'rgba(255,255,255,0.06)',
+  divider: 'rgba(255,255,255,0.09)',
   overlay: 'rgba(0,0,0,0.6)',
 } as const;
 

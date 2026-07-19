@@ -123,7 +123,7 @@ function getLanguageName(code: string): string {
 const styles = StyleSheet.create({
   container: { paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
-  gridItem: { width: '47%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radii.sm, padding: spacing.sm },
+  gridItem: { width: '47%', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: radii.sm, padding: spacing.sm },
   gridLabel: { ...typography.micro, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
   gridValue: { ...typography.caption, color: colors.textPrimary, fontWeight: '500', marginTop: 2 },
   section: { marginTop: spacing.md },

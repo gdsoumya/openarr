@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, Pressable, BackHandler, Dimensions } from 'react-native';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radii, typography } from '../theme/tokens';
@@ -10,6 +12,29 @@ export interface ActionSheetOption {
   icon?: string;
   onPress: () => void;
   destructive?: boolean;
+}
+
+// Legacy emoji icons map to vector icons so every sheet in the app renders
+// the modern chip style without touching call sites
+const EMOJI_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  '🔍': 'search', '📋': 'list', '🗑': 'trash-outline', '👁': 'eye-outline',
+  '💬': 'chatbubble-ellipses-outline', '🎬': 'film-outline', '▶️': 'play',
+  '🔄': 'refresh', '⏹': 'stop', '⚡': 'flash-outline', '🖥': 'desktop-outline',
+  '⚙️': 'settings-outline', '⬇️': 'download-outline', '⏱': 'time-outline',
+  '🌐': 'globe-outline', '🔁': 'swap-horizontal', '✓': 'checkmark',
+};
+
+function OptionIcon({ icon, destructive }: { icon: string; destructive?: boolean }) {
+  const tint = destructive ? colors.error : colors.primary;
+  const bg = destructive ? 'rgba(233,69,96,0.12)' : colors.primaryMuted;
+  const name = EMOJI_ICONS[icon.replace(/\uFE0F/g, '')] ?? EMOJI_ICONS[icon];
+  return (
+    <View style={[styles.iconChip, { backgroundColor: bg }]}>
+      {name
+        ? <Ionicons name={name} size={16} color={tint} />
+        : <Text style={{ fontSize: 14 }}>{icon}</Text>}
+    </View>
+  );
 }
 
 interface ActionSheetProps {
@@ -57,7 +82,9 @@ export function ActionSheet({ visible, title, subtitle, options, onClose }: Acti
       backdropComponent={(props) => (
         <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" />
       )}
-      backgroundStyle={styles.background}
+      backgroundComponent={({ style }) => (
+        <LinearGradient colors={['#1c2148', '#131634']} style={[style, styles.background]} />
+      )}
       handleIndicatorStyle={styles.handle}
     >
       <BottomSheetScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomPad }]}>
@@ -71,10 +98,11 @@ export function ActionSheet({ visible, title, subtitle, options, onClose }: Acti
               style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
               onPress={() => { onClose(); setTimeout(opt.onPress, 300); }}
             >
-              {opt.icon && <Text style={styles.optionIcon}>{opt.icon}</Text>}
+              {opt.icon && <OptionIcon icon={opt.icon} destructive={opt.destructive} />}
               <Text style={[styles.optionLabel, opt.destructive && styles.optionDestructive]}>
                 {opt.label}
               </Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={styles.optionChevron} />
             </Pressable>
           ))}
         </View>
@@ -89,11 +117,13 @@ export function ActionSheet({ visible, title, subtitle, options, onClose }: Acti
 
 const styles = StyleSheet.create({
   background: {
-    backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
-  handle: { backgroundColor: 'rgba(255,255,255,0.2)', width: 36 },
+  handle: { backgroundColor: 'rgba(255,255,255,0.25)', width: 36 },
   content: { paddingHorizontal: spacing.xl },
   title: { ...typography.h3, color: colors.textPrimary, marginBottom: 2 },
   subtitle: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.lg },
@@ -104,12 +134,16 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    borderRadius: radii.md,
-    marginBottom: 2,
+    borderRadius: radii.lg,
+    marginBottom: spacing.xs,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
   },
-  optionPressed: { backgroundColor: 'rgba(255,255,255,0.04)' },
-  optionIcon: { fontSize: 18, width: 28, textAlign: 'center' },
-  optionLabel: { ...typography.body, color: colors.textPrimary },
+  optionPressed: { backgroundColor: 'rgba(255,255,255,0.08)', transform: [{ scale: 0.98 }] },
+  iconChip: { width: 30, height: 30, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
+  optionLabel: { ...typography.body, color: colors.textPrimary, flex: 1 },
+  optionChevron: { opacity: 0.4 },
   optionDestructive: { color: colors.error },
   cancelButton: {
     marginTop: spacing.md,

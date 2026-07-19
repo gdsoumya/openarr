@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   actionDelete: { borderColor: 'rgba(233,69,96,0.3)', backgroundColor: 'rgba(233,69,96,0.08)' },
   actionText: { ...typography.bodyBold, color: colors.primary },
   sectionTitle: { ...typography.h3, color: colors.textPrimary, paddingHorizontal: spacing.xl, marginBottom: spacing.md },
-  fileItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)' },
+  fileItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.07)' },
   fileInfo: { flex: 1, marginRight: spacing.md },
   fileName: { ...typography.caption, color: colors.textPrimary, lineHeight: 17 },
   fileSize: { ...typography.micro, color: colors.textMuted, marginTop: 2 },

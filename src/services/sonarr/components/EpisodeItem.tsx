@@ -69,14 +69,14 @@ export function EpisodeItem({ episode, subtitles, downloadProgress, onPress }: E
 }
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm + 2, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)' },
+  container: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm + 2, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.07)' },
 
   // Episode number badge
   num: { width: 30, height: 30, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
   numDone: { backgroundColor: 'rgba(100, 255, 218, 0.2)' },
   numDownloading: { backgroundColor: 'rgba(100, 255, 218, 0.15)' },
   numMissing: { backgroundColor: 'rgba(233, 69, 96, 0.15)' },
-  numUnaired: { backgroundColor: 'rgba(255,255,255,0.04)' },
+  numUnaired: { backgroundColor: 'rgba(255,255,255,0.08)' },
   numText: { fontSize: 12, fontWeight: '700', color: colors.textMuted },
   numTextDone: { color: colors.primary },
 
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   statusIcon: { width: 28, height: 28, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
   statusDone: { backgroundColor: 'rgba(100, 255, 218, 0.25)', borderWidth: 1, borderColor: 'rgba(100, 255, 218, 0.3)' },
   statusMissing: { backgroundColor: 'rgba(233, 69, 96, 0.2)', borderWidth: 1, borderColor: 'rgba(233, 69, 96, 0.3)' },
-  statusUnaired: { backgroundColor: 'rgba(255,255,255,0.04)' },
+  statusUnaired: { backgroundColor: 'rgba(255,255,255,0.08)' },
   statusText: { fontSize: 14, fontWeight: '700' },
   statusTextDone: { color: colors.success },
   statusTextMissing: { color: colors.error },

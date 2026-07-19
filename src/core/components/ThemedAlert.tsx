@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radii, typography } from '../theme/tokens';
 
 interface AlertButton {
@@ -64,6 +65,7 @@ export function ThemedAlertProvider({ children }: { children: React.ReactNode })
           else dismiss();
         }}>
           <Pressable style={styles.dialog} onPress={(e) => e.stopPropagation()}>
+            <LinearGradient colors={['#1c2148', '#131634']} style={StyleSheet.absoluteFill} />
             <Text style={styles.title}>{state.title}</Text>
             {state.message && <Text style={styles.message}>{state.message}</Text>}
 
@@ -111,13 +113,13 @@ const styles = StyleSheet.create({
     padding: spacing.xxl,
   },
   dialog: {
-    backgroundColor: colors.surfaceElevated,
     borderRadius: radii.xl,
     padding: spacing.xl,
     width: '100%',
     maxWidth: 340,
     borderWidth: 1,
-    borderColor: colors.divider,
+    borderColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
   },
   title: {
     ...typography.h3,
@@ -149,7 +151,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(233,69,96,0.3)',
   },
   buttonCancel: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
     borderColor: colors.divider,
   },
