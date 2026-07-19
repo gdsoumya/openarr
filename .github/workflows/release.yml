@@ -33,6 +33,9 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Caches gradle wrapper + dependencies; cold RN builds take 30+ min without it
+      - uses: gradle/actions/setup-gradle@v4
+
       - name: Install dependencies
         run: npm ci
 
