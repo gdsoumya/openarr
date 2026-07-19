@@ -21,7 +21,7 @@
     "expo": "~55.0.9",
     "expo-application": "~55.0.17",
     "expo-constants": "~55.0.9",
-    "expo-dev-client": "~55.0.19",
+    "expo-dev-client": "~57.0.7",
     "expo-device": "~55.0.10",
     "expo-file-system": "~55.0.12",
     "expo-font": "~55.0.4",
