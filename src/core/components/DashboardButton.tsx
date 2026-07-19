@@ -8,7 +8,7 @@ import { colors } from '../theme/tokens';
 export function DashboardButton() {
   const navigation = useNavigation<any>();
   return (
-    <Pressable style={styles.btn} hitSlop={8} onPress={() => navigation.navigate('Dashboard')}>
+    <Pressable style={styles.btn} hitSlop={8} onPress={() => navigation.navigate('Dashboard')} accessibilityRole="button" accessibilityLabel="Open dashboard">
       <Ionicons name="pulse" size={20} color={colors.textSecondary} />
     </Pressable>
   );

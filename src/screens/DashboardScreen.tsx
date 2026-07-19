@@ -95,12 +95,12 @@ export function DashboardScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <View style={styles.headerLeft}>
-          <Pressable style={styles.headerBtn} hitSlop={8} onPress={() => navigation.goBack()}>
+          <Pressable style={styles.headerBtn} hitSlop={8} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back">
             <Ionicons name="arrow-back" size={20} color={colors.textMuted} />
           </Pressable>
           <Text style={styles.title}>Dashboard</Text>
         </View>
-        <Pressable style={styles.headerBtn} onPress={() => navigation.navigate('Settings')}>
+        <Pressable style={styles.headerBtn} onPress={() => navigation.navigate('Settings')} accessibilityRole="button" accessibilityLabel="Settings">
           <Ionicons name="settings-outline" size={20} color={colors.textMuted} />
         </Pressable>
       </View>

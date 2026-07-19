@@ -12,7 +12,7 @@ export function SearchBar({ placeholder, value, onChangeText, onSubmit }: Search
       <TextInput style={styles.input} placeholder={placeholder} placeholderTextColor={colors.textMuted}
         value={value} onChangeText={onChangeText} onSubmitEditing={onSubmit} returnKeyType="search" autoCapitalize="none" autoCorrect={false} />
       {value.length > 0 && (
-        <Pressable style={styles.clearBtn} onPress={() => onChangeText('')} hitSlop={8}>
+        <Pressable style={styles.clearBtn} onPress={() => onChangeText('')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Clear search">
           <Ionicons name="close-circle" size={18} color={colors.textMuted} />
         </Pressable>
       )}

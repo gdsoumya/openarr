@@ -27,6 +27,9 @@ export const colors = {
   overlay: 'rgba(0,0,0,0.6)',
 } as const;
 
+// Elevated sheet/dialog surface gradient (top → bottom)
+export const sheetGradient = ['#1c2148', '#131634'] as const;
+
 export const spacing = {
   xs: 4,
   sm: 8,

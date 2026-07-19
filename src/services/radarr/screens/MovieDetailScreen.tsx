@@ -204,7 +204,7 @@ export function MovieDetailScreen() {
             <View style={styles.heroBg} />
           )}
           <LinearGradient
-            colors={['rgba(15,16,35,0.25)', 'rgba(15,16,35,0.55)', '#0f1023']}
+            colors={['rgba(15,16,35,0.25)', 'rgba(15,16,35,0.55)', colors.surfaceBase]}
             locations={[0, 0.65, 1]}
             style={styles.heroOverlay}
           />

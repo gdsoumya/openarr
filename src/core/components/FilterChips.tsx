@@ -12,7 +12,7 @@ export function FilterChips({ chips, activeId, onSelect }: FilterChipsProps) {
         {chips.map((chip) => {
           const isActive = chip.id === activeId;
           return (
-            <Pressable key={chip.id} style={[styles.chip, isActive && styles.chipActive]} onPress={() => onSelect(chip.id)}>
+            <Pressable key={chip.id} style={[styles.chip, isActive && styles.chipActive]} hitSlop={{ top: 8, bottom: 8 }} onPress={() => onSelect(chip.id)} accessibilityRole="button" accessibilityLabel={chip.label} accessibilityState={{ selected: isActive }}>
               <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
                 {chip.label}{chip.count !== undefined ? ` (${chip.count})` : ''}
               </Text>

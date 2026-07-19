@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, radii, typography } from '../theme/tokens';
+import { colors, spacing, radii, typography, sheetGradient } from '../theme/tokens';
 
 interface AlertButton {
   text: string;
@@ -65,7 +65,7 @@ export function ThemedAlertProvider({ children }: { children: React.ReactNode })
           else dismiss();
         }}>
           <Pressable style={styles.dialog} onPress={(e) => e.stopPropagation()}>
-            <LinearGradient colors={['#1c2148', '#131634']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={sheetGradient} style={StyleSheet.absoluteFill} />
             <Text style={styles.title}>{state.title}</Text>
             {state.message && <Text style={styles.message}>{state.message}</Text>}
 

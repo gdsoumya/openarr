@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, radii, typography } from '../theme/tokens';
+import { colors, spacing, radii, typography, sheetGradient } from '../theme/tokens';
 
 export interface ActionSheetOption {
   label: string;
@@ -83,7 +83,7 @@ export function ActionSheet({ visible, title, subtitle, options, onClose }: Acti
         <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" />
       )}
       backgroundComponent={({ style }) => (
-        <LinearGradient colors={['#1c2148', '#131634']} style={[style, styles.background]} />
+        <LinearGradient colors={sheetGradient} style={[style, styles.background]} />
       )}
       handleIndicatorStyle={styles.handle}
     >

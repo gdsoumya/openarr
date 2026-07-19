@@ -229,6 +229,4 @@ const styles = StyleSheet.create({
   testFail: { ...typography.caption, color: colors.error, textAlign: 'center', marginTop: spacing.sm },
   saveButton: { backgroundColor: colors.primary, borderRadius: radii.md, padding: spacing.lg, alignItems: 'center', marginTop: spacing.lg },
   saveButtonText: { ...typography.bodyBold, color: '#0f1023' },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.xl },
-  switchLabel: { ...typography.body, color: colors.textSecondary, flex: 1 },
 });

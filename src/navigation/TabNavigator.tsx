@@ -56,7 +56,7 @@ export function TabNavigator() {
         },
         tabBarActiveTintColor: tabAccentMap[route.name] ?? colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { ...typography.badge, fontWeight: '600' },
+        tabBarLabelStyle: { ...typography.micro, fontWeight: '600' },
         tabBarIcon: ({ focused, color }) => {
           const cfg = tabIconMap[route.name];
           const size = 24;

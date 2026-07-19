@@ -351,7 +351,7 @@ export function SeriesDetailScreen() {
             <View style={styles.heroBg} />
           )}
           <LinearGradient
-            colors={['rgba(15,16,35,0.25)', 'rgba(15,16,35,0.55)', '#0f1023']}
+            colors={['rgba(15,16,35,0.25)', 'rgba(15,16,35,0.55)', colors.surfaceBase]}
             locations={[0, 0.65, 1]}
             style={styles.heroOverlay}
           />
@@ -541,7 +541,6 @@ const styles = StyleSheet.create({
   actionBtnPrimary: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder, flex: 2 },
   actionBtnText: { ...typography.bodyBold, color: colors.textMuted },
   actionBtnTextPrimary: { color: colors.primary },
-  actionBtnTextDanger: { color: '#e94560' },
   emptyTab: { padding: spacing.xxxl, alignItems: 'center' },
   emptyTabText: { ...typography.body, color: colors.textMuted },
   calendarItem: { marginHorizontal: spacing.xl, marginBottom: spacing.sm, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

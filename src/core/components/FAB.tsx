@@ -7,13 +7,16 @@ import { colors, radii } from '../theme/tokens';
 interface FABProps {
   onPress: () => void;
   style?: ViewStyle;
+  label?: string;
 }
 
-export function FAB({ onPress, style }: FABProps) {
+export function FAB({ onPress, style, label = 'Add' }: FABProps) {
   return (
     <Pressable
       style={({ pressed }) => [styles.fab, pressed && { transform: [{ scale: 0.92 }] }, style]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
     >
       <LinearGradient
         colors={[colors.primary, '#3fbac2']}

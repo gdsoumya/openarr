@@ -10,7 +10,6 @@ export { SearchBar } from './SearchBar';
 export { MetadataPills } from './MetadataPills';
 export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
-export { BottomSheetWrapper } from './BottomSheetWrapper';
 export { PosterGrid } from './PosterGrid';
 export { LoadingSpinner } from './LoadingSpinner';
 export { Toast } from './Toast';

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, StyleSheet, Pressable, ScrollView, Modal, FlatList } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { colors, spacing, radii, typography } from '../../core/theme/tokens';
+import { colors, spacing, radii, typography, sheetGradient } from '../../core/theme/tokens';
 import { tmdb } from '../../services/tmdb/instance';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { DiscoverFilters, TMDBGenre, WatchProvider } from '../../services/tmdb/types';
@@ -222,7 +222,7 @@ export function DiscoverFiltersScreen() {
       <Modal visible={yearPicker !== null} transparent animationType="fade" onRequestClose={() => setYearPicker(null)}>
         <Pressable style={styles.pickerOverlay} onPress={() => setYearPicker(null)}>
           <Pressable style={styles.pickerCard} onPress={() => {}}>
-            <LinearGradient colors={['#1c2148', '#131634']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={sheetGradient} style={StyleSheet.absoluteFill} />
             <Text style={styles.pickerTitle}>{yearPicker === 'from' ? 'From year' : 'To year'}</Text>
             <FlatList
               data={['Any', ...YEARS] as Array<'Any' | number>}
