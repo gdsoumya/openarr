@@ -10,7 +10,7 @@ import { DiscoverFilters, TMDBGenre, WatchProvider } from '../../services/tmdb/t
 interface RouteParams {
   mediaType: 'movie' | 'tv';
   filters: DiscoverFilters;
-  onApply: (filters: DiscoverFilters) => void;
+  onApply?: (filters: DiscoverFilters) => void;
 }
 
 const SORT_OPTIONS: Array<{ id: string; label: string; movieOnly?: boolean }> = [
@@ -102,7 +102,7 @@ export function DiscoverFiltersScreen() {
   const runtimeId = RUNTIMES.find((r) => r.from === draft.runtimeFrom && r.to === draft.runtimeTo)?.id ?? 'any';
 
   const apply = () => {
-    onApply(draft);
+    onApply?.(draft);
     navigation.goBack();
   };
 

@@ -181,7 +181,7 @@ export function DiscoverBrowseScreen() {
     <View style={styles.container}>
       {feed.kind === 'discover' && (
         <View style={styles.toolbar}>
-          <Text style={styles.resultCount}>{items.length} titles</Text>
+          <Text style={styles.resultCount}>{displayItems.length} titles</Text>
           <Pressable style={styles.filterBtn} onPress={() => navigation.navigate('DiscoverFilters', { mediaType, filters, onApply: (f: DiscoverFilters) => setFilters(f) })}>
             <Ionicons name="options-outline" size={16} color={colors.primary} />
             <Text style={styles.filterBtnText}>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</Text>
@@ -191,11 +191,11 @@ export function DiscoverBrowseScreen() {
 
       {state === 'loading' && <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>}
       {state === 'error' && <ErrorState message={error} onRetry={() => loadMore(true)} />}
-      {state === 'loaded' && items.length === 0 && (
+      {state === 'loaded' && displayItems.length === 0 && (
         <EmptyState icon="🎬" title="No titles found" message="Try loosening the filters." />
       )}
 
-      {state === 'loaded' && items.length > 0 && (
+      {state === 'loaded' && displayItems.length > 0 && (
         <PosterGrid
           data={displayItems}
           onEndReached={() => loadMore()}
