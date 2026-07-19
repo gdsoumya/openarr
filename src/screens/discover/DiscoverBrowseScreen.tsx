@@ -72,7 +72,12 @@ export function DiscoverBrowseScreen() {
         return next;
       });
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      // Free this run's claims immediately so the next run can retry titles
+      // the cancelled run never finished (its cache writes are the record)
+      pending.forEach((i) => inFlightIds.current.delete(i.id));
+    };
   }, [needsRatings, items, mediaType]);
 
   const ratingsFor = useCallback((id: number): ExternalRatings | undefined =>
@@ -130,6 +135,9 @@ export function DiscoverBrowseScreen() {
   }, [feed, mediaType, filters]);
 
   const resetRequestId = useRef(0);
+  // When rating filters drop every loaded title, keep paginating (bounded)
+  // so qualifying titles from later pages can still surface
+  const AUTO_PAGE_CAP = 6;
 
   const loadMore = useCallback(async (reset = false) => {
     if (loadingRef.current) {
@@ -165,6 +173,14 @@ export function DiscoverBrowseScreen() {
   }, [fetchPage, page, totalPages]);
 
   useEffect(() => { loadMore(true); }, [fetchPage]);
+
+  useEffect(() => {
+    if (state === 'loaded' && needsRatings && displayItems.length === 0 && items.length > 0
+        && page < totalPages && page < AUTO_PAGE_CAP && !loadingRef.current) {
+      loadMore();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, displayItems.length, items.length, page, totalPages, needsRatings]);
 
   const activeFilterCount = useMemo(() =>
     (filters.genreIds?.length ?? 0) + (filters.watchProviderIds?.length ?? 0) +

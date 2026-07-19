@@ -18,11 +18,19 @@ function load(): CacheMap {
 
 // Batch MMKV writes — the map grows unbounded and serializing it per lookup
 // would cost time proportional to historical usage
+const MAX_ENTRIES = 2000;
+
 function scheduleFlush(): void {
   if (flushTimer) return;
   flushTimer = setTimeout(() => {
     flushTimer = null;
-    if (cache) appStorage.setJSON(CACHE_KEY, cache);
+    if (!cache) return;
+    // Bound the map: drop the oldest (insertion-ordered) half once over cap
+    const keys = Object.keys(cache);
+    if (keys.length > MAX_ENTRIES) {
+      for (const k of keys.slice(0, keys.length - MAX_ENTRIES / 2)) delete cache[k];
+    }
+    appStorage.setJSON(CACHE_KEY, cache);
   }, 1000);
 }
 

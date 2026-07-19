@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, StyleSheet, RefreshControl, Platform, TextInput, Pressable, Modal, KeyboardAvoidingView } from 'react-native';
 import { useThemedAlert } from '../../../core/components/ThemedAlert';
 import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, typography, radii } from '../../../core/theme/tokens';
+import { colors, spacing, typography, radii, sheetGradient } from '../../../core/theme/tokens';
 import { SpeedBanner } from '../../../core/components/SpeedBanner';
 import { FilterChips } from '../../../core/components/FilterChips';
 import { FAB } from '../../../core/components/FAB';
@@ -44,14 +44,20 @@ export function TorrentListScreen() {
   const showToast = useToastStore((s) => s.show);
   const { alert } = useThemedAlert();
 
+  const pollErrored = useRef(false);
   const fetchTorrents = useCallback(async () => {
     if (!adapter) return;
     try {
       const data = await adapter.getTorrents();
       setTorrents(data);
       setLoading(false);
+      pollErrored.current = false;
     } catch (e: any) {
-      showToast(e.message ?? 'Failed to fetch torrents', 'error');
+      // One toast per outage, not one per 5s poll tick
+      if (!pollErrored.current) {
+        pollErrored.current = true;
+        showToast(e.message ?? 'Failed to fetch torrents', 'error');
+      }
       setLoading(false);
     }
   }, [adapter]);
@@ -143,7 +149,7 @@ export function TorrentListScreen() {
       <Modal visible={showAddInput} transparent animationType="fade" onRequestClose={() => setShowAddInput(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.dialogOverlay}>
           <View style={styles.dialogCard}>
-            <LinearGradient colors={['#1c2148', '#131634']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={sheetGradient} style={StyleSheet.absoluteFill} />
             <Text style={styles.dialogTitle}>Add Torrent</Text>
             <TextInput
               style={styles.dialogInput}

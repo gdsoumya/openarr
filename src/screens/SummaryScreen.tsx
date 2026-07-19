@@ -78,8 +78,17 @@ export function SummaryScreen() {
 
   usePolling(fetchHealth, 60000, !!server);
 
-  const fetchContent = useCallback(async () => {
+  const fetchSeq = React.useRef(0);
+  const lastContent = React.useRef<{ at: number; serverId?: string }>({ at: 0 });
+
+  const fetchContent = useCallback(async (force = false) => {
     if (!server) { setLoaded(true); return; }
+    // Refocusing the tab re-fires the poll immediately; skip if fresh enough
+    if (!force && lastContent.current.serverId === server.id
+        && Date.now() - lastContent.current.at < 5 * 60 * 1000) return;
+    // Any newer run (server switch) invalidates this one's writes
+    const seq = ++fetchSeq.current;
+    const stale = () => seq !== fetchSeq.current;
     const sonarrConfig = configOf('sonarr');
     const radarrConfig = configOf('radarr');
     const embyConfig = configOf('emby');
@@ -112,6 +121,7 @@ export function SummaryScreen() {
           emby.getLatestUnplayed('Movie').catch(() => []),
           emby.getRecentlyPlayed(100).catch(() => []),
         ]);
+        if (stale()) return;
         setResumeItems(resume);
         setNextUp(next);
         setLatestShows(freshShows);
@@ -142,6 +152,7 @@ export function SummaryScreen() {
           sonarr.getCalendar(new Date(now.getTime() - 7 * DAY).toISOString(), now.toISOString(), { includeSeries: true }),
           sonarr.getCalendar(now.toISOString(), new Date(now.getTime() + 14 * DAY).toISOString(), { includeSeries: true }),
         ]);
+        if (stale()) return;
         setReadyEpisodes(past.filter((e: any) => e.hasFile));
         setSchedule((prev) => mergeSchedule(prev, 'ep-', upcoming.filter((e: any) => e.monitored).map((e: any) => ({
             key: `ep-${e.id}`,
@@ -159,6 +170,7 @@ export function SummaryScreen() {
           radarr.getMovies(),
           radarr.getCalendar(now.toISOString(), new Date(now.getTime() + 30 * DAY).toISOString()),
         ]);
+        if (stale()) return;
         useLibraryStore.getState().setMovies(movies);
         const cutoff = now.getTime() - 14 * DAY;
         setReadyMovies(movies
@@ -178,7 +190,10 @@ export function SummaryScreen() {
           }))));
       })(),
     ]);
-    setLoaded(true);
+    if (!stale()) {
+      lastContent.current = { at: Date.now(), serverId: server.id };
+      setLoaded(true);
+    }
   }, [server, configOf, isLocal, navigation]);
 
   usePolling(fetchContent, 900000, !!server);
@@ -197,7 +212,7 @@ export function SummaryScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.allSettled([fetchContent(), fetchHealth()]);
+    await Promise.allSettled([fetchContent(true), refreshStatuses(enabledServices, isLocal, true)]);
     setRefreshing(false);
   }, [fetchContent, fetchHealth]);
 
@@ -227,6 +242,12 @@ export function SummaryScreen() {
     .map(([id]) => serviceConfig[id as ServiceId]?.label ?? id);
   const totalChecked = Object.keys(serviceStatuses).length;
   const allUp = totalChecked > 0 && downServices.length === 0;
+
+  // If the schedule card disappears mid-drag its end callbacks never fire —
+  // never leave the page lock stuck
+  React.useEffect(() => {
+    if (schedule.length === 0) setPageScrollEnabled(true);
+  }, [schedule.length]);
 
   // Schedule grouped by day
   const groupedSchedule = useMemo(() => {
@@ -271,7 +292,7 @@ export function SummaryScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
         <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-          <Pressable style={styles.serverPill} onPress={() => setShowServerPicker(true)}>
+          <Pressable style={styles.serverPill} onPress={() => setShowServerPicker(true)} accessibilityRole="button" accessibilityLabel={`Switch server, current ${server?.name ?? 'none'}`}>
             <MaterialCommunityIcons name="server" size={14} color={colors.primary} />
             <Text style={styles.serverPillText}>{server?.name ?? 'No server'}</Text>
             <Ionicons name="chevron-down" size={14} color={colors.primary} />
@@ -279,6 +300,8 @@ export function SummaryScreen() {
           <Pressable
             style={[styles.statusPill, allUp ? styles.statusPillOk : totalChecked > 0 ? styles.statusPillBad : null]}
             onPress={() => navigation.navigate('Dashboard')}
+            accessibilityRole="button"
+            accessibilityLabel={totalChecked === 0 ? 'Service status, checking' : allUp ? `All ${upCount} services up, open dashboard` : `${downServices.length} services down, open dashboard`}
           >
             <View style={[styles.statusDot, { backgroundColor: totalChecked === 0 ? colors.textMuted : allUp ? colors.success : colors.error }]} />
             <Text style={[styles.statusPillText, { color: totalChecked === 0 ? colors.textMuted : allUp ? colors.success : colors.error }]}>
@@ -373,7 +396,7 @@ export function SummaryScreen() {
           </Carousel>
         )}
 
-        {!embyAdapter && (unwatchedEpisodes.length > 0 || unwatchedMovies.length > 0) && (
+        {latestShows.length === 0 && latestMovies.length === 0 && (unwatchedEpisodes.length > 0 || unwatchedMovies.length > 0) && (
           <Carousel title="New & Ready to Watch" status="loaded">
             {unwatchedEpisodes.map((e: any) => (
               <PosterCard

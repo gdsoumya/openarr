@@ -21,26 +21,21 @@ export class OMDBClient {
     });
   }
 
+  // Network/HTTP errors propagate so callers can avoid caching a transient
+  // failure as a permanent "no ratings" result; only a genuine OMDB
+  // not-found (200 + Response:"False") returns null.
   async getByTitle(title: string, year?: string): Promise<OMDBRatings | null> {
-    try {
-      const params: any = { t: title, plot: 'short' };
-      if (year) params.y = year;
-      const { data } = await this.client.get('/', { params });
-      if (data.Response === 'False') return null;
-      return this.parseResponse(data);
-    } catch {
-      return null;
-    }
+    const params: any = { t: title, plot: 'short' };
+    if (year) params.y = year;
+    const { data } = await this.client.get('/', { params });
+    if (data.Response === 'False') return null;
+    return this.parseResponse(data);
   }
 
   async getByImdbId(imdbId: string): Promise<OMDBRatings | null> {
-    try {
-      const { data } = await this.client.get('/', { params: { i: imdbId, plot: 'short' } });
-      if (data.Response === 'False') return null;
-      return this.parseResponse(data);
-    } catch {
-      return null;
-    }
+    const { data } = await this.client.get('/', { params: { i: imdbId, plot: 'short' } });
+    if (data.Response === 'False') return null;
+    return this.parseResponse(data);
   }
 
   private parseResponse(data: any): OMDBRatings {

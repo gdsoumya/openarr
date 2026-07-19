@@ -32,7 +32,7 @@ export abstract class ArrServiceAdapter {
   async getTags(): Promise<Tag[]> { const { data } = await this.client.get('/api/v3/tag'); return data; }
 
   async getQueue(page = 1, pageSize = 20): Promise<PaginatedResult<QueueItem>> {
-    const { data } = await this.client.get('/api/v3/queue', { params: { page, pageSize, includeUnknownSeriesItems: true } });
+    const { data } = await this.client.get('/api/v3/queue', { params: { page, pageSize, includeUnknownSeriesItems: true, includeUnknownMovieItems: true } });
     return data;
   }
 

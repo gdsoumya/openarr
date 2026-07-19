@@ -36,7 +36,9 @@ export function InfraHomeScreen() {
   // Dashboard cards deep-link to a specific tab (portainer → docker, gluetun → vpn)
   React.useEffect(() => {
     if (route.params?.tab) setActiveTab(route.params.tab);
-  }, [route.params?.tab]);
+    // Key on the params object: navigate() creates a fresh one each time, so
+    // tapping the same dashboard card twice still switches the tab back
+  }, [route.params]);
   const [endpoints, setEndpoints] = useState<PortainerEndpoint[]>([]);
   const [stacks, setStacks] = useState<PortainerStack[]>([]);
   const [refreshing, setRefreshing] = useState(false);

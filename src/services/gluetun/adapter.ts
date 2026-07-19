@@ -24,10 +24,16 @@ export class GluetunAdapter {
       const { data } = await this.client.get('/v1/version');
       // The SPA catch-all answers 200 with HTML, so require a JSON shape
       this.prefix = data && typeof data === 'object' ? '/v1' : '/api/v1';
-    } catch {
-      this.prefix = '/api/v1';
+      return this.prefix;
+    } catch (e: any) {
+      // Only a definite "route missing" pins the legacy prefix; a network
+      // blip must not permanently misroute a standard /v1 build
+      if (e.response) {
+        this.prefix = '/api/v1';
+        return this.prefix;
+      }
+      throw e;
     }
-    return this.prefix;
   }
 
   async testConnection(): Promise<boolean> {
@@ -65,9 +71,15 @@ export class GluetunAdapter {
 
   async getVersion(): Promise<GluetunVersion> { const { data } = await this.client.get(`${await this.api()}/version`); return data; }
   async getVpnStatus(): Promise<VpnStatus> { const { data } = await this.client.get(`${await this.api()}/vpn/status`); return data; }
-  async setVpnStatus(status: 'running' | 'stopped'): Promise<void> { await this.client.put(`${await this.api()}/vpn/status`, { status }); }
+  async setVpnStatus(status: 'running' | 'stopped'): Promise<void> {
+    await this.client.put(`${await this.api()}/vpn/status`, { status });
+    this.ipCache = null;
+  }
   async getPublicIp(): Promise<PublicIp> { const { data } = await this.client.get(`${await this.api()}/publicip/ip`); return data; }
-  async refreshPublicIp(): Promise<void> { await this.client.get(`${await this.api()}/publicip/refresh`); }
+  async refreshPublicIp(): Promise<void> {
+    await this.client.get(`${await this.api()}/publicip/refresh`);
+    this.ipCache = null;
+  }
   async getPortForward(): Promise<PortForward> { const { data } = await this.client.get(`${await this.api()}/portforward`); return data; }
   async getVpnSettings(): Promise<VpnSettings> { const { data } = await this.client.get(`${await this.api()}/vpn/settings`); return data; }
   async setVpnSettings(settings: VpnSettings): Promise<void> { await this.client.put(`${await this.api()}/vpn/settings`, settings); }

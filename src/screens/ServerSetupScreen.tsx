@@ -58,7 +58,9 @@ export function ServerSetupScreen() {
       updateServer(server);
     } else {
       addServer(server);
-      setActiveServer(serverId);
+      // Only claim the active slot when no working server exists — otherwise
+      // exploring "Add Server" would silently switch the whole app over
+      if (!useServerStore.getState().getActiveServer()) setActiveServer(serverId);
     }
   };
 
@@ -159,8 +161,6 @@ const styles = StyleSheet.create({
   input: { ...typography.body, color: colors.textPrimary, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.md, padding: spacing.md },
   serviceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.surfaceCardBorder, borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm },
   serviceRowConfigured: { borderColor: 'rgba(100, 255, 218, 0.15)' },
-  serviceIcon: { width: 36, height: 36, borderRadius: radii.sm, justifyContent: 'center', alignItems: 'center' },
-  serviceIconText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   serviceInfo: { flex: 1 },
   serviceLabel: { ...typography.bodyBold, color: colors.textPrimary },
   serviceStatus: { ...typography.micro, color: colors.warning, marginTop: 2 },

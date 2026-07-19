@@ -77,10 +77,12 @@ export function DiscoveryDetailScreen() {
 
     if (!cancelled.value) setResolvedId(resolvedTmdbId);
 
+    let fetchedDetails: any = null;
     if (resolvedTmdbId) {
       const id = resolvedTmdbId;
       const isMovie = type === 'movie';
       const d = await (isMovie ? tmdb.getMovieDetails(id) : tmdb.getShowDetails(id)).catch(() => null);
+      fetchedDetails = d;
       if (!cancelled.value && d) {
         setDetails(d);
         if (isMovie && (d as any).belongs_to_collection?.id) {
@@ -114,7 +116,7 @@ export function DiscoveryDetailScreen() {
     const title = item.title ?? item.name;
     const yearStr = item.first_air_date?.slice(0, 4) ?? item.release_date?.slice(0, 4);
     const year = item.year ?? (yearStr ? parseInt(yearStr) : undefined);
-    fetchOMDBRatings({ imdbId: item.imdbId ?? details?.imdb_id, tmdbId: resolvedTmdbId, title, year, type })
+    fetchOMDBRatings({ imdbId: item.imdbId ?? fetchedDetails?.imdb_id, tmdbId: resolvedTmdbId, title, year, type })
       .then(r => { if (!cancelled.value) setOmdbRatings(r); }).catch(() => {});
 
     if (!cancelled.value) setLoadingDetails(false);

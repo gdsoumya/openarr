@@ -16,6 +16,10 @@ export function useDownloadMonitor() {
   useEffect(() => {
     if (!sonarrConfig) return;
     let cancelled = false;
+    // First tick after a config/server change only records a baseline —
+    // diffing against the previous server's queue would fire false
+    // "download complete" notifications for every item on it
+    let baselined = false;
 
     async function tick() {
       try {
@@ -23,8 +27,9 @@ export function useDownloadMonitor() {
         const queueData = await sonarr.getQueue(1, 50);
         const currentQueue = (queueData.records ?? []).map((q: any) => ({ id: q.id, title: q.title }));
         if (!cancelled) {
-          checkForCompletedDownloads(currentQueue, previousQueue.current);
+          if (baselined) checkForCompletedDownloads(currentQueue, previousQueue.current);
           previousQueue.current = currentQueue;
+          baselined = true;
         }
       } catch {}
     }
