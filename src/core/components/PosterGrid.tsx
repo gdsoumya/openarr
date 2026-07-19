@@ -24,7 +24,7 @@ export function PosterGrid<T extends { id: string | number }>({
 }
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  container: { paddingHorizontal: spacing.sm, paddingTop: spacing.md },
   // Cells are equal-width; centering the card splits leftover space evenly
   cell: { alignItems: 'center' },
 });

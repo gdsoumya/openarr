@@ -18,3 +18,7 @@ jobs:
       - run: npx eslint . --max-warnings 100
       - run: npx tsc --noEmit
       - run: npx jest --ci --no-cache
+      - name: Bundle check (android export)
+        run: npx expo export --platform android
+        env:
+          EXPO_NO_TELEMETRY: '1'

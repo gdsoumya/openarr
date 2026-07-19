@@ -10,7 +10,7 @@ import { tmdb } from '../../services/tmdb/instance';
 import { posterUrl, profileUrl, TMDBPerson, TMDBPersonCredit } from '../../services/tmdb/types';
 
 export function PersonScreen() {
-  const gridPosterW = Math.floor((Dimensions.get('window').width - spacing.lg * 2) / 3) - spacing.sm;
+  const gridPosterW = Math.floor((Dimensions.get('window').width - spacing.sm * 2) / 3) - 6;
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { personId } = route.params as { personId: number };

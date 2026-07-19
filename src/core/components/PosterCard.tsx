@@ -79,7 +79,8 @@ const styles = StyleSheet.create({
   placeholder: { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surfaceElevated },
   placeholderText: { fontSize: 28, fontWeight: '700', color: 'rgba(255,255,255,0.15)' },
   badgePosition: { position: 'absolute', top: 8, right: 8 },
-  ratingBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: radii.sm },
+  // Bottom-left keeps it clear of the status badge in the top-right
+  ratingBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: radii.sm },
   ratingText: { ...typography.badge, color: colors.radarr },
   bottomOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 8, paddingBottom: 8, paddingTop: 24 },
   bottomLabel: { ...typography.badge, color: '#fff' },

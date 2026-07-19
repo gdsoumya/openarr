@@ -135,7 +135,7 @@ export function DiscoverBrowseScreen() {
   }, [feed, mediaType, filters]);
 
   // Fill each FlashList column evenly so the 3-up grid is centered
-  const gridPosterW = Math.floor((Dimensions.get('window').width - spacing.lg * 2) / 3) - spacing.sm;
+  const gridPosterW = Math.floor((Dimensions.get('window').width - spacing.sm * 2) / 3) - 6;
 
   const resetRequestId = useRef(0);
   // When rating filters drop every loaded title, keep paginating (bounded)
