@@ -326,11 +326,19 @@ export function MovieDetailScreen() {
 
       <View style={styles.actionBar}>
         {movie.hasFile && embyConfig && (
-          <Pressable style={styles.actionBtn} onPress={async () => {
+          <Pressable style={[styles.actionBtn, styles.actionBtnEmby]} onPress={async () => {
             const err = await openInEmby('Movie', { tmdbId: movie.tmdbId, imdbId: movie.imdbId });
             if (err) showToast(err, 'error');
           }}>
-            <MaterialCommunityIcons name="play" size={20} color={colors.emby} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <MaterialCommunityIcons name="play-circle" size={18} color={colors.emby} />
+              <Text
+                style={{ fontSize: 15, lineHeight: 18, color: '#fff', fontWeight: '800', letterSpacing: 0.3, includeFontPadding: false, marginTop: -2 }}
+                numberOfLines={1}
+              >
+                emby
+              </Text>
+            </View>
           </Pressable>
         )}
         <Pressable style={[styles.actionBtn, styles.actionBtnPrimary]} onPress={() => {
@@ -442,6 +450,7 @@ const styles = StyleSheet.create({
   fileBarText: { ...typography.micro, color: colors.success },
   actionBar: { flexDirection: 'row', gap: spacing.sm, padding: spacing.md, paddingHorizontal: spacing.lg, borderTopWidth: 1, borderTopColor: colors.divider, backgroundColor: colors.surfaceElevated },
   actionBtn: { flex: 1, paddingVertical: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.divider, alignItems: 'center', justifyContent: 'center' },
+  actionBtnEmby: { backgroundColor: 'rgba(82,181,75,0.12)', borderColor: 'rgba(82,181,75,0.4)' },
   actionBtnPrimary: { backgroundColor: colors.primaryMuted, borderColor: colors.primaryBorder, flex: 2 },
   actionBtnText: { ...typography.bodyBold, color: colors.textMuted },
   actionBtnTextPrimary: { color: colors.primary },
