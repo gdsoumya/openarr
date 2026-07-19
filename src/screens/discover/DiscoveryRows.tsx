@@ -26,6 +26,11 @@ interface DiscoveryRowsProps {
   refreshToken?: number;
 }
 
+// Row results barely change hour to hour — cache across remounts, bypass on
+// pull-to-refresh (refreshToken bump)
+const ROW_TTL_MS = 6 * 60 * 60 * 1000;
+const rowCache = new Map<string, { items: MediaItem[]; at: number; token?: number }>();
+
 const GENRE_ROWS: Record<'movie' | 'tv', Array<{ id: number; label: string }>> = {
   movie: [{ id: 28, label: 'Action' }, { id: 35, label: 'Comedy' }, { id: 878, label: 'Sci-Fi' }],
   tv: [{ id: 10759, label: 'Action & Adventure' }, { id: 35, label: 'Comedy' }, { id: 10765, label: 'Sci-Fi & Fantasy' }],
@@ -45,12 +50,21 @@ function Row({ def, mediaType, onItemPress, getItemBadge, refreshToken }: {
 
   useEffect(() => {
     let cancelled = false;
+    const cacheKey = `${mediaType}:${def.key}`;
+    const cached = rowCache.get(cacheKey);
+    if (cached && Date.now() - cached.at < ROW_TTL_MS && cached.token === refreshToken) {
+      setItems(cached.items);
+      setStatus(cached.items.length > 0 ? 'loaded' : 'empty');
+      return;
+    }
     setStatus('loading');
     def.fetch()
       .then((data) => {
         if (cancelled) return;
         // Carousels cap at 12 posters — "See All" has the rest
-        setItems(data.slice(0, 12));
+        const capped = data.slice(0, 12);
+        rowCache.set(cacheKey, { items: capped, at: Date.now(), token: refreshToken });
+        setItems(capped);
         setStatus(data.length > 0 ? 'loaded' : 'empty');
       })
       .catch((e) => {
@@ -59,7 +73,7 @@ function Row({ def, mediaType, onItemPress, getItemBadge, refreshToken }: {
         setStatus('error');
       });
     return () => { cancelled = true; };
-  }, [def.key, refreshToken]);
+  }, [def.key, refreshToken, mediaType]);
 
   // Empty personalized/genre rows just disappear instead of showing placeholders
   if (status === 'empty') return null;

@@ -9,10 +9,12 @@ export class RadarrAdapter extends ArrServiceAdapter {
 
   async getStatus(): Promise<ServiceStatus> {
     try {
-      const [movies, queue] = await Promise.all([this.getMovies(), this.getQueue(1, 1)]);
+      // Queue-only check — pulling the whole library for a status count is wasteful
+      const queue = await this.getQueue(1, 1);
       const dl = queue.totalRecords;
       return { serviceId: 'radarr', connection: { status: 'connected', isLocal: true, lastChecked: Date.now() },
-        summary: dl > 0 ? `${dl} downloading` : `${movies.length} movies`, metric: { value: movies.length, label: 'movies' } };
+        summary: dl > 0 ? `${dl} downloading` : 'Connected',
+        metric: dl > 0 ? { value: dl, label: 'downloading' } : undefined };
     } catch (e: any) {
       return { serviceId: 'radarr', connection: { status: 'error', isLocal: true, lastChecked: Date.now(), error: e.message }, summary: 'Connection failed' };
     }

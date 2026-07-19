@@ -7,8 +7,8 @@ import { colors, spacing, typography, ServiceId } from '../core/theme/tokens';
 import { ServiceCard } from '../core/components/ServiceCard';
 import { useServerStore } from '../stores/serverStore';
 import { useConnectionStore } from '../stores/connectionStore';
-import { ServiceStatus } from '../core/types/services';
-import { getAdapter, getTransmissionAdapter } from '../services/adapterFactory';
+import { getTransmissionAdapter } from '../services/adapterFactory';
+import { useStatusStore } from '../stores/statusStore';
 import { usePolling } from '../core/hooks/usePolling';
 import { useToastStore } from '../core/hooks/useToast';
 import { formatBytes, formatSpeed } from '../core/utils/format';
@@ -17,7 +17,8 @@ export function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const server = useServerStore((s) => s.getActiveServer());
   const isLocal = useConnectionStore((s) => s.isLocal);
-  const [statuses, setStatuses] = useState<Partial<Record<ServiceId, ServiceStatus>>>({});
+  const statuses = useStatusStore((s) => s.statuses);
+  const refreshStatuses = useStatusStore((s) => s.refresh);
   const [downloadSpeed, setDownloadSpeed] = useState(0);
   const [uploadSpeed, setUploadSpeed] = useState(0);
   const [freeSpace, setFreeSpace] = useState(0);
@@ -32,33 +33,23 @@ export function DashboardScreen() {
   const erroredServicesRef = useRef<Set<string>>(new Set());
   const showToast = useToastStore((s) => s.show);
 
-  const fetchStatuses = useCallback(async () => {
+  const fetchStatuses = useCallback(async (force = false) => {
     if (!server) return;
-    const newStatuses: Partial<Record<ServiceId, ServiceStatus>> = {};
+    await refreshStatuses(enabledServices, isLocal, force);
 
-    const results = await Promise.allSettled(
-      enabledServices.map(async (svc) => {
-        const config = server.services.find(s => s.serviceId === svc.serviceId);
-        if (!config) return;
-        const status = await getAdapter(config, isLocal).getStatus();
-        return { serviceId: svc.serviceId, status };
-      })
-    );
-
-    results.forEach((result, index) => {
-      const svc = enabledServices[index];
-      if (result.status === 'fulfilled' && result.value) {
-        newStatuses[result.value.serviceId] = result.value.status;
-        erroredServicesRef.current.delete(svc.serviceId);
-      } else if (result.status === 'rejected') {
+    // Toast newly-failing services once until they recover
+    const current = useStatusStore.getState().statuses;
+    for (const svc of enabledServices) {
+      const st = current[svc.serviceId];
+      if (st && st.connection.status !== 'connected') {
         if (!erroredServicesRef.current.has(svc.serviceId)) {
           erroredServicesRef.current.add(svc.serviceId);
-          showToast(`${svc.serviceId}: ${result.reason?.message ?? 'Connection failed'}`, 'error');
+          showToast(`${svc.serviceId}: ${st.connection.error ?? 'Connection failed'}`, 'error');
         }
+      } else {
+        erroredServicesRef.current.delete(svc.serviceId);
       }
-    });
-
-    setStatuses(newStatuses);
+    }
 
     // Transmission speed/free-space banner (download notifications live in useDownloadMonitor)
     const txConfig = server.services.find(s => s.serviceId === 'transmission' && s.enabled);
@@ -69,15 +60,20 @@ export function DashboardScreen() {
         setDownloadSpeed(stats.downloadSpeed);
         setUploadSpeed(stats.uploadSpeed);
         setFreeSpace(await tx.getFreeSpace(session.downloadDir));
-      } catch {}
+      } catch {
+        // Stale numbers are worse than zeros when transmission drops
+        setDownloadSpeed(0);
+        setUploadSpeed(0);
+        setFreeSpace(0);
+      }
     }
-  }, [server, enabledServices, isLocal]);
+  }, [server, enabledServices, isLocal, refreshStatuses, showToast]);
 
-  usePolling(fetchStatuses, 10000, !!server);
+  usePolling(fetchStatuses, 30000, !!server);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchStatuses();
+    await fetchStatuses(true);
     setRefreshing(false);
   }, [fetchStatuses]);
 

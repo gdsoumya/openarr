@@ -12,6 +12,7 @@ export class GluetunAdapter {
   // Older custom builds serve the control API under /api/v1 (web UI owns /),
   // newer builds serve it at /v1 upstream-style. Detect once and cache.
   private prefix: string | null = null;
+  private ipCache: { ip: import('./types').PublicIp; at: number } | null = null;
 
   constructor(config: ServiceConfig, isLocal: boolean) {
     this.client = createServiceClient(config, isLocal);
@@ -44,7 +45,12 @@ export class GluetunAdapter {
           summary: 'VPN stopped',
         };
       }
-      const ip = await this.getPublicIp().catch(() => null);
+      // Exit IP changes only on reconnect — cache it briefly to halve status calls
+      let ip = this.ipCache && Date.now() - this.ipCache.at < 60000 ? this.ipCache.ip : null;
+      if (!ip) {
+        ip = await this.getPublicIp().catch(() => null);
+        if (ip) this.ipCache = { ip, at: Date.now() };
+      }
       const where = ip ? [ip.city, ip.country].filter(Boolean).join(', ') : '';
       return {
         serviceId: 'gluetun',

@@ -9,10 +9,12 @@ export class SonarrAdapter extends ArrServiceAdapter {
 
   async getStatus(): Promise<ServiceStatus> {
     try {
-      const [series, queue] = await Promise.all([this.getSeries(), this.getQueue(1, 1)]);
+      // Queue-only check — pulling the whole library for a status count is wasteful
+      const queue = await this.getQueue(1, 1);
       const dl = queue.totalRecords;
       return { serviceId: 'sonarr', connection: { status: 'connected', isLocal: true, lastChecked: Date.now() },
-        summary: dl > 0 ? `${dl} downloading` : `${series.length} series`, metric: { value: series.length, label: 'series' } };
+        summary: dl > 0 ? `${dl} downloading` : 'Connected',
+        metric: dl > 0 ? { value: dl, label: 'downloading' } : undefined };
     } catch (e: any) {
       return { serviceId: 'sonarr', connection: { status: 'error', isLocal: true, lastChecked: Date.now(), error: e.message }, summary: 'Connection failed' };
     }

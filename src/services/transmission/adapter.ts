@@ -3,6 +3,14 @@ import { createTransmissionClient } from '../../core/api/httpClient';
 import { ServiceConfig, ServiceStatus } from '../../core/types/services';
 import { Torrent, SessionStats, TransmissionSession } from './types';
 
+// Slim set for the list view — files/fileStats/magnetLink only load in detail
+const LIST_FIELDS = [
+  'id', 'name', 'status', 'percentDone', 'rateDownload', 'rateUpload', 'eta',
+  'totalSize', 'uploadRatio', 'peersConnected', 'labels', 'queuePosition',
+  'downloadDir', 'errorString', 'addedDate', 'doneDate', 'isFinished', 'sizeWhenDone',
+  'peersGettingFromUs', 'peersSendingToUs',
+];
+
 const TORRENT_FIELDS = [
   'id',
   'name',
@@ -68,7 +76,8 @@ export class TransmissionAdapter {
   }
 
   async getTorrents(ids?: number[]): Promise<Torrent[]> {
-    const args: Record<string, any> = { fields: TORRENT_FIELDS };
+    // Detail views (specific ids) get the full field set including files
+    const args: Record<string, any> = { fields: ids ? TORRENT_FIELDS : LIST_FIELDS };
     if (ids) args.ids = ids;
     const result = await this.rpc<{ torrents: Torrent[] }>('torrent-get', args);
     return result.torrents;

@@ -43,7 +43,7 @@ export function ContainerDetailScreen() {
     }
   }, [adapter, endpointId, containerId]);
 
-  usePolling(fetch, 5000, !!adapter);
+  usePolling(fetch, 10000, !!adapter);
 
   const runAction = async (label: string, fn: () => Promise<void>) => {
     if (actionPending) return;

@@ -55,7 +55,7 @@ export function TorrentListScreen() {
     }
   }, [adapter]);
 
-  usePolling(fetchTorrents, 3000, !!adapter);
+  usePolling(fetchTorrents, 5000, !!adapter);
 
   const handleAddTorrent = async (url: string) => {
     if (!url.trim() || !adapter) return;
