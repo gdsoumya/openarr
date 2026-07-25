@@ -2,10 +2,15 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { ServiceConfig } from '../types/services';
 
 // Prowlarr search fans out to many indexers and can take a while;
-// Bazarr manual subtitle search fans out to providers similarly
+// Bazarr manual subtitle search fans out to providers similarly.
+// Portainer/gluetun get SHORT timeouts on purpose: Android caps concurrent
+// requests at 5 per hostname, and self-hosted stacks put every service on one
+// host, so a down service hanging until timeout starves the others' requests.
 const TIMEOUT_MS: Record<string, number> = {
   prowlarr: 120000,
   bazarr: 60000,
+  portainer: 8000,
+  gluetun: 8000,
   default: 30000,
 };
 
