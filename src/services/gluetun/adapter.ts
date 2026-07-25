@@ -36,8 +36,22 @@ export class GluetunAdapter {
     }
   }
 
+  // The SPA catch-all answers ANY path with HTML 200, so a pinned prefix can
+  // silently go stale when the container is swapped for a build that moved the
+  // API. Getting HTML where JSON belongs means the prefix is wrong: re-probe
+  // once and retry instead of serving garbage until app restart.
+  private async getJson<T>(path: string, retried = false): Promise<T> {
+    const { data } = await this.client.get(`${await this.api()}${path}`);
+    if (data && typeof data === 'object') return data as T;
+    if (!retried) {
+      this.prefix = null;
+      return this.getJson<T>(path, true);
+    }
+    throw new Error('Unexpected response from the gluetun control server');
+  }
+
   async testConnection(): Promise<boolean> {
-    await this.client.get(`${await this.api()}/version`);
+    await this.getJson('/version');
     return true;
   }
 
@@ -69,24 +83,24 @@ export class GluetunAdapter {
     }
   }
 
-  async getVersion(): Promise<GluetunVersion> { const { data } = await this.client.get(`${await this.api()}/version`); return data; }
-  async getVpnStatus(): Promise<VpnStatus> { const { data } = await this.client.get(`${await this.api()}/vpn/status`); return data; }
+  async getVersion(): Promise<GluetunVersion> { return this.getJson('/version'); }
+  async getVpnStatus(): Promise<VpnStatus> { return this.getJson('/vpn/status'); }
   async setVpnStatus(status: 'running' | 'stopped'): Promise<void> {
     await this.client.put(`${await this.api()}/vpn/status`, { status });
     this.ipCache = null;
   }
-  async getPublicIp(): Promise<PublicIp> { const { data } = await this.client.get(`${await this.api()}/publicip/ip`); return data; }
+  async getPublicIp(): Promise<PublicIp> { return this.getJson('/publicip/ip'); }
   async refreshPublicIp(): Promise<void> {
     await this.client.get(`${await this.api()}/publicip/refresh`);
     this.ipCache = null;
   }
-  async getPortForward(): Promise<PortForward> { const { data } = await this.client.get(`${await this.api()}/portforward`); return data; }
-  async getVpnSettings(): Promise<VpnSettings> { const { data } = await this.client.get(`${await this.api()}/vpn/settings`); return data; }
+  async getPortForward(): Promise<PortForward> { return this.getJson('/portforward'); }
+  async getVpnSettings(): Promise<VpnSettings> { return this.getJson('/vpn/settings'); }
   async setVpnSettings(settings: VpnSettings): Promise<void> { await this.client.put(`${await this.api()}/vpn/settings`, settings); }
-  async getServerChoices(): Promise<ServerChoices> { const { data } = await this.client.get(`${await this.api()}/vpn/serverchoices`); return data; }
-  async getDnsStatus(): Promise<DnsStatus> { const { data } = await this.client.get(`${await this.api()}/dns/status`); return data; }
+  async getServerChoices(): Promise<ServerChoices> { return this.getJson('/vpn/serverchoices'); }
+  async getDnsStatus(): Promise<DnsStatus> { return this.getJson('/dns/status'); }
   async setDnsStatus(status: string): Promise<void> { await this.client.put(`${await this.api()}/dns/status`, { status }); }
-  async getUpdaterStatus(): Promise<UpdaterStatus> { const { data } = await this.client.get(`${await this.api()}/updater/status`); return data; }
+  async getUpdaterStatus(): Promise<UpdaterStatus> { return this.getJson('/updater/status'); }
   async triggerUpdater(): Promise<void> { await this.client.put(`${await this.api()}/updater/status`, { status: 'running' }); }
 
   // Saving the selection alone does not re-dial, gluetun keeps the current
