@@ -50,12 +50,12 @@ export function StackDetailScreen() {
     } catch (e: any) { alert('Error', e.message); }
   };
 
-  const runStackAction = (label: string, fn: () => Promise<void>) => {
-    alert(`${label} Stack`, `${label} all containers in "${name}"?`, [
+  const runStackAction = (label: string, fn: () => Promise<void>, message?: string) => {
+    alert(`${label} Stack`, message ?? `${label} all containers in "${name}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: label,
-        style: label === 'Stop' ? 'destructive' : 'default',
+        style: label === 'Stop' || label === 'Redeploy' ? 'destructive' : 'default',
         onPress: async () => {
           setActionPending(true);
           try {
@@ -95,6 +95,14 @@ export function StackDetailScreen() {
               <Text style={[styles.actionBtnText, { color: colors.success }]}>Start Stack</Text>
             </Pressable>
           )
+        )}
+        {stack && (
+          <Pressable style={[styles.actionBtn, actionPending && { opacity: 0.5 }]} disabled={actionPending}
+            onPress={() => adapter && stack && runStackAction('Redeploy',
+              () => adapter.redeployStack(stack, endpointId),
+              `Re-pull all images and redeploy "${name}"? Containers are recreated and restart briefly. Works whether the stack is running or stopped.`)}>
+            <Text style={[styles.actionBtnText, { color: colors.info }]}>Redeploy</Text>
+          </Pressable>
         )}
         <Pressable style={styles.actionBtn} onPress={loadCompose}>
           <Text style={styles.actionBtnText}>{showCompose ? 'Hide Compose' : 'View Compose'}</Text>

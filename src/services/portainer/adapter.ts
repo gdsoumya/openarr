@@ -127,6 +127,27 @@ export class PortainerAdapter {
     await this.client.post(`/api/stacks/${id}/stop`, undefined, { params: { endpointId } });
   }
 
+  // Portainer's "pull and redeploy": re-submit the stack with PullImage so
+  // images are re-pulled and containers recreated. Works whether the stack is
+  // running or stopped; git-backed stacks use the dedicated redeploy endpoint.
+  async redeployStack(stack: PortainerStack, endpointId: number): Promise<void> {
+    if (stack.GitConfig) {
+      await this.client.put(`/api/stacks/${stack.Id}/git/redeploy`, {
+        RepositoryReferenceName: stack.GitConfig.ReferenceName,
+        RepositoryAuthentication: false,
+        PullImage: true,
+        Prune: false,
+      }, { params: { endpointId } });
+      return;
+    }
+    const file = await this.getStackFile(stack.Id);
+    await this.client.put(`/api/stacks/${stack.Id}`, {
+      StackFileContent: file,
+      Env: stack.Env ?? [],
+      PullImage: true,
+    }, { params: { endpointId } });
+  }
+
   async getImages(endpointId: number): Promise<DockerImage[]> {
     const { data } = await this.client.get(`${this.docker(endpointId)}/images/json`);
     return data;

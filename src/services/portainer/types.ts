@@ -78,6 +78,8 @@ export interface PortainerStack {
   Type: number;
   EndpointId: number;
   Env: Array<{ name: string; value: string }>;
+  // Present only for git-backed stacks; they redeploy via /git/redeploy
+  GitConfig?: { URL: string; ReferenceName: string } | null;
 }
 
 export interface DockerImage {

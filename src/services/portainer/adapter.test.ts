@@ -1,12 +1,12 @@
 import { PortainerAdapter, computeStats } from './adapter';
 
-const mockGet = jest.fn(); const mockPost = jest.fn();
-jest.mock('../../core/api/httpClient', () => ({ createServiceClient: () => ({ get: mockGet, post: mockPost }) }));
+const mockGet = jest.fn(); const mockPost = jest.fn(); const mockPut = jest.fn();
+jest.mock('../../core/api/httpClient', () => ({ createServiceClient: () => ({ get: mockGet, post: mockPost, put: mockPut }) }));
 
 describe('PortainerAdapter', () => {
   let adapter: PortainerAdapter;
   beforeEach(() => {
-    [mockGet, mockPost].forEach(m => m.mockReset());
+    [mockGet, mockPost, mockPut].forEach(m => m.mockReset());
     adapter = new PortainerAdapter({ serviceId: 'portainer' as const, enabled: true, localUrl: 'https://nas:9443', remoteUrl: 'https://nas:9443', apiKey: 'token' }, true);
   });
 
@@ -60,6 +60,31 @@ describe('PortainerAdapter', () => {
   test('getStackFile unwraps StackFileContent', async () => {
     mockGet.mockResolvedValue({ data: { StackFileContent: 'version: "3"' } });
     expect(await adapter.getStackFile(4)).toBe('version: "3"');
+  });
+
+  test('redeployStack re-submits the current file with PullImage', async () => {
+    mockGet.mockResolvedValue({ data: { StackFileContent: 'version: "3"' } });
+    mockPut.mockResolvedValue({ data: {} });
+    const stack = { Id: 4, Name: 'media', Status: 2, Type: 2, EndpointId: 2, Env: [{ name: 'TZ', value: 'UTC' }] } as any;
+    await adapter.redeployStack(stack, 2);
+    expect(mockGet).toHaveBeenCalledWith('/api/stacks/4/file');
+    expect(mockPut).toHaveBeenCalledWith('/api/stacks/4', {
+      StackFileContent: 'version: "3"',
+      Env: [{ name: 'TZ', value: 'UTC' }],
+      PullImage: true,
+    }, { params: { endpointId: 2 } });
+  });
+
+  test('redeployStack uses git redeploy for git-backed stacks', async () => {
+    mockPut.mockResolvedValue({ data: {} });
+    const stack = { Id: 7, GitConfig: { URL: 'https://x', ReferenceName: 'refs/heads/main' } } as any;
+    await adapter.redeployStack(stack, 2);
+    expect(mockPut).toHaveBeenCalledWith('/api/stacks/7/git/redeploy', {
+      RepositoryReferenceName: 'refs/heads/main',
+      RepositoryAuthentication: false,
+      PullImage: true,
+      Prune: false,
+    }, { params: { endpointId: 2 } });
   });
 });
 
