@@ -35,8 +35,8 @@ describe('PortainerAdapter', () => {
     mockPost.mockResolvedValue({ data: {} });
     await adapter.startStack(4, 2);
     await adapter.stopStack(4, 2);
-    expect(mockPost).toHaveBeenCalledWith('/api/stacks/4/start', undefined, { params: { endpointId: 2 } });
-    expect(mockPost).toHaveBeenCalledWith('/api/stacks/4/stop', undefined, { params: { endpointId: 2 } });
+    expect(mockPost).toHaveBeenCalledWith('/api/stacks/4/start', undefined, { params: { endpointId: 2 }, timeout: 600000 });
+    expect(mockPost).toHaveBeenCalledWith('/api/stacks/4/stop', undefined, { params: { endpointId: 2 }, timeout: 600000 });
   });
 
   test('getStatus aggregates snapshot counts', async () => {
@@ -53,6 +53,7 @@ describe('PortainerAdapter', () => {
     const result = await adapter.pruneImages(2);
     expect(mockPost).toHaveBeenCalledWith('/api/endpoints/2/docker/images/prune', undefined, {
       params: { filters: JSON.stringify({ dangling: ['false'] }) },
+      timeout: 300000,
     });
     expect(result).toEqual({ imagesDeleted: 3, spaceReclaimed: 1073741824 });
   });
@@ -72,7 +73,7 @@ describe('PortainerAdapter', () => {
       StackFileContent: 'version: "3"',
       Env: [{ name: 'TZ', value: 'UTC' }],
       PullImage: true,
-    }, { params: { endpointId: 2 } });
+    }, { params: { endpointId: 2 }, timeout: 600000 });
   });
 
   test('redeployStack uses git redeploy for git-backed stacks', async () => {
@@ -84,7 +85,7 @@ describe('PortainerAdapter', () => {
       RepositoryAuthentication: false,
       PullImage: true,
       Prune: false,
-    }, { params: { endpointId: 2 } });
+    }, { params: { endpointId: 2 }, timeout: 600000 });
   });
 });
 

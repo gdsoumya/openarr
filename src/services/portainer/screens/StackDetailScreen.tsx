@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { colors, spacing, radii, typography } from '../../../core/theme/tokens';
 import { Badge } from '../../../core/components/Badge';
@@ -26,7 +26,8 @@ export function StackDetailScreen() {
   const [composeFile, setComposeFile] = useState('');
   const [showCompose, setShowCompose] = useState(false);
   const [members, setMembers] = useState<DockerContainer[]>([]);
-  const [actionPending, setActionPending] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const actionPending = pendingAction !== null;
 
   const fetch = useCallback(async () => {
     if (!adapter) return;
@@ -57,13 +58,13 @@ export function StackDetailScreen() {
         text: label,
         style: label === 'Stop' || label === 'Redeploy' ? 'destructive' : 'default',
         onPress: async () => {
-          setActionPending(true);
+          setPendingAction(label);
           try {
             await fn();
-            showToast(`Stack ${label.toLowerCase()} requested`, 'success');
+            showToast(`Stack ${label.toLowerCase()} finished`, 'success');
             await fetch().catch(() => {});
           } catch (e: any) { alert(`${label} Failed`, e.message); }
-          setActionPending(false);
+          setPendingAction(null);
         },
       },
     ]);
@@ -87,12 +88,12 @@ export function StackDetailScreen() {
           active ? (
             <Pressable style={[styles.actionBtn, actionPending && { opacity: 0.5 }]} disabled={actionPending}
               onPress={() => adapter && runStackAction('Stop', () => adapter.stopStack(stackId, endpointId))}>
-              <Text style={[styles.actionBtnText, { color: colors.error }]}>Stop Stack</Text>
+              <Text style={[styles.actionBtnText, { color: colors.error }]} numberOfLines={1}>Stop</Text>
             </Pressable>
           ) : (
             <Pressable style={[styles.actionBtn, actionPending && { opacity: 0.5 }]} disabled={actionPending}
               onPress={() => adapter && runStackAction('Start', () => adapter.startStack(stackId, endpointId))}>
-              <Text style={[styles.actionBtnText, { color: colors.success }]}>Start Stack</Text>
+              <Text style={[styles.actionBtnText, { color: colors.success }]} numberOfLines={1}>Start</Text>
             </Pressable>
           )
         )}
@@ -100,14 +101,25 @@ export function StackDetailScreen() {
           <Pressable style={[styles.actionBtn, actionPending && { opacity: 0.5 }]} disabled={actionPending}
             onPress={() => adapter && stack && runStackAction('Redeploy',
               () => adapter.redeployStack(stack, endpointId),
-              `Re-pull all images and redeploy "${name}"? Containers are recreated and restart briefly. Works whether the stack is running or stopped.`)}>
-            <Text style={[styles.actionBtnText, { color: colors.info }]}>Redeploy</Text>
+              `Re-pull all images and redeploy "${name}"? Containers are recreated and restarted; this can take 5-10 minutes.`)}>
+            <Text style={[styles.actionBtnText, { color: colors.info }]} numberOfLines={1}>Redeploy</Text>
           </Pressable>
         )}
         <Pressable style={styles.actionBtn} onPress={loadCompose}>
-          <Text style={styles.actionBtnText}>{showCompose ? 'Hide Compose' : 'View Compose'}</Text>
+          <Text style={styles.actionBtnText} numberOfLines={1}>{showCompose ? 'Hide' : 'Compose'}</Text>
         </Pressable>
       </View>
+
+      {actionPending && (
+        <View style={styles.pendingBanner}>
+          <ActivityIndicator size="small" color={colors.info} />
+          <Text style={styles.pendingText}>
+            {pendingAction === 'Redeploy'
+              ? 'Redeploying: pulling images and recreating containers. This can take 5-10 minutes, keep the app open.'
+              : `${pendingAction}ing stack... this can take several minutes.`}
+          </Text>
+        </View>
+      )}
 
       {showCompose && (
         <View style={styles.composeBox}>
@@ -136,6 +148,8 @@ export function StackDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  pendingBanner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginHorizontal: spacing.xl, marginBottom: spacing.md, padding: spacing.md, backgroundColor: 'rgba(63,186,194,0.10)', borderWidth: 1, borderColor: 'rgba(63,186,194,0.35)', borderRadius: radii.md },
+  pendingText: { ...typography.caption, color: colors.info, flex: 1 },
   container: { flex: 1, backgroundColor: 'transparent' },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.xl },
   title: { ...typography.h2, color: colors.textPrimary },

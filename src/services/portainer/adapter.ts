@@ -77,20 +77,22 @@ export class PortainerAdapter {
     return data;
   }
 
+  // docker stop/restart wait out the container's grace period (10s+), well
+  // past the 8s client default that guards status polling
   async startContainer(endpointId: number, id: string): Promise<void> {
-    await this.client.post(`${this.docker(endpointId)}/containers/${id}/start`);
+    await this.client.post(`${this.docker(endpointId)}/containers/${id}/start`, undefined, { timeout: 60000 });
   }
 
   async stopContainer(endpointId: number, id: string): Promise<void> {
-    await this.client.post(`${this.docker(endpointId)}/containers/${id}/stop`);
+    await this.client.post(`${this.docker(endpointId)}/containers/${id}/stop`, undefined, { timeout: 60000 });
   }
 
   async restartContainer(endpointId: number, id: string): Promise<void> {
-    await this.client.post(`${this.docker(endpointId)}/containers/${id}/restart`);
+    await this.client.post(`${this.docker(endpointId)}/containers/${id}/restart`, undefined, { timeout: 60000 });
   }
 
   async killContainer(endpointId: number, id: string): Promise<void> {
-    await this.client.post(`${this.docker(endpointId)}/containers/${id}/kill`);
+    await this.client.post(`${this.docker(endpointId)}/containers/${id}/kill`, undefined, { timeout: 30000 });
   }
 
   async getContainerLogs(endpointId: number, id: string, tail = 100, timestamps = false): Promise<string> {
@@ -119,17 +121,21 @@ export class PortainerAdapter {
     return data.StackFileContent ?? '';
   }
 
+  // Stack lifecycle blocks until compose finishes; well beyond the 8s default
   async startStack(id: number, endpointId: number): Promise<void> {
-    await this.client.post(`/api/stacks/${id}/start`, undefined, { params: { endpointId } });
+    await this.client.post(`/api/stacks/${id}/start`, undefined, { params: { endpointId }, timeout: 600000 });
   }
 
   async stopStack(id: number, endpointId: number): Promise<void> {
-    await this.client.post(`/api/stacks/${id}/stop`, undefined, { params: { endpointId } });
+    await this.client.post(`/api/stacks/${id}/stop`, undefined, { params: { endpointId }, timeout: 600000 });
   }
 
   // Portainer's "pull and redeploy": re-submit the stack with PullImage so
   // images are re-pulled and containers recreated. Works whether the stack is
   // running or stopped; git-backed stacks use the dedicated redeploy endpoint.
+  // Redeploy blocks server-side until every image is pulled and containers
+  // are recreated, which takes minutes; the client-wide 8s timeout (per-host
+  // starvation guard) must not apply here
   async redeployStack(stack: PortainerStack, endpointId: number): Promise<void> {
     if (stack.GitConfig) {
       await this.client.put(`/api/stacks/${stack.Id}/git/redeploy`, {
@@ -137,7 +143,7 @@ export class PortainerAdapter {
         RepositoryAuthentication: false,
         PullImage: true,
         Prune: false,
-      }, { params: { endpointId } });
+      }, { params: { endpointId }, timeout: 600000 });
       return;
     }
     const file = await this.getStackFile(stack.Id);
@@ -145,7 +151,7 @@ export class PortainerAdapter {
       StackFileContent: file,
       Env: stack.Env ?? [],
       PullImage: true,
-    }, { params: { endpointId } });
+    }, { params: { endpointId }, timeout: 600000 });
   }
 
   async getImages(endpointId: number): Promise<DockerImage[]> {
@@ -157,6 +163,7 @@ export class PortainerAdapter {
   async pruneImages(endpointId: number): Promise<{ imagesDeleted: number; spaceReclaimed: number }> {
     const { data } = await this.client.post(`${this.docker(endpointId)}/images/prune`, undefined, {
       params: { filters: JSON.stringify({ dangling: ['false'] }) },
+      timeout: 300000,
     });
     return { imagesDeleted: (data.ImagesDeleted ?? []).length, spaceReclaimed: data.SpaceReclaimed ?? 0 };
   }
